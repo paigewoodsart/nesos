@@ -13,9 +13,9 @@ interface MobileArchiveProps {
 
 export function MobileArchive({ clients, tasksByClient, onBack, onOpenDrawer }: MobileArchiveProps) {
   return (
-    <div className="flex flex-col h-screen bg-paper-cream">
+    <div className="flex flex-col h-screen board-breathe board-grid">
       <MobileScreenHeader title="Archive" onBack={onBack} onOpenDrawer={onOpenDrawer} />
-      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-4">
+      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-4 bg-paper-cream/60 backdrop-blur-sm">
         {clients.map((c) => {
           const archived = (tasksByClient[c.id] ?? []).filter((t) => t.archived);
           if (archived.length === 0) return null;

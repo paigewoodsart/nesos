@@ -47,7 +47,7 @@ export function MobileWeekCalendar({ activeDate, tasks, events, onBack, onOpenDr
     });
 
   return (
-    <div className="flex flex-col h-screen bg-paper-cream">
+    <div className="flex flex-col h-screen board-breathe board-grid">
       <MobileScreenHeader title="Week" onBack={onBack} onOpenDrawer={onOpenDrawer} accent={CREAMSICLE} />
 
       {/* Day strip */}
@@ -85,7 +85,7 @@ export function MobileWeekCalendar({ activeDate, tasks, events, onBack, onOpenDr
       </div>
 
       {/* Day content */}
-      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-3">
+      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-3 bg-paper-cream/60 backdrop-blur-sm">
         <p className="text-[9px] uppercase tracking-widest mb-2 text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>
           {format(selectedDay, "EEEE, MMM d")}
         </p>

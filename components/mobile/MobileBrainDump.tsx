@@ -13,7 +13,7 @@ interface MobileBrainDumpProps {
 
 export function MobileBrainDump({ brainDump, onBrainDumpChange, onBack, onOpenDrawer }: MobileBrainDumpProps) {
   return (
-    <div className="flex flex-col h-screen bg-paper-cream">
+    <div className="flex flex-col h-screen board-breathe board-grid">
       <MobileScreenHeader title="Brain Dump" onBack={onBack} onOpenDrawer={onOpenDrawer} accent={RASPBERRY} />
       <div className="flex-1 px-5 pt-4 pb-8 flex flex-col">
         <textarea

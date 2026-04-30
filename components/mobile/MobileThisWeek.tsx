@@ -61,7 +61,7 @@ export function MobileThisWeek({
   const todayMeetings = weekMeetings.filter((e) => isEventToday(e.start));
 
   return (
-    <div className="flex flex-col h-screen bg-paper-cream">
+    <div className="flex flex-col h-screen board-breathe board-grid">
       <MobileScreenHeader title="This Week" onBack={onBack} onOpenDrawer={onOpenDrawer} accent={CREAMSICLE} />
 
       {/* Progress */}
@@ -74,7 +74,7 @@ export function MobileThisWeek({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-2">
+      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-2 bg-paper-cream/60 backdrop-blur-sm">
         {/* Meetings today */}
         {todayMeetings.length > 0 && (
           <div className="mb-4">
@@ -150,7 +150,7 @@ export function MobileThisWeek({
       </div>
 
       {/* Add task */}
-      <div className="flex-shrink-0 border-t border-paper-line px-5 py-3 bg-paper-cream pb-8">
+      <div className="flex-shrink-0 border-t border-paper-line/30 px-5 py-3 bg-paper-cream/70 backdrop-blur-sm pb-8">
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold" style={{ color: CREAMSICLE }}>+</span>
           <input

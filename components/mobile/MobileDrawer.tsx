@@ -92,12 +92,9 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
               Your work. Your rhythm. Your island.
             </p>
           </div>
-          <div className="flex flex-col items-end gap-2 mt-1">
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-paper-ink-light hover:text-paper-ink text-lg">
-              ×
-            </button>
-            <img src="/nesos-icon.webp" alt="Nesos" className="h-8 w-8 object-contain opacity-60" />
-          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-paper-ink-light hover:text-paper-ink text-lg mt-1">
+            ×
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
@@ -211,6 +208,22 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
               </div>
             )}
           </div>
+        </div>
+
+        {/* Footer credit */}
+        <div className="flex-shrink-0 border-t border-paper-line/30 px-6 py-4 flex items-center gap-3">
+          <img src="/nesos-icon.webp" alt="Nesos" className="h-7 w-7 object-contain opacity-60 flex-shrink-0" />
+          <p className="text-[10px] text-paper-ink-light leading-relaxed" style={{ fontFamily: "var(--font-serif)" }}>
+            created with love by{" "}
+            <a
+              href="https://www.paigewoods.art"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-paper-ink transition-colors"
+            >
+              Paige Woods
+            </a>
+          </p>
         </div>
       </div>
     </>

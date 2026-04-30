@@ -26,7 +26,7 @@ export function MobileHome({ onOpenDrawer, onNavigate, clients }: MobileHomeProp
   );
 
   return (
-    <div className="h-screen flex flex-col bg-paper-cream">
+    <div className="h-screen flex flex-col board-breathe board-grid">
       {/* Top bar */}
       <div className="flex items-center justify-between px-5 pt-8 pb-4 flex-shrink-0">
         <img src="/nesos-icon.webp" alt="Nesos" className="h-10 w-10 object-contain" />

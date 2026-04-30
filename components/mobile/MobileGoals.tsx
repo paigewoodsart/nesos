@@ -100,9 +100,9 @@ function GoalSection({ title, color, goals, type, onToggle, onRemove, onAdd }: G
 
 export function MobileGoals({ weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onAddGoal, onBack, onOpenDrawer }: MobileGoalsProps) {
   return (
-    <div className="flex flex-col h-screen bg-paper-cream">
+    <div className="flex flex-col h-screen board-breathe board-grid">
       <MobileScreenHeader title="Goals" onBack={onBack} onOpenDrawer={onOpenDrawer} accent={WEEK_COLOR} />
-      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-4">
+      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-4 bg-paper-cream/60 backdrop-blur-sm">
         <GoalSection
           title="This Week"
           color={WEEK_COLOR}
