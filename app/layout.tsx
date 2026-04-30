@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Inter, Aboreto } from "next/font/google";
 import "./globals.css";
 
@@ -24,8 +24,13 @@ const aboreto = Aboreto({
 export const metadata: Metadata = {
   title: "Nesos",
   description: "A planner for ADHD minds",
-  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
-  icons: { icon: "/logo.jpg", apple: "/logo.jpg" },
+  icons: { icon: "/nesos-icon.webp", apple: "/nesos-icon.webp" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
