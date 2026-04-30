@@ -89,7 +89,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
               νῆσος · ne·sos
             </p>
             <p className="text-[10px] italic text-paper-ink-light/70 mt-1" style={{ fontFamily: "var(--font-serif)" }}>
-              your personal island of focus.
+              Your work. Your rhythm. Your island.
             </p>
           </div>
           <button

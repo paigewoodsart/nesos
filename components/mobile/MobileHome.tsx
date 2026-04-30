@@ -86,16 +86,15 @@ export function MobileHome({ onOpenDrawer, clients, tasksByClient, events }: Mob
           <div
             style={{
               borderRadius: "63% 37% 54% 46% / 55% 48% 52% 45%",
-              background: "rgba(255,255,255,0.58)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
+              background: "rgba(255,255,255,0.32)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
               boxShadow: [
-                "inset 0 2px 4px rgba(255,255,255,0.88)",
-                "inset 0 -2px 4px rgba(0,0,0,0.04)",
-                "0 8px 40px rgba(0,0,0,0.09)",
-                "0 2px 8px rgba(0,0,0,0.05)",
+                "inset 0 2px 6px rgba(255,255,255,0.90)",
+                "inset 0 -2px 4px rgba(0,0,0,0.06)",
+                "0 10px 40px rgba(0,0,0,0.08)",
               ].join(", "),
-              border: "1px solid rgba(255,255,255,0.68)",
+              border: "1.5px solid rgba(255,255,255,0.75)",
               padding: "52px 44px",
               width: "100%",
               maxWidth: 340,
@@ -117,7 +116,7 @@ export function MobileHome({ onOpenDrawer, clients, tasksByClient, events }: Mob
         {/* Tagline + scroll hint */}
         <div className="flex flex-col items-center gap-2 pb-10 flex-shrink-0">
           <p className="text-[10px] tracking-[0.22em] uppercase text-paper-ink/35" style={{ fontFamily: "var(--font-body)" }}>
-            your planning island
+            Your work. Your rhythm. Your island.
           </p>
           {allTasksSorted.length > 0 && (
             <span className="text-[9px] text-paper-ink/30 tracking-widest uppercase" style={{ fontFamily: "var(--font-body)" }}>
