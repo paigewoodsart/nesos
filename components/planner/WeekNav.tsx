@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, addMonths, subMonths } from "date-fns";
 import { prevWeekId, nextWeekId, getWeekId, formatWeekRange } from "@/lib/dates";
@@ -27,6 +28,45 @@ interface WeekNavProps {
   onViewChange: (v: View) => void;
   activeDate: Date;
   onDayChange: (d: Date) => void;
+}
+
+function NesosPhonetic() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative mt-0.5">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="text-[10px] tracking-widest text-paper-ink-light hover:text-paper-ink transition-colors select-none"
+        style={{ fontFamily: "var(--font-body)", letterSpacing: "0.18em" }}
+      >
+        νῆσος · nē·sos
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="absolute left-0 top-6 z-50 w-56 rounded-sm shadow-lg px-4 py-3 animate-fade-up"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.96)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(26,26,26,0.08)",
+              boxShadow: "0 8px 32px rgba(26,26,26,0.12)",
+            }}
+          >
+            <p className="text-xs uppercase tracking-[0.2em] text-paper-ink-light mb-1" style={{ fontFamily: "var(--font-body)" }}>
+              ancient greek
+            </p>
+            <p className="text-xl font-semibold text-paper-ink mb-0.5" style={{ fontFamily: "var(--font-serif)" }}>
+              island
+            </p>
+            <p className="text-[11px] leading-relaxed text-paper-ink-light italic mt-2" style={{ fontFamily: "var(--font-serif)" }}>
+              where scattered thoughts find shore.
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function WeekNav({ weekId, bloomState, view, onViewChange, activeDate, onDayChange }: WeekNavProps) {
@@ -66,12 +106,15 @@ export function WeekNav({ weekId, bloomState, view, onViewChange, activeDate, on
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-3.5 border-b-2 border-paper-ink/10 bg-paper-cream/98 backdrop-blur-sm">
       <div className="flex items-center gap-5">
-        <h1
-          className="text-3xl font-bold tracking-tight leading-none"
-          style={{ fontFamily: "var(--font-aboreto)", color: "var(--color-paper-rust)" }}
-        >
-          Nesos
-        </h1>
+        <div className="flex flex-col leading-none">
+          <h1
+            className="text-3xl font-bold tracking-tight leading-none"
+            style={{ fontFamily: "var(--font-aboreto)", color: "var(--color-paper-rust)" }}
+          >
+            Nesos
+          </h1>
+          <NesosPhonetic />
+        </div>
         {showNav && (
           <>
             <span className="text-paper-line text-xl font-thin">|</span>

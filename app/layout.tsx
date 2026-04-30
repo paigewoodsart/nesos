@@ -34,7 +34,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable} ${aboreto.variable} h-full`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <div className="w-full py-1.5 px-4 text-center text-[11px] tracking-wide bg-white border-b border-paper-line/30" style={{ fontFamily: "var(--font-body)", color: "var(--color-paper-rust)" }}>
+          This resource is still in beta, please email{" "}
+          <a href="mailto:nesosplanner@gmail.com" className="underline underline-offset-2 opacity-70 hover:opacity-100 transition-opacity">
+            nesosplanner@gmail.com
+          </a>
+          {" "}to submit feedback
+        </div>
+        {children}
+      </body>
     </html>
   );
 }
