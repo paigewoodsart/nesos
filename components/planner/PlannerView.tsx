@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider, useSession } from "next-auth/react";
 import { useWeekStore } from "@/hooks/useWeekStore";
 import { useClientStore } from "@/hooks/useClientStore";
 import { useCalendarEvents } from "@/hooks/useCalendarEvents";
@@ -25,8 +25,11 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const [activeDate, setActiveDate] = useState<Date>(() => new Date());
   const [activeWeekId, setActiveWeekId] = useState(initialWeekId);
 
-  const store = useWeekStore(activeWeekId);
-  const clientStore = useClientStore(activeWeekId);
+  const { data: session } = useSession();
+  const userEmail = session?.user?.email ?? null;
+
+  const store = useWeekStore(activeWeekId, userEmail);
+  const clientStore = useClientStore(activeWeekId, userEmail);
   const { events } = useCalendarEvents(activeWeekId);
   const isMobile = useIsMobile();
 

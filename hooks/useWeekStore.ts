@@ -5,9 +5,13 @@ import { getTasksByWeek, saveTask, deleteTask, getRecurringTasks } from "@/lib/s
 import { getNotesByWeek, saveNote } from "@/lib/storage/notes";
 import { getGoalsByWeek, getLongtermGoals, saveGoal, deleteGoal } from "@/lib/storage/goals";
 import { getBrainDump, saveBrainDump } from "@/lib/storage/braindump";
+import { sbGetTasksByWeek, sbGetRecurringTasks, sbSaveTask, sbDeleteTask } from "@/lib/storage/supabase/tasks";
+import { sbGetNotesByWeek, sbSaveNote } from "@/lib/storage/supabase/notes";
+import { sbGetGoalsByWeek, sbGetLongtermGoals, sbSaveGoal, sbDeleteGoal } from "@/lib/storage/supabase/goals";
+import { sbGetBrainDump, sbSaveBrainDump } from "@/lib/storage/supabase/braindump";
 import type { Task, Note, Goal, BrainDump, BloomState } from "@/types";
 
-export function useWeekStore(weekId: string) {
+export function useWeekStore(weekId: string, userEmail?: string | null) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [weekGoals, setWeekGoals] = useState<Goal[]>([]);
@@ -15,35 +19,30 @@ export function useWeekStore(weekId: string) {
   const [brainDump, setBrainDumpState] = useState<string>("");
   const [loaded, setLoaded] = useState(false);
 
+  const sb = !!userEmail;
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
       const [t, n, wg, lg, bd] = await Promise.all([
-        getTasksByWeek(weekId),
-        getNotesByWeek(weekId),
-        getGoalsByWeek(weekId),
-        getLongtermGoals(),
-        getBrainDump(weekId),
+        sb ? sbGetTasksByWeek(userEmail!, weekId) : getTasksByWeek(weekId),
+        sb ? sbGetNotesByWeek(userEmail!, weekId) : getNotesByWeek(weekId),
+        sb ? sbGetGoalsByWeek(userEmail!, weekId) : getGoalsByWeek(weekId),
+        sb ? sbGetLongtermGoals(userEmail!) : getLongtermGoals(),
+        sb ? sbGetBrainDump(userEmail!, weekId) : getBrainDump(weekId),
       ]);
 
-      // Seed recurring tasks from any previous week if this week has none
       if (t.length === 0) {
-        const recurring = await getRecurringTasks();
+        const recurring = sb
+          ? await sbGetRecurringTasks(userEmail!)
+          : await getRecurringTasks();
         const seeded: Task[] = recurring
-          .filter((rt) => !t.find((existing) => existing.text === rt.text && existing.dayIndex === rt.dayIndex))
-          .map((rt) => ({
-            ...rt,
-            id: crypto.randomUUID(),
-            weekId,
-            completed: false,
-            createdAt: Date.now(),
-          }));
+          .filter((rt) => !t.find((e) => e.text === rt.text && e.dayIndex === rt.dayIndex))
+          .map((rt) => ({ ...rt, id: crypto.randomUUID(), weekId, completed: false, createdAt: Date.now() }));
         for (const task of seeded) {
-          await saveTask(task);
+          if (sb) await sbSaveTask(userEmail!, task); else await saveTask(task);
         }
-        if (!cancelled) {
-          setTasks([...t, ...seeded]);
-        }
+        if (!cancelled) setTasks([...t, ...seeded]);
       } else if (!cancelled) {
         setTasks(t);
       }
@@ -56,128 +55,97 @@ export function useWeekStore(weekId: string) {
         setLoaded(true);
       }
     }
+    setLoaded(false);
     load();
     return () => { cancelled = true; };
-  }, [weekId]);
+  }, [weekId, userEmail]); // eslint-disable-line
+
+  const save = useCallback((task: Task) => {
+    if (userEmail) sbSaveTask(userEmail, task); else saveTask(task);
+  }, [userEmail]);
 
   const addTask = useCallback(async (partial: Omit<Task, "id" | "weekId" | "createdAt" | "sortOrder">) => {
-    const task: Task = {
-      ...partial,
-      id: crypto.randomUUID(),
-      weekId,
-      sortOrder: Date.now(),
-      createdAt: Date.now(),
-    };
-    await saveTask(task);
+    const task: Task = { ...partial, id: crypto.randomUUID(), weekId, sortOrder: Date.now(), createdAt: Date.now() };
+    if (userEmail) await sbSaveTask(userEmail, task); else await saveTask(task);
     setTasks((prev) => [...prev, task]);
     return task;
-  }, [weekId]);
+  }, [weekId, userEmail]);
 
   const toggleTask = useCallback(async (id: string) => {
     setTasks((prev) => {
-      const updated = prev.map((t) =>
-        t.id === id ? { ...t, completed: !t.completed } : t
-      );
+      const updated = prev.map((t) => t.id === id ? { ...t, completed: !t.completed } : t);
       const task = updated.find((t) => t.id === id);
-      if (task) saveTask(task);
+      if (task) { if (userEmail) sbSaveTask(userEmail, task); else saveTask(task); }
       return updated;
     });
-  }, []);
+  }, [userEmail]);
 
   const removeTask = useCallback(async (id: string) => {
-    await deleteTask(id);
+    if (userEmail) await sbDeleteTask(id); else await deleteTask(id);
     setTasks((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  }, [userEmail]);
 
   const renameTask = useCallback((id: string, text: string) => {
     setTasks((prev) => {
       const updated = prev.map((t) => t.id === id ? { ...t, text } : t);
       const task = updated.find((t) => t.id === id);
-      if (task) saveTask(task);
+      if (task) { if (userEmail) sbSaveTask(userEmail, task); else saveTask(task); }
       return updated;
     });
-  }, []);
+  }, [userEmail]);
 
   const upsertNote = useCallback(async (dayIndex: number, text: string, photoIds?: string[]) => {
     const existing = notes.find((n) => n.dayIndex === dayIndex);
     const note: Note = existing
       ? { ...existing, text, photoIds: photoIds ?? existing.photoIds, updatedAt: Date.now() }
-      : {
-          id: crypto.randomUUID(),
-          weekId,
-          dayIndex,
-          text,
-          photoIds: photoIds ?? [],
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-    await saveNote(note);
-    setNotes((prev) =>
-      existing ? prev.map((n) => (n.id === note.id ? note : n)) : [...prev, note]
-    );
+      : { id: crypto.randomUUID(), weekId, dayIndex, text, photoIds: photoIds ?? [], createdAt: Date.now(), updatedAt: Date.now() };
+    if (userEmail) await sbSaveNote(userEmail, note); else await saveNote(note);
+    setNotes((prev) => existing ? prev.map((n) => n.id === note.id ? note : n) : [...prev, note]);
     return note;
-  }, [weekId, notes]);
+  }, [weekId, notes, userEmail]);
 
   const addNotePhoto = useCallback(async (dayIndex: number, photoId: string) => {
     const existing = notes.find((n) => n.dayIndex === dayIndex);
     if (existing) {
       const updated: Note = { ...existing, photoIds: [...existing.photoIds, photoId], updatedAt: Date.now() };
-      await saveNote(updated);
-      setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
+      if (userEmail) await sbSaveNote(userEmail, updated); else await saveNote(updated);
+      setNotes((prev) => prev.map((n) => n.id === updated.id ? updated : n));
     } else {
-      const note: Note = {
-        id: crypto.randomUUID(),
-        weekId,
-        dayIndex,
-        text: "",
-        photoIds: [photoId],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-      await saveNote(note);
+      const note: Note = { id: crypto.randomUUID(), weekId, dayIndex, text: "", photoIds: [photoId], createdAt: Date.now(), updatedAt: Date.now() };
+      if (userEmail) await sbSaveNote(userEmail, note); else await saveNote(note);
       setNotes((prev) => [...prev, note]);
     }
-  }, [weekId, notes]);
+  }, [weekId, notes, userEmail]);
 
   const addGoal = useCallback(async (text: string, type: "weekly" | "longterm") => {
-    const goal: Goal = {
-      id: crypto.randomUUID(),
-      weekId: type === "weekly" ? weekId : null,
-      text,
-      completed: false,
-      type,
-      createdAt: Date.now(),
-    };
-    await saveGoal(goal);
-    if (type === "weekly") {
-      setWeekGoals((prev) => [...prev, goal]);
-    } else {
-      setLongtermGoals((prev) => [...prev, goal]);
-    }
-  }, [weekId]);
+    const goal: Goal = { id: crypto.randomUUID(), weekId: type === "weekly" ? weekId : null, text, completed: false, type, createdAt: Date.now() };
+    if (userEmail) await sbSaveGoal(userEmail, goal); else await saveGoal(goal);
+    if (type === "weekly") setWeekGoals((prev) => [...prev, goal]);
+    else setLongtermGoals((prev) => [...prev, goal]);
+  }, [weekId, userEmail]);
 
   const toggleGoal = useCallback(async (id: string) => {
     const toggle = (prev: Goal[]) => {
       const updated = prev.map((g) => g.id === id ? { ...g, completed: !g.completed } : g);
       const goal = updated.find((g) => g.id === id);
-      if (goal) saveGoal(goal);
+      if (goal) { if (userEmail) sbSaveGoal(userEmail, goal); else saveGoal(goal); }
       return updated;
     };
     setWeekGoals(toggle);
     setLongtermGoals(toggle);
-  }, []);
+  }, [userEmail]);
 
   const removeGoal = useCallback(async (id: string) => {
-    await deleteGoal(id);
+    if (userEmail) await sbDeleteGoal(id); else await deleteGoal(id);
     setWeekGoals((prev) => prev.filter((g) => g.id !== id));
     setLongtermGoals((prev) => prev.filter((g) => g.id !== id));
-  }, []);
+  }, [userEmail]);
 
   const updateBrainDump = useCallback(async (text: string) => {
     setBrainDumpState(text);
     const dump: BrainDump = { weekId, text, updatedAt: Date.now() };
-    await saveBrainDump(dump);
-  }, [weekId]);
+    if (userEmail) await sbSaveBrainDump(userEmail, dump); else await saveBrainDump(dump);
+  }, [weekId, userEmail]);
 
   const bloomState: BloomState = (() => {
     const total = tasks.filter((t) => !t.completed).length;
@@ -186,23 +154,8 @@ export function useWeekStore(weekId: string) {
     return "overgrown";
   })();
 
-  return {
-    tasks,
-    notes,
-    weekGoals,
-    longtermGoals,
-    brainDump,
-    bloomState,
-    loaded,
-    addTask,
-    toggleTask,
-    removeTask,
-    renameTask,
-    upsertNote,
-    addNotePhoto,
-    addGoal,
-    toggleGoal,
-    removeGoal,
-    updateBrainDump,
-  };
+  // suppress unused warning
+  void save;
+
+  return { tasks, notes, weekGoals, longtermGoals, brainDump, bloomState, loaded, addTask, toggleTask, removeTask, renameTask, upsertNote, addNotePhoto, addGoal, toggleGoal, removeGoal, updateBrainDump };
 }
