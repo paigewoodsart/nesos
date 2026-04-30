@@ -34,6 +34,7 @@ interface MobileViewProps {
   onRemoveTask: (id: string) => void;
   onToggleGoal: (id: string) => void;
   onRemoveGoal: (id: string) => void;
+  onRenameGoal: (id: string, text: string) => void;
   onAddGoal: (text: string, type: "weekly" | "longterm") => void;
   onBrainDumpChange: (text: string) => void;
   clients: Client[];
@@ -51,7 +52,7 @@ interface MobileViewProps {
 export function MobileView({
   tasks, weekGoals, longtermGoals, brainDump, sessions,
   onAddTask, onToggleTask, onRemoveTask,
-  onToggleGoal, onRemoveGoal, onAddGoal, onBrainDumpChange,
+  onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal, onBrainDumpChange,
   clients, tasksByClient,
   onAddClientTask, onToggleClientTask, onArchiveClientTask, onUpdateClientTask, onAddClient,
   events, activeDate, onDayChange,

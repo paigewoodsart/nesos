@@ -177,10 +177,19 @@ function TaskColumnHeaders() {
   );
 }
 
-function GoalRow({ goal, color, onToggle, onRemove }: {
+function GoalRow({ goal, color, onToggle, onRemove, onRename }: {
   goal: Goal; color: string;
-  onToggle: (id: string) => void; onRemove: (id: string) => void;
+  onToggle: (id: string) => void; onRemove: (id: string) => void; onRename: (id: string, text: string) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(goal.text);
+
+  const commit = () => {
+    const t = draft.trim();
+    if (t && t !== goal.text) onRename(goal.id, t); else setDraft(goal.text);
+    setEditing(false);
+  };
+
   return (
     <div className="group flex items-start gap-2 py-1">
       <button onClick={() => onToggle(goal.id)}
@@ -188,10 +197,24 @@ function GoalRow({ goal, color, onToggle, onRemove }: {
         style={{ borderColor: goal.completed ? color : "rgba(26,26,26,0.22)", backgroundColor: goal.completed ? color : "transparent" }}>
         {goal.completed && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </button>
-      <span className={`flex-1 text-sm leading-snug ${goal.completed ? "line-through opacity-50" : "font-medium"}`}
-        style={{ fontFamily: "var(--font-serif)", color: goal.completed ? "#1A1A1A" : color }}>
-        {goal.text}
-      </span>
+      {editing ? (
+        <input autoFocus value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setDraft(goal.text); setEditing(false); } }}
+          className="flex-1 text-sm bg-transparent border-b border-paper-ink-light/50 outline-none font-medium"
+          style={{ fontFamily: "var(--font-serif)", color }}
+        />
+      ) : (
+        <span
+          className={`flex-1 text-sm leading-snug cursor-text ${goal.completed ? "line-through opacity-50" : "font-medium"}`}
+          style={{ fontFamily: "var(--font-serif)", color: goal.completed ? "#1A1A1A" : color }}
+          onDoubleClick={() => { setDraft(goal.text); setEditing(true); }}
+          title="Double-click to edit"
+        >
+          {goal.text}
+        </span>
+      )}
       <button onClick={() => onRemove(goal.id)} className="opacity-0 group-hover:opacity-100 text-paper-ink-light hover:text-paper-rust text-base font-bold transition-opacity">×</button>
     </div>
   );
@@ -534,6 +557,7 @@ interface StickyBoardProps {
   longtermGoals: Goal[];
   onToggleGoal: (id: string) => void;
   onRemoveGoal: (id: string) => void;
+  onRenameGoal: (id: string, text: string) => void;
   onAddGoal: (text: string, type: "weekly" | "longterm") => void;
   brainDump: string;
   onBrainDumpChange: (text: string) => void;
@@ -544,7 +568,7 @@ export function StickyBoard({
   onAddClientTask, onToggleClientTask, onRemoveClientTask, onUpdateClientTask, onArchiveClientTask,
   onAddClient, onUpdateClient, onRemoveClient,
   weekTasks, onAddWeekTask, onToggleWeekTask, onRemoveWeekTask, onRenameWeekTask,
-  weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onAddGoal,
+  weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal,
   brainDump, onBrainDumpChange,
 }: StickyBoardProps) {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
@@ -653,12 +677,12 @@ export function StickyBoard({
                 >
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.6 }}>This Week</p>
                   {weekGoals.length === 0 && <p className="text-xs italic mb-2" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.45 }}>No goals yet.</p>}
-                  {weekGoals.map((g) => <GoalRow key={g.id} goal={g} color="#168aad" onToggle={onToggleGoal} onRemove={onRemoveGoal} />)}
+                  {weekGoals.map((g) => <GoalRow key={g.id} goal={g} color="#168aad" onToggle={onToggleGoal} onRemove={onRemoveGoal} onRename={onRenameGoal} />)}
                   <AddGoalInline onAdd={(t) => onAddGoal(t, "weekly")} color="#168aad" placeholder="add weekly goal..." />
                   <div className="mt-3 mb-2 border-t" style={{ borderColor: "rgba(26,26,26,0.08)" }} />
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.6 }}>Long-Term</p>
                   {longtermGoals.length === 0 && <p className="text-xs italic mb-2" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.45 }}>Dream big.</p>}
-                  {longtermGoals.map((g) => <GoalRow key={g.id} goal={g} color="#34a0a4" onToggle={onToggleGoal} onRemove={onRemoveGoal} />)}
+                  {longtermGoals.map((g) => <GoalRow key={g.id} goal={g} color="#34a0a4" onToggle={onToggleGoal} onRemove={onRemoveGoal} onRename={onRenameGoal} />)}
                   <AddGoalInline onAdd={(t) => onAddGoal(t, "longterm")} color="#34a0a4" placeholder="add long-term goal..." />
                 </NotePanel>
               ) : (

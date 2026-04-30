@@ -69,6 +69,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         onRemoveTask={store.removeTask}
         onToggleGoal={store.toggleGoal}
         onRemoveGoal={store.removeGoal}
+            onRenameGoal={store.renameGoal}
         onAddGoal={store.addGoal}
         onBrainDumpChange={store.updateBrainDump}
         clients={clientStore.clients}
@@ -127,6 +128,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
             longtermGoals={store.longtermGoals}
             onToggleGoal={store.toggleGoal}
             onRemoveGoal={store.removeGoal}
+            onRenameGoal={store.renameGoal}
             onAddGoal={store.addGoal}
             brainDump={store.brainDump}
             onBrainDumpChange={store.updateBrainDump}

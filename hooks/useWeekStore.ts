@@ -141,6 +141,17 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
     setLongtermGoals((prev) => prev.filter((g) => g.id !== id));
   }, [userEmail]);
 
+  const renameGoal = useCallback((id: string, text: string) => {
+    const update = (prev: Goal[]) => {
+      const updated = prev.map((g) => g.id === id ? { ...g, text } : g);
+      const goal = updated.find((g) => g.id === id);
+      if (goal) { if (userEmail) sbSaveGoal(userEmail, goal); else saveGoal(goal); }
+      return updated;
+    };
+    setWeekGoals(update);
+    setLongtermGoals(update);
+  }, [userEmail]);
+
   const updateBrainDump = useCallback(async (text: string) => {
     setBrainDumpState(text);
     const dump: BrainDump = { weekId, text, updatedAt: Date.now() };
@@ -157,5 +168,5 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
   // suppress unused warning
   void save;
 
-  return { tasks, notes, weekGoals, longtermGoals, brainDump, bloomState, loaded, addTask, toggleTask, removeTask, renameTask, upsertNote, addNotePhoto, addGoal, toggleGoal, removeGoal, updateBrainDump };
+  return { tasks, notes, weekGoals, longtermGoals, brainDump, bloomState, loaded, addTask, toggleTask, removeTask, renameTask, upsertNote, addNotePhoto, addGoal, toggleGoal, removeGoal, renameGoal, updateBrainDump };
 }
