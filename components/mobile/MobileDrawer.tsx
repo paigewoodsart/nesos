@@ -76,7 +76,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
         className={`fixed top-0 right-0 z-50 h-full bg-paper-cream shadow-2xl flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"}`}
         style={{ width: "78vw", maxWidth: 320 }}
       >
-        {/* Header: NESOS title + close */}
+        {/* Header: NESOS title + favicon + close */}
         <div className="flex items-start justify-between px-6 pt-10 pb-5 border-b border-paper-line/40">
           <div>
             <h2
@@ -92,12 +92,12 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
               Your work. Your rhythm. Your island.
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-paper-ink-light hover:text-paper-ink text-lg mt-1"
-          >
-            ×
-          </button>
+          <div className="flex flex-col items-end gap-2 mt-1">
+            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-paper-ink-light hover:text-paper-ink text-lg">
+              ×
+            </button>
+            <img src="/nesos-icon.webp" alt="Nesos" className="h-8 w-8 object-contain opacity-60" />
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">

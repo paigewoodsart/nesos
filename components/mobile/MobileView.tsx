@@ -76,9 +76,8 @@ export function MobileView({
       {screen === "home" && (
         <MobileHome
           onOpenDrawer={openDrawer}
+          onNavigate={(s) => { setScreen(s as typeof screen); }}
           clients={clients}
-          tasksByClient={tasksByClient}
-          events={events}
         />
       )}
 
