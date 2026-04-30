@@ -19,6 +19,86 @@ interface WeekNavProps {
   onDayChange: (d: Date) => void;
 }
 
+function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSession>["data"]> }) {
+  const [open, setOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const email = session.user?.email ?? "";
+  const name = session.user?.name?.split(" ")[0] ?? email;
+
+  const handleDelete = async () => {
+    if (!confirm("This will permanently delete all your Nesos data. This cannot be undone. Are you sure?")) return;
+    setDeleting(true);
+    try {
+      await fetch("/api/account/delete", { method: "DELETE" });
+      await signOut();
+    } catch {
+      setDeleting(false);
+      alert("Something went wrong. Please try again.");
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-8 h-8 flex items-center justify-center text-paper-ink-light hover:text-paper-ink transition-colors"
+        aria-label="Account menu"
+      >
+        <svg width="16" height="4" viewBox="0 0 16 4" fill="none">
+          <circle cx="2" cy="2" r="1.5" fill="currentColor"/>
+          <circle cx="8" cy="2" r="1.5" fill="currentColor"/>
+          <circle cx="14" cy="2" r="1.5" fill="currentColor"/>
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="absolute right-0 top-10 z-50 w-56 shadow-lg animate-fade-up"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.97)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(26,26,26,0.08)",
+              boxShadow: "0 8px 32px rgba(26,26,26,0.12)",
+            }}
+          >
+            {/* User info */}
+            <div className="px-4 py-3 border-b border-paper-line/30">
+              <p className="text-sm font-semibold text-paper-ink" style={{ fontFamily: "var(--font-serif)" }}>{name}</p>
+              <p className="text-[10px] text-paper-ink-light truncate" style={{ fontFamily: "var(--font-body)" }}>{email}</p>
+            </div>
+
+            {/* Migrate */}
+            <div className="px-4 py-2 border-b border-paper-line/30">
+              <MigrateDataButton userEmail={email} />
+            </div>
+
+            {/* Sign out */}
+            <button
+              onClick={() => { setOpen(false); signOut(); }}
+              className="w-full text-left px-4 py-2.5 text-sm text-paper-ink hover:bg-paper-warm transition-colors"
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              Sign out
+            </button>
+
+            {/* Delete account */}
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-paper-line/30 disabled:opacity-40"
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              {deleting ? "Deleting..." : "Delete account"}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function NesosPhonetic() {
   const [open, setOpen] = useState(false);
   return (
@@ -112,36 +192,24 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
         )}
       </div>
 
-      {/* Right: sign in → view toggle → migrate → nav arrows */}
+      {/* Right: sign in / menu → view toggle → nav arrows */}
       <div className="flex items-center gap-4">
 
-        {/* Sign in / out */}
-        {session ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-paper-ink-light" style={{ fontFamily: "var(--font-serif)" }}>
-              {session.user?.name?.split(" ")[0] ?? session.user?.email}
-            </span>
-            <button
-              onClick={() => signOut()}
-              className="text-xs text-paper-ink-light hover:text-paper-rust transition-colors"
-              style={{ fontFamily: "var(--font-serif)" }}
-            >
-              Sign out
-            </button>
-          </div>
-        ) : (
+        {/* Sign in (not authenticated) */}
+        {!session && (
           <button
             onClick={() => signIn("google")}
-            className="text-xs px-3 py-1.5 rounded-full border border-paper-ink/20 text-paper-ink hover:bg-paper-ink hover:text-white transition-all"
+            className="text-xs px-3 py-1.5 border border-paper-ink/20 text-paper-ink hover:bg-paper-ink hover:text-white transition-all"
             style={{ fontFamily: "var(--font-serif)" }}
           >
             Sign in
           </button>
         )}
 
-        <ViewToggle view={view} onChange={onViewChange} />
+        {/* Three-dot menu (authenticated) */}
+        {session && <UserMenu session={session} />}
 
-        {session?.user?.email && <MigrateDataButton userEmail={session.user.email} />}
+        <ViewToggle view={view} onChange={onViewChange} />
 
         {showNav && (
           <div className="flex items-center gap-1">
