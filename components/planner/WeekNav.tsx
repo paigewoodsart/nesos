@@ -44,33 +44,10 @@ function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSessi
         className="w-8 h-8 flex items-center justify-center text-paper-ink-light hover:text-paper-ink transition-colors"
         aria-label="Account menu"
       >
-        <svg width="22" height="8" viewBox="0 0 22 8" fill="none">
-          <defs>
-            <radialGradient id="dot1" cx="35%" cy="30%" r="65%">
-              <stop offset="0%" stopColor="#a8d8f0"/>
-              <stop offset="50%" stopColor="#5fa8d3"/>
-              <stop offset="100%" stopColor="#1e6091"/>
-            </radialGradient>
-            <radialGradient id="dot2" cx="35%" cy="30%" r="65%">
-              <stop offset="0%" stopColor="#b8e0f7"/>
-              <stop offset="50%" stopColor="#74b3ce"/>
-              <stop offset="100%" stopColor="#168aad"/>
-            </radialGradient>
-            <radialGradient id="dot3" cx="35%" cy="30%" r="65%">
-              <stop offset="0%" stopColor="#c5e8f5"/>
-              <stop offset="50%" stopColor="#90c4d8"/>
-              <stop offset="100%" stopColor="#34a0a4"/>
-            </radialGradient>
-            <filter id="emboss" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="0.4" result="blur"/>
-              <feOffset dx="-0.5" dy="-0.5" result="offsetBlur"/>
-              <feComposite in="SourceGraphic" in2="offsetBlur" operator="over"/>
-              <feDropShadow dx="0.6" dy="0.6" stdDeviation="0.4" floodColor="rgba(0,0,0,0.35)"/>
-            </filter>
-          </defs>
-          <circle cx="3" cy="4" r="3" fill="url(#dot1)" filter="url(#emboss)"/>
-          <circle cx="11" cy="4" r="3" fill="url(#dot2)" filter="url(#emboss)"/>
-          <circle cx="19" cy="4" r="3" fill="url(#dot3)" filter="url(#emboss)"/>
+        <svg width="18" height="4" viewBox="0 0 18 4" fill="none">
+          <circle cx="2" cy="2" r="2" fill="rgba(26,26,26,0.28)"/>
+          <circle cx="9" cy="2" r="2" fill="rgba(26,26,26,0.28)"/>
+          <circle cx="16" cy="2" r="2" fill="rgba(26,26,26,0.28)"/>
         </svg>
       </button>
 

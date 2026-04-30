@@ -13,30 +13,6 @@ interface MobileHomeProps {
   events: CalendarEvent[];
 }
 
-function BloomIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-      <circle cx="14" cy="14" r="4" fill="#D4909E"/>
-      {[0,60,120,180,240,300].map((deg) => (
-        <ellipse key={deg} cx="14" cy="14" rx="2.5" ry="6"
-          fill="#D4909E" opacity="0.7"
-          transform={`rotate(${deg} 14 14) translate(0 -8)`}/>
-      ))}
-    </svg>
-  );
-}
-
-function BlobShape() {
-  return (
-    <svg viewBox="0 0 300 230" fill="none" className="w-full max-w-[320px]" style={{ filter: "drop-shadow(0 6px 28px rgba(0,0,0,0.09))" }}>
-      <path
-        d="M 145,18 C 185,5 235,20 258,58 C 278,90 272,138 248,166 C 222,196 180,208 140,204 C 98,200 58,182 36,152 C 14,122 12,80 30,52 C 50,22 105,32 145,18 Z"
-        fill="rgba(255,255,255,0.90)"
-      />
-    </svg>
-  );
-}
-
 export function MobileHome({ onOpenDrawer, clients, tasksByClient, events }: MobileHomeProps) {
   const [affirmation, setAffirmation] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,10 +32,8 @@ export function MobileHome({ onOpenDrawer, clients, tasksByClient, events }: Mob
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Aggregated data for scroll section ─────────────────────────
   const allActive = clients.flatMap((c) =>
-    (tasksByClient[c.id] ?? [])
-      .filter((t) => !t.archived)
+    (tasksByClient[c.id] ?? []).filter((t) => !t.archived)
       .map((t) => ({ ...t, clientColor: c.color, clientName: c.name }))
   );
 
@@ -89,56 +63,74 @@ export function MobileHome({ onOpenDrawer, clients, tasksByClient, events }: Mob
     <div className="h-screen overflow-y-auto mobile-scroll" style={{ scrollSnapType: "y proximity" }}>
 
       {/* ── Screen 1: Affirmation ── */}
-      <div className="relative h-screen flex flex-col board-breathe" style={{ scrollSnapAlign: "start", flexShrink: 0 }}>
+      <div className="relative h-screen flex flex-col board-breathe board-grid" style={{ scrollSnapAlign: "start", flexShrink: 0 }}>
+
         {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-5 pt-8 pb-3">
-          <button className="w-11 h-11 flex items-center justify-center" aria-label="Home">
-            <BloomIcon />
-          </button>
+        <div className="flex items-center justify-between px-5 pt-8 pb-3 flex-shrink-0">
+          <img src="/nesos-icon.webp" alt="Nesos" className="h-11 w-11 object-contain" />
           <button
             onClick={onOpenDrawer}
-            className="w-11 h-11 flex items-center justify-center text-paper-ink"
+            className="w-11 h-11 flex items-center justify-center"
             aria-label="Open menu"
           >
-            <svg width="22" height="18" viewBox="0 0 22 18" fill="none">
-              <path d="M1 1h20M1 9h20M1 17h20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <svg width="24" height="18" viewBox="0 0 24 18" fill="none">
+              <rect y="0" width="24" height="2.5" rx="1.25" fill="rgba(26,26,26,0.45)"/>
+              <rect y="7.75" width="24" height="2.5" rx="1.25" fill="rgba(26,26,26,0.45)"/>
+              <rect y="15.5" width="24" height="2.5" rx="1.25" fill="rgba(26,26,26,0.45)"/>
             </svg>
           </button>
         </div>
 
         {/* Blob + affirmation */}
-        <div className="flex-1 flex items-center justify-center px-6">
-          <div className="relative w-full max-w-[320px]">
-            <BlobShape />
-            <div className="absolute inset-0 flex items-center justify-center p-10">
-              {loading ? (
-                <p className="text-center text-sm italic text-paper-ink-light animate-pulse-soft" style={{ fontFamily: "var(--font-serif)" }}>
-                  finding your words...
-                </p>
-              ) : (
-                <p className="text-center text-base leading-relaxed italic text-paper-ink" style={{ fontFamily: "var(--font-serif)" }}>
-                  {affirmation}{" "}
-                  <span style={{ color: "#D4909E", fontStyle: "normal" }}>♥</span>
-                </p>
-              )}
-            </div>
+        <div className="flex-1 flex items-center justify-center px-8">
+          <div
+            style={{
+              borderRadius: "63% 37% 54% 46% / 55% 48% 52% 45%",
+              background: "rgba(255,255,255,0.58)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              boxShadow: [
+                "inset 0 2px 4px rgba(255,255,255,0.88)",
+                "inset 0 -2px 4px rgba(0,0,0,0.04)",
+                "0 8px 40px rgba(0,0,0,0.09)",
+                "0 2px 8px rgba(0,0,0,0.05)",
+              ].join(", "),
+              border: "1px solid rgba(255,255,255,0.68)",
+              padding: "52px 44px",
+              width: "100%",
+              maxWidth: 340,
+            }}
+          >
+            {loading ? (
+              <p className="text-center text-sm italic text-paper-ink-light animate-pulse-soft" style={{ fontFamily: "var(--font-serif)" }}>
+                finding your words...
+              </p>
+            ) : (
+              <p className="text-center text-base leading-relaxed italic text-paper-ink" style={{ fontFamily: "var(--font-serif)" }}>
+                {affirmation}{" "}
+                <span style={{ color: "#9b72cf", fontStyle: "normal" }}>♥</span>
+              </p>
+            )}
           </div>
         </div>
 
-        {allTasksSorted.length > 0 && (
-          <div className="flex justify-center pb-10">
-            <span className="text-[10px] text-paper-ink/40 tracking-widest uppercase" style={{ fontFamily: "var(--font-body)" }}>
+        {/* Tagline + scroll hint */}
+        <div className="flex flex-col items-center gap-2 pb-10 flex-shrink-0">
+          <p className="text-[10px] tracking-[0.22em] uppercase text-paper-ink/35" style={{ fontFamily: "var(--font-body)" }}>
+            your planning island
+          </p>
+          {allTasksSorted.length > 0 && (
+            <span className="text-[9px] text-paper-ink/30 tracking-widest uppercase" style={{ fontFamily: "var(--font-body)" }}>
               scroll for tasks ↓
             </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ── Screen 2: Today + All Tasks ── */}
       {allTasksSorted.length > 0 || hasToday ? (
         <div className="min-h-screen bg-paper-cream px-5 pt-8 pb-24" style={{ scrollSnapAlign: "start" }}>
 
-          {/* Today section */}
           {hasToday && (
             <div className="mb-6">
               <p className="text-[10px] uppercase tracking-widest font-semibold mb-3" style={{ fontFamily: "var(--font-body)", color: "#D4909E" }}>
@@ -162,7 +154,6 @@ export function MobileHome({ onOpenDrawer, clients, tasksByClient, events }: Mob
             </div>
           )}
 
-          {/* All tasks */}
           {allTasksSorted.length > 0 && (
             <>
               <p className="text-[10px] uppercase tracking-widest font-semibold mb-3" style={{ fontFamily: "var(--font-body)", color: "#F4956A" }}>

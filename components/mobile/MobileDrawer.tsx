@@ -19,17 +19,8 @@ const CLIENT_COLORS = [
   "#168aad","#1a759f","#1e6091","#184e77",
 ];
 
-const CREAMSICLE = "#F4956A";
+const NAVY = "#1e6091";
 const RASPBERRY = "#D4909E";
-
-function Dot({ active }: { active: boolean }) {
-  return (
-    <span
-      className="w-2 h-2 rounded-full flex-shrink-0"
-      style={{ backgroundColor: active ? CREAMSICLE : "transparent", border: `1.5px solid ${active ? CREAMSICLE : "rgba(26,26,26,0.25)"}` }}
-    />
-  );
-}
 
 export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAddClient }: MobileDrawerProps) {
   const [projectsOpen, setProjectsOpen] = useState(true);
@@ -53,12 +44,18 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
     return (
       <button
         onClick={() => go(key)}
-        className="w-full flex items-center gap-3 px-6 py-3 text-left active:bg-paper-warm/50 transition-colors"
+        className="w-full flex items-center gap-4 px-6 py-3.5 text-left transition-colors active:bg-paper-warm/40"
       >
-        <Dot active={active} />
         <span
-          className="text-xs uppercase tracking-[0.18em] font-semibold"
-          style={{ fontFamily: "var(--font-body)", color: active ? CREAMSICLE : "#1A1A1A" }}
+          className="w-2 h-2 rounded-full flex-shrink-0 border"
+          style={{
+            backgroundColor: active ? NAVY : "transparent",
+            borderColor: active ? NAVY : "rgba(26,26,26,0.22)",
+          }}
+        />
+        <span
+          className="text-xs uppercase tracking-[0.22em] font-bold"
+          style={{ fontFamily: "var(--font-body)", color: active ? NAVY : "rgba(26,26,26,0.75)" }}
         >
           {label}
         </span>
@@ -70,19 +67,37 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-paper-ink/25 backdrop-blur-[2px] transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 z-40 bg-paper-ink/20 backdrop-blur-[2px] transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={onClose}
       />
 
       {/* Drawer panel */}
       <div
         className={`fixed top-0 right-0 z-50 h-full bg-paper-cream shadow-2xl flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"}`}
-        style={{ width: "75vw", maxWidth: 300 }}
+        style={{ width: "78vw", maxWidth: 320 }}
       >
-        {/* Close */}
-        <div className="flex items-center justify-between px-6 pt-12 pb-4 border-b border-paper-line">
-          <span className="text-xs uppercase tracking-[0.2em] text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Menu</span>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-paper-ink-light hover:text-paper-ink text-xl">×</button>
+        {/* Header: NESOS title + close */}
+        <div className="flex items-start justify-between px-6 pt-10 pb-5 border-b border-paper-line/40">
+          <div>
+            <h2
+              className="text-2xl font-bold tracking-tight leading-none"
+              style={{ fontFamily: "var(--font-aboreto)", color: NAVY }}
+            >
+              NESOS
+            </h2>
+            <p className="text-[11px] tracking-[0.18em] text-paper-ink-light mt-1" style={{ fontFamily: "var(--font-body)" }}>
+              νῆσος · ne·sos
+            </p>
+            <p className="text-[10px] italic text-paper-ink-light/70 mt-1" style={{ fontFamily: "var(--font-serif)" }}>
+              your personal island of focus.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center text-paper-ink-light hover:text-paper-ink text-lg mt-1"
+          >
+            ×
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
@@ -94,31 +109,33 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
           <div>
             <button
               onClick={() => setProjectsOpen((v) => !v)}
-              className="w-full flex items-center gap-3 px-6 py-3 text-left active:bg-paper-warm/50 transition-colors"
+              className="w-full flex items-center gap-4 px-6 py-3.5 text-left transition-colors active:bg-paper-warm/40"
             >
-              <Dot active={screen.startsWith("project:")} />
-              <span className="text-xs uppercase tracking-[0.18em] font-semibold flex-1" style={{ fontFamily: "var(--font-body)", color: screen.startsWith("project:") ? CREAMSICLE : "#1A1A1A" }}>
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0 border"
+                style={{
+                  backgroundColor: screen.startsWith("project:") ? NAVY : "transparent",
+                  borderColor: screen.startsWith("project:") ? NAVY : "rgba(26,26,26,0.22)",
+                }}
+              />
+              <span className="text-xs uppercase tracking-[0.22em] font-bold flex-1"
+                style={{ fontFamily: "var(--font-body)", color: screen.startsWith("project:") ? NAVY : "rgba(26,26,26,0.75)" }}>
                 Projects
               </span>
               <span className="text-[10px] text-paper-ink-light">{projectsOpen ? "∧" : "∨"}</span>
             </button>
 
             {projectsOpen && (
-              <div className="pl-10 pr-6 pb-2 space-y-0.5">
-                {/* Add project */}
+              <div className="pl-12 pr-6 pb-2 space-y-0.5">
                 {!addingProject ? (
-                  <button
-                    onClick={() => setAddingProject(true)}
-                    className="w-full flex items-center gap-2 py-2 text-left"
-                  >
+                  <button onClick={() => setAddingProject(true)} className="w-full flex items-center gap-2 py-2 text-left">
                     <span className="text-sm font-bold" style={{ color: RASPBERRY }}>+</span>
                     <span className="text-xs text-paper-ink-light uppercase tracking-wider" style={{ fontFamily: "var(--font-body)" }}>Add</span>
                   </button>
                 ) : (
                   <div className="py-2 space-y-2">
                     <input
-                      autoFocus
-                      value={newName}
+                      autoFocus value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") commitAdd(); if (e.key === "Escape") setAddingProject(false); }}
                       placeholder="Project name..."
@@ -133,23 +150,26 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
                       ))}
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={commitAdd} className="text-xs px-2 py-1 text-white rounded-sm" style={{ backgroundColor: newColor }}>Add</button>
+                      <button onClick={commitAdd} className="text-xs px-2 py-1 text-white" style={{ backgroundColor: newColor }}>Add</button>
                       <button onClick={() => setAddingProject(false)} className="text-xs text-paper-ink-light">Cancel</button>
                     </div>
                   </div>
                 )}
 
-                {/* Each project */}
                 {clients.map((c) => (
                   <button
                     key={c.id}
                     onClick={() => go(`project:${c.id}`)}
-                    className="w-full flex items-center gap-2 py-2 text-left active:opacity-60 transition-opacity"
+                    className="w-full flex items-center gap-3 py-2 text-left active:opacity-60 transition-opacity"
                   >
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
                     <span
-                      className="text-xs truncate"
-                      style={{ fontFamily: "var(--font-serif)", color: screen === `project:${c.id}` ? c.color : "#1A1A1A", fontWeight: screen === `project:${c.id}` ? 600 : 400 }}
+                      className="text-sm truncate"
+                      style={{
+                        fontFamily: "var(--font-serif)",
+                        color: screen === `project:${c.id}` ? NAVY : "#1A1A1A",
+                        fontWeight: screen === `project:${c.id}` ? 600 : 400,
+                      }}
                     >
                       {c.name}
                     </span>
@@ -165,21 +185,28 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
           <div>
             <button
               onClick={() => setCalendarOpen((v) => !v)}
-              className="w-full flex items-center gap-3 px-6 py-3 text-left active:bg-paper-warm/50 transition-colors"
+              className="w-full flex items-center gap-4 px-6 py-3.5 text-left transition-colors active:bg-paper-warm/40"
             >
-              <Dot active={screen.startsWith("calendar")} />
-              <span className="text-xs uppercase tracking-[0.18em] font-semibold flex-1" style={{ fontFamily: "var(--font-body)", color: screen.startsWith("calendar") ? CREAMSICLE : "#1A1A1A" }}>
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0 border"
+                style={{
+                  backgroundColor: screen.startsWith("calendar") ? NAVY : "transparent",
+                  borderColor: screen.startsWith("calendar") ? NAVY : "rgba(26,26,26,0.22)",
+                }}
+              />
+              <span className="text-xs uppercase tracking-[0.22em] font-bold flex-1"
+                style={{ fontFamily: "var(--font-body)", color: screen.startsWith("calendar") ? NAVY : "rgba(26,26,26,0.75)" }}>
                 Calendar
               </span>
               <span className="text-[10px] text-paper-ink-light">{calendarOpen ? "∧" : "∨"}</span>
             </button>
             {calendarOpen && (
-              <div className="pl-10 pr-6 pb-2 space-y-0.5">
+              <div className="pl-12 pr-6 pb-2 space-y-0.5">
                 <button onClick={() => go("calendar-week")} className="w-full flex items-center gap-2 py-2 text-left">
-                  <span className="text-xs" style={{ fontFamily: "var(--font-serif)", color: screen === "calendar-week" ? CREAMSICLE : "#1A1A1A" }}>Week</span>
+                  <span className="text-xs" style={{ fontFamily: "var(--font-serif)", color: screen === "calendar-week" ? NAVY : "#1A1A1A" }}>Week</span>
                 </button>
                 <button onClick={() => go("calendar-month")} className="w-full flex items-center gap-2 py-2 text-left">
-                  <span className="text-xs" style={{ fontFamily: "var(--font-serif)", color: screen === "calendar-month" ? CREAMSICLE : "#1A1A1A" }}>Month</span>
+                  <span className="text-xs" style={{ fontFamily: "var(--font-serif)", color: screen === "calendar-month" ? NAVY : "#1A1A1A" }}>Month</span>
                 </button>
               </div>
             )}
