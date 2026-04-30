@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   title: "Nesos",
   description: "A planner for ADHD minds",
   viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
+  icons: { icon: "/logo.jpg", apple: "/logo.jpg" },
 };
 
 export default function RootLayout({

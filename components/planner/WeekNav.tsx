@@ -105,10 +105,11 @@ export function WeekNav({ weekId, bloomState, view, onViewChange, activeDate, on
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-3.5 border-b-2 border-paper-ink/10 bg-paper-cream/98 backdrop-blur-sm">
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-3">
+        <img src="/logo.jpg" alt="Nesos" className="h-10 w-10 object-contain" />
         <div className="flex flex-col leading-none">
           <h1
-            className="text-3xl font-bold tracking-tight leading-none"
+            className="text-xl font-bold tracking-tight leading-none"
             style={{ fontFamily: "var(--font-aboreto)", color: "var(--color-paper-rust)" }}
           >
             Nesos
