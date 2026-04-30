@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Luxury monochrome palette ── */
+  --color-paper-cream: #F9F8F6;       /* warm alabaster — main background */
+  --color-paper-warm: #EBE5DE;        /* pale taupe — secondary surfaces */
+  --color-paper-line: #D5D3CF;        /* light grey — borders and dividers */
+  --color-paper-ink: #1A1A1A;         /* rich charcoal — primary text */
+  --color-paper-ink-light: #6C6863;   /* warm grey — secondary text */
+  --color-paper-rust: #184e77;        /* yale-blue — primary accent (replaces terracotta) */
+  --color-paper-sage: #34a0a4;        /* tropical-teal — secondary accent (completed states) */
+  --color-gold: #D4AF37;              /* metallic gold — hover/focus accent, use sparingly */
+
+  /* ── Sticky note colors (blue-green palette) ── */
+  --color-note-1: #d9ed92;
+  --color-note-2: #b5e48c;
+  --color-note-3: #99d98c;
+  --color-note-4: #76c893;
+  --color-note-5: #52b69a;
+  --color-note-6: #34a0a4;
+  --color-note-7: #168aad;
+  --color-note-8: #1a759f;
+  --color-note-9: #1e6091;
+  --color-note-10: #184e77;
+
+  /* ── Typography ── */
+  --font-serif: var(--font-playfair);
+  --font-body: var(--font-inter);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-paper-cream);
+  color: var(--color-paper-ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* Paper grain texture — mimics expensive laid paper */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--color-paper-warm); }
+::-webkit-scrollbar-thumb { background: var(--color-paper-line); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-paper-ink-light); }
+
+/* ── Mobile ── */
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── Keyframes ── */
+@keyframes strikethrough {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@keyframes bloom-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.97) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes board-breathe {
+  0%   { background-position: 0 0, 0 0, 0% 50%; }
+  25%  { background-position: 0 0, 0 0, 50% 0%; }
+  50%  { background-position: 0 0, 0 0, 100% 50%; }
+  75%  { background-position: 0 0, 0 0, 50% 100%; }
+  100% { background-position: 0 0, 0 0, 0% 50%; }
+}
+
+/* ── Utility classes ── */
+.animate-fade-up {
+  animation: fadeUp 0.25s ease-out forwards;
+}
+
+.animate-modal-in {
+  animation: modal-in 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+.animate-bloom-wiggle {
+  animation: bloom-wiggle 0.5s ease-in-out;
+}
+
+.task-strike {
+  position: relative;
+}
+.task-strike::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--color-paper-ink-light);
+  animation: strikethrough 0.3s ease-out forwards;
+}
+
+.board-breathe {
+  background-image:
+    linear-gradient(rgba(26,26,26,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,26,26,0.05) 1px, transparent 1px),
+    linear-gradient(135deg, #ffdfe5 0%, #fce4ff 14%, #dfe8ff 28%, #d4f5f5 42%, #d8fae5 56%, #fffbd4 70%, #ffe8d4 84%, #ffdfe5 100%);
+  background-size: 28px 28px, 28px 28px, 400% 400%;
+  animation: board-breathe 40s ease infinite;
+}
+
+.focus-dimmed {
+  opacity: 0.12;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.focus-active {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
