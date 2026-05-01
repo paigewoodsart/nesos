@@ -8,6 +8,7 @@ import { MobileBrainDump } from "./MobileBrainDump";
 import { MobileGoals } from "./MobileGoals";
 import { MobileProject } from "./MobileProject";
 import { MobileArchive } from "./MobileArchive";
+import { MobileProjects } from "./MobileProjects";
 import { MobileWeekCalendar } from "./MobileWeekCalendar";
 import { MobileMonthCalendar } from "./MobileMonthCalendar";
 import type { Task, Goal, Client, ClientTask, ClientSession, CalendarEvent } from "@/types";
@@ -17,6 +18,7 @@ type MobileScreen =
   | "thisweek"
   | "braindump"
   | "goals"
+  | "projects"
   | `project:${string}`
   | "archive"
   | "calendar-week"
@@ -131,6 +133,16 @@ export function MobileView({
         );
       })()}
 
+      {screen === "projects" && (
+        <MobileProjects
+          clients={clients}
+          onSelectProject={(id) => navigate(`project:${id}`)}
+          onAddClient={onAddClient}
+          onBack={() => setScreen("home")}
+          onOpenDrawer={openDrawer}
+        />
+      )}
+
       {screen === "archive" && (
         <MobileArchive
           clients={clients}
@@ -167,8 +179,6 @@ export function MobileView({
         onClose={() => setDrawerOpen(false)}
         screen={screen}
         onNavigate={navigate}
-        clients={clients}
-        onAddClient={onAddClient}
       />
     </div>
   );

@@ -211,8 +211,15 @@ export function MobileProject({
             value={addDue}
             onChange={(e) => setAddDue(e.target.value)}
             type="date"
-            className="ml-6 mt-1 text-xs bg-transparent border-b border-paper-line/40 outline-none text-paper-ink-light"
-            style={{ fontFamily: "var(--font-body)" }}
+            className="ml-6 mt-2 bg-transparent outline-none border-b"
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "13px",
+              color: lightText ? "rgba(255,255,255,0.85)" : "#1A1A1A",
+              borderColor: lightText ? "rgba(255,255,255,0.4)" : "rgba(26,26,26,0.25)",
+              minWidth: 130,
+              display: "block",
+            }}
           />
         )}
       </div>
