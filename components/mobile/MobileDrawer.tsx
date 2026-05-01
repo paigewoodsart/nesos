@@ -75,8 +75,8 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
 
       {/* Drawer panel */}
       <div
-        className={`fixed top-0 right-0 z-50 h-full bg-paper-cream/50 backdrop-blur-xl shadow-2xl border-l border-paper-line/20 flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"}`}
-        style={{ width: "78vw", maxWidth: 320 }}
+        className={`fixed top-0 right-0 z-50 h-full backdrop-blur-xl shadow-2xl flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"}`}
+        style={{ width: "78vw", maxWidth: 320, backgroundColor: "rgba(249,248,246,0.22)", borderLeft: "1px solid rgba(213,211,207,0.25)" }}
       >
         {/* Header: NESOS title + favicon + close */}
         <div className="flex items-start justify-between px-6 pt-10 pb-5 border-b border-paper-line/40">

@@ -168,7 +168,10 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
     : isCurrentWeek;
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-3.5 border-b border-paper-line/30 bg-paper-cream/40 backdrop-blur-md">
+    <header
+      className="sticky top-0 z-30 flex items-center justify-between px-6 py-3.5 border-b backdrop-blur-md"
+      style={{ backgroundColor: "rgba(249,248,246,0.18)", borderColor: "rgba(213,211,207,0.3)" }}
+    >
 
       {/* Left: logo + title */}
       <div className="flex items-center gap-3">
@@ -176,7 +179,7 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
         <div className="flex flex-col leading-none">
           <h1
             className="text-xl font-bold tracking-tight leading-none"
-            style={{ fontFamily: "var(--font-aboreto)", color: "var(--color-paper-rust)" }}
+            style={{ fontFamily: "var(--font-aboreto)", color: "var(--color-paper-rust)", textShadow: "0 1px 3px rgba(249,248,246,0.8)" }}
           >
             Nesos
           </h1>
