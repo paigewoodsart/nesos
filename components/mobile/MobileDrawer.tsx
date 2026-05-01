@@ -78,7 +78,9 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
       >
         {/* Header: NESOS title + favicon + close */}
         <div className="flex items-start justify-between px-6 pt-10 pb-5 border-b border-paper-line/40">
-          <div>
+          <div className="flex items-start gap-3">
+            <img src="/nesos-icon.webp" alt="Nesos" className="h-12 w-12 object-contain flex-shrink-0 mt-0.5" />
+            <div>
             <h2
               className="text-2xl font-bold tracking-tight leading-none"
               style={{ fontFamily: "var(--font-aboreto)", color: NAVY }}
@@ -91,6 +93,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
             <p className="text-[10px] italic text-paper-ink-light/70 mt-1" style={{ fontFamily: "var(--font-serif)" }}>
               Your work. Your rhythm. Your island.
             </p>
+            </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-paper-ink-light hover:text-paper-ink text-lg mt-1">
             ×
