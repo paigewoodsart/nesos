@@ -74,11 +74,7 @@ export function MobileView({
   return (
     <div className="relative h-screen overflow-hidden bg-paper-cream">
       {screen === "home" && (
-        <MobileHome
-          onOpenDrawer={openDrawer}
-          onNavigate={(s) => { setScreen(s as typeof screen); }}
-          clients={clients}
-        />
+        <MobileHome onOpenDrawer={openDrawer} />
       )}
 
       {screen === "thisweek" && (

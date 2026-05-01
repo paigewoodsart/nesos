@@ -25,11 +25,11 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const [activeDate, setActiveDate] = useState<Date>(() => new Date());
   const [activeWeekId, setActiveWeekId] = useState(initialWeekId);
 
-  const { data: session } = useSession();
-  const userEmail = session?.user?.email ?? null;
+  const { data: session, status: authStatus } = useSession();
+  const userEmail = authStatus === "authenticated" ? (session?.user?.email ?? null) : authStatus === "unauthenticated" ? null : undefined;
 
-  const store = useWeekStore(activeWeekId, userEmail);
-  const clientStore = useClientStore(activeWeekId, userEmail);
+  const store = useWeekStore(activeWeekId, userEmail ?? null);
+  const clientStore = useClientStore(activeWeekId, userEmail ?? null);
   const { events } = useCalendarEvents(activeWeekId);
   const isMobile = useIsMobile();
 
@@ -45,7 +45,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
     setOpenSession(session);
   }, []);
 
-  if (!store.loaded || !clientStore.loaded) {
+  if (authStatus === "loading" || !store.loaded || !clientStore.loaded) {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-paper-ink-light italic text-sm animate-pulse-soft" style={{ fontFamily: "var(--font-serif)" }}>
