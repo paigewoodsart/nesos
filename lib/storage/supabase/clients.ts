@@ -6,11 +6,11 @@ import type { Client, ClientTask, ClientSession } from "@/types";
 export async function sbGetAllClients(userEmail: string): Promise<Client[]> {
   const { data, error } = await supabase.from("clients").select("*").eq("user_email", userEmail);
   if (error) { console.error("[sb] getAllClients:", error); throw error; }
-  return (data ?? []).map(r => ({ id: r.id, name: r.name, color: r.color, createdAt: r.created_at }));
+  return (data ?? []).map(r => ({ id: r.id, name: r.name, color: r.color, notes: r.notes ?? undefined, createdAt: r.created_at }));
 }
 
 export async function sbSaveClient(userEmail: string, client: Client): Promise<void> {
-  const { error } = await supabase.from("clients").upsert({ id: client.id, user_email: userEmail, name: client.name, color: client.color, created_at: client.createdAt });
+  const { error } = await supabase.from("clients").upsert({ id: client.id, user_email: userEmail, name: client.name, color: client.color, notes: client.notes ?? null, created_at: client.createdAt });
   if (error) console.error("[sb] saveClient:", error);
 }
 

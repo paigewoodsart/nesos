@@ -75,6 +75,7 @@ export interface Client {
   id: string;
   name: string;
   color: string; // hex
+  notes?: string;
   createdAt: number;
 }
 

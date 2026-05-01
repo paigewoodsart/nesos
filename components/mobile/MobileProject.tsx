@@ -45,6 +45,7 @@ export function MobileProject({
   const [editName, setEditName] = useState(client.name);
   const [editColor, setEditColor] = useState(client.color);
   const [editingDueTask, setEditingDueTask] = useState<ClientTask | null>(null);
+  const [projectNotes, setProjectNotes] = useState(client.notes ?? "");
 
   const addDateRef = useRef<HTMLInputElement>(null);
   const taskDateRef = useRef<HTMLInputElement>(null);
@@ -197,6 +198,27 @@ export function MobileProject({
             </span>
           </div>
         )}
+      </div>
+
+      {/* Project notes */}
+      <div className="flex-shrink-0 px-5 py-3 border-b" style={{ ...bodyStyle, borderColor: "rgba(255,255,255,0.3)" }}>
+        <p className="text-[9px] uppercase tracking-[0.25em] mb-1.5"
+          style={{ fontFamily: "var(--font-body)", color: lightText ? "rgba(255,255,255,0.5)" : "rgba(26,26,26,0.4)" }}>
+          Notes
+        </p>
+        <textarea
+          value={projectNotes}
+          onChange={(e) => setProjectNotes(e.target.value)}
+          onBlur={() => { if (projectNotes !== (client.notes ?? "")) onUpdateClient({ ...client, notes: projectNotes }); }}
+          placeholder="project context, ideas, links..."
+          rows={projectNotes ? Math.min(projectNotes.split("\n").length + 1, 5) : 2}
+          className="w-full bg-transparent outline-none resize-none text-sm leading-relaxed placeholder:opacity-40"
+          style={{
+            fontFamily: "var(--font-serif)",
+            fontStyle: "italic",
+            color: lightText ? "rgba(255,255,255,0.85)" : "rgba(26,26,26,0.75)",
+          }}
+        />
       </div>
 
       {/* Task body */}
