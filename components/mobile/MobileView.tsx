@@ -26,6 +26,7 @@ type MobileScreen =
 
 interface MobileViewProps {
   weekId: string;
+  userEmail: string | null;
   tasks: Task[];
   weekGoals: Goal[];
   longtermGoals: Goal[];
@@ -46,20 +47,24 @@ interface MobileViewProps {
   onArchiveClientTask: (clientId: string, taskId: string) => void;
   onUpdateClientTask: (clientId: string, task: ClientTask) => void;
   onAddClient: (name: string, color: string) => Promise<Client>;
+  onUpdateClient: (client: Client) => Promise<void>;
+  onRemoveClient: (id: string) => Promise<void>;
   events: CalendarEvent[];
   activeDate: Date;
   onDayChange: (d: Date) => void;
 }
 
 export function MobileView({
+  userEmail,
   tasks, weekGoals, longtermGoals, brainDump, sessions,
   onAddTask, onToggleTask, onRemoveTask,
   onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal, onBrainDumpChange,
   clients, tasksByClient,
-  onAddClientTask, onToggleClientTask, onArchiveClientTask, onUpdateClientTask, onAddClient,
+  onAddClientTask, onToggleClientTask, onArchiveClientTask, onUpdateClientTask,
+  onAddClient, onUpdateClient, onRemoveClient,
   events, activeDate, onDayChange,
 }: MobileViewProps) {
-  const [screen, setScreen] = useState<MobileScreen>("home");
+  const [screen, setScreen] = useState<MobileScreen>(userEmail ? "thisweek" : "home");
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const navigate = useCallback((s: string) => {
@@ -76,7 +81,7 @@ export function MobileView({
   return (
     <div className="relative h-screen overflow-hidden bg-paper-cream">
       {screen === "home" && (
-        <MobileHome onOpenDrawer={openDrawer} />
+        <MobileHome onOpenDrawer={openDrawer} isLoggedIn={!!userEmail} />
       )}
 
       {screen === "thisweek" && (
@@ -115,6 +120,16 @@ export function MobileView({
         />
       )}
 
+      {screen === "projects" && (
+        <MobileProjects
+          clients={clients}
+          onSelectProject={(id) => navigate(`project:${id}`)}
+          onAddClient={onAddClient}
+          onBack={() => setScreen("home")}
+          onOpenDrawer={openDrawer}
+        />
+      )}
+
       {screen.startsWith("project:") && (() => {
         const clientId = screen.slice(8);
         const client = clients.find((c) => c.id === clientId);
@@ -127,21 +142,13 @@ export function MobileView({
             onToggleTask={onToggleClientTask}
             onArchiveTask={onArchiveClientTask}
             onUpdateTask={onUpdateClientTask}
-            onBack={() => setScreen("home")}
+            onUpdateClient={onUpdateClient}
+            onRemoveClient={onRemoveClient}
+            onBack={() => setScreen("projects")}
             onOpenDrawer={openDrawer}
           />
         );
       })()}
-
-      {screen === "projects" && (
-        <MobileProjects
-          clients={clients}
-          onSelectProject={(id) => navigate(`project:${id}`)}
-          onAddClient={onAddClient}
-          onBack={() => setScreen("home")}
-          onOpenDrawer={openDrawer}
-        />
-      )}
 
       {screen === "archive" && (
         <MobileArchive

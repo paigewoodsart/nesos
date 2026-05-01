@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { signIn } from "next-auth/react";
 
 interface MobileHomeProps {
   onOpenDrawer: () => void;
+  isLoggedIn: boolean;
 }
 
-export function MobileHome({ onOpenDrawer }: MobileHomeProps) {
+export function MobileHome({ onOpenDrawer, isLoggedIn }: MobileHomeProps) {
   const [phase, setPhase] = useState<"logo" | "begin">("logo");
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function MobileHome({ onOpenDrawer }: MobileHomeProps) {
         <img src="/nesos-icon.webp" alt="Nesos" className="h-40 w-40 object-contain" />
       </div>
 
-      {/* Phase 2: NESOS + tagline + BEGIN */}
+      {/* Phase 2: NESOS + tagline + action buttons */}
       <div
         className="absolute flex flex-col items-center gap-5"
         style={{
@@ -53,17 +55,39 @@ export function MobileHome({ onOpenDrawer }: MobileHomeProps) {
           </p>
         </div>
 
-        <button
-          onClick={onOpenDrawer}
-          className="mt-2 px-12 py-3.5 text-[11px] tracking-[0.3em] uppercase"
-          style={{
-            fontFamily: "var(--font-body)",
-            color: "#1a759f",
-            border: "1px solid rgba(26,96,145,0.4)",
-          }}
-        >
-          PLAN
-        </button>
+        {isLoggedIn ? (
+          <button
+            onClick={onOpenDrawer}
+            className="mt-2 px-12 py-3.5 text-[11px] tracking-[0.3em] uppercase"
+            style={{
+              fontFamily: "var(--font-body)",
+              color: "#1a759f",
+              border: "1px solid rgba(26,96,145,0.4)",
+            }}
+          >
+            PLAN
+          </button>
+        ) : (
+          <div className="mt-2 flex flex-col items-center gap-3">
+            <button
+              onClick={() => signIn("google")}
+              className="px-10 py-3.5 text-[11px] tracking-[0.3em] uppercase text-white"
+              style={{
+                fontFamily: "var(--font-body)",
+                backgroundColor: "#1a759f",
+              }}
+            >
+              Sign in with Google
+            </button>
+            <button
+              onClick={onOpenDrawer}
+              className="text-[10px] tracking-[0.2em] uppercase"
+              style={{ fontFamily: "var(--font-body)", color: "#1a759f", opacity: 0.6 }}
+            >
+              Continue without account
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

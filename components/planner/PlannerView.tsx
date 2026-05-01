@@ -59,6 +59,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
     return (
       <MobileView
         weekId={activeWeekId}
+        userEmail={userEmail ?? null}
         tasks={store.tasks}
         weekGoals={store.weekGoals}
         longtermGoals={store.longtermGoals}
@@ -69,7 +70,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         onRemoveTask={store.removeTask}
         onToggleGoal={store.toggleGoal}
         onRemoveGoal={store.removeGoal}
-            onRenameGoal={store.renameGoal}
+        onRenameGoal={store.renameGoal}
         onAddGoal={store.addGoal}
         onBrainDumpChange={store.updateBrainDump}
         clients={clientStore.clients}
@@ -79,6 +80,8 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         onArchiveClientTask={clientStore.archiveClientTask}
         onUpdateClientTask={clientStore.updateClientTask}
         onAddClient={clientStore.addClient}
+        onUpdateClient={clientStore.updateClient}
+        onRemoveClient={clientStore.removeClient}
         events={events}
         activeDate={activeDate}
         onDayChange={handleDayChange}
