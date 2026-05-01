@@ -52,6 +52,9 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   }
 
   if (authStatus === "loading" || !store.loaded || !clientStore.loaded) {
+    if (isMobile) {
+      return <MobileHome isLoggedIn={authStatus === "authenticated"} onOpenDrawer={() => {}} />;
+    }
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-paper-ink-light italic text-sm animate-pulse-soft" style={{ fontFamily: "var(--font-serif)" }}>
