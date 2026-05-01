@@ -22,7 +22,8 @@ export function MobileHome({ onOpenDrawer }: MobileHomeProps) {
         className="absolute flex items-center justify-center"
         style={{
           opacity: phase === "logo" ? 1 : 0,
-          transition: "opacity 800ms ease-out",
+          transform: phase === "logo" ? "scale(1)" : "scale(2.5)",
+          transition: "opacity 800ms ease-out, transform 800ms ease-out",
           pointerEvents: "none",
         }}
       >
