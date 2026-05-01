@@ -74,25 +74,37 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
     return () => { cancelled = true; };
   }, [weekId, userEmail]); // eslint-disable-line
 
-  const save = useCallback((task: Task) => {
-    if (userEmail) sbSaveTask(userEmail, task); else saveTask(task);
+  // Write to Supabase; fall back to IDB if it fails so data is never lost locally
+  const wTask = useCallback(async (task: Task) => {
+    if (userEmail) { try { await sbSaveTask(userEmail, task); } catch { await saveTask(task); } } else { await saveTask(task); }
   }, [userEmail]);
+  const wNote = useCallback(async (note: Note) => {
+    if (userEmail) { try { await sbSaveNote(userEmail, note); } catch { await saveNote(note); } } else { await saveNote(note); }
+  }, [userEmail]);
+  const wGoal = useCallback(async (goal: Goal) => {
+    if (userEmail) { try { await sbSaveGoal(userEmail, goal); } catch { await saveGoal(goal); } } else { await saveGoal(goal); }
+  }, [userEmail]);
+  const wBrainDump = useCallback(async (dump: BrainDump) => {
+    if (userEmail) { try { await sbSaveBrainDump(userEmail, dump); } catch { await saveBrainDump(dump); } } else { await saveBrainDump(dump); }
+  }, [userEmail]);
+
+  const save = useCallback((task: Task) => { wTask(task); }, [wTask]);
 
   const addTask = useCallback(async (partial: Omit<Task, "id" | "weekId" | "createdAt" | "sortOrder">) => {
     const task: Task = { ...partial, id: crypto.randomUUID(), weekId, sortOrder: Date.now(), createdAt: Date.now() };
-    if (userEmail) await sbSaveTask(userEmail, task); else await saveTask(task);
+    await wTask(task);
     setTasks((prev) => [...prev, task]);
     return task;
-  }, [weekId, userEmail]);
+  }, [weekId, wTask]);
 
   const toggleTask = useCallback(async (id: string) => {
     setTasks((prev) => {
       const updated = prev.map((t) => t.id === id ? { ...t, completed: !t.completed } : t);
       const task = updated.find((t) => t.id === id);
-      if (task) { if (userEmail) sbSaveTask(userEmail, task); else saveTask(task); }
+      if (task) wTask(task);
       return updated;
     });
-  }, [userEmail]);
+  }, [wTask]);
 
   const removeTask = useCallback(async (id: string) => {
     if (userEmail) await sbDeleteTask(id); else await deleteTask(id);
@@ -103,51 +115,51 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
     setTasks((prev) => {
       const updated = prev.map((t) => t.id === id ? { ...t, text } : t);
       const task = updated.find((t) => t.id === id);
-      if (task) { if (userEmail) sbSaveTask(userEmail, task); else saveTask(task); }
+      if (task) wTask(task);
       return updated;
     });
-  }, [userEmail]);
+  }, [wTask]);
 
   const upsertNote = useCallback(async (dayIndex: number, text: string, photoIds?: string[]) => {
     const existing = notes.find((n) => n.dayIndex === dayIndex);
     const note: Note = existing
       ? { ...existing, text, photoIds: photoIds ?? existing.photoIds, updatedAt: Date.now() }
       : { id: crypto.randomUUID(), weekId, dayIndex, text, photoIds: photoIds ?? [], createdAt: Date.now(), updatedAt: Date.now() };
-    if (userEmail) await sbSaveNote(userEmail, note); else await saveNote(note);
+    await wNote(note);
     setNotes((prev) => existing ? prev.map((n) => n.id === note.id ? note : n) : [...prev, note]);
     return note;
-  }, [weekId, notes, userEmail]);
+  }, [weekId, notes, wNote]);
 
   const addNotePhoto = useCallback(async (dayIndex: number, photoId: string) => {
     const existing = notes.find((n) => n.dayIndex === dayIndex);
     if (existing) {
       const updated: Note = { ...existing, photoIds: [...existing.photoIds, photoId], updatedAt: Date.now() };
-      if (userEmail) await sbSaveNote(userEmail, updated); else await saveNote(updated);
+      await wNote(updated);
       setNotes((prev) => prev.map((n) => n.id === updated.id ? updated : n));
     } else {
       const note: Note = { id: crypto.randomUUID(), weekId, dayIndex, text: "", photoIds: [photoId], createdAt: Date.now(), updatedAt: Date.now() };
-      if (userEmail) await sbSaveNote(userEmail, note); else await saveNote(note);
+      await wNote(note);
       setNotes((prev) => [...prev, note]);
     }
-  }, [weekId, notes, userEmail]);
+  }, [weekId, notes, wNote]);
 
   const addGoal = useCallback(async (text: string, type: "weekly" | "longterm") => {
     const goal: Goal = { id: crypto.randomUUID(), weekId: type === "weekly" ? weekId : null, text, completed: false, type, createdAt: Date.now() };
-    if (userEmail) await sbSaveGoal(userEmail, goal); else await saveGoal(goal);
+    await wGoal(goal);
     if (type === "weekly") setWeekGoals((prev) => [...prev, goal]);
     else setLongtermGoals((prev) => [...prev, goal]);
-  }, [weekId, userEmail]);
+  }, [weekId, wGoal]);
 
   const toggleGoal = useCallback(async (id: string) => {
     const toggle = (prev: Goal[]) => {
       const updated = prev.map((g) => g.id === id ? { ...g, completed: !g.completed } : g);
       const goal = updated.find((g) => g.id === id);
-      if (goal) { if (userEmail) sbSaveGoal(userEmail, goal); else saveGoal(goal); }
+      if (goal) wGoal(goal);
       return updated;
     };
     setWeekGoals(toggle);
     setLongtermGoals(toggle);
-  }, [userEmail]);
+  }, [wGoal]);
 
   const removeGoal = useCallback(async (id: string) => {
     if (userEmail) await sbDeleteGoal(id); else await deleteGoal(id);
@@ -159,18 +171,17 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
     const update = (prev: Goal[]) => {
       const updated = prev.map((g) => g.id === id ? { ...g, text } : g);
       const goal = updated.find((g) => g.id === id);
-      if (goal) { if (userEmail) sbSaveGoal(userEmail, goal); else saveGoal(goal); }
+      if (goal) wGoal(goal);
       return updated;
     };
     setWeekGoals(update);
     setLongtermGoals(update);
-  }, [userEmail]);
+  }, [wGoal]);
 
   const updateBrainDump = useCallback(async (text: string) => {
     setBrainDumpState(text);
-    const dump: BrainDump = { weekId, text, updatedAt: Date.now() };
-    if (userEmail) await sbSaveBrainDump(userEmail, dump); else await saveBrainDump(dump);
-  }, [weekId, userEmail]);
+    await wBrainDump({ weekId, text, updatedAt: Date.now() });
+  }, [weekId, wBrainDump]);
 
   const bloomState: BloomState = (() => {
     const total = tasks.filter((t) => !t.completed).length;

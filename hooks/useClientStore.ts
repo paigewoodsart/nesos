@@ -65,18 +65,28 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
     return () => { cancelled = true; };
   }, [weekId, userEmail]); // eslint-disable-line
 
+  const wClient = useCallback(async (client: Client) => {
+    if (userEmail) { try { await sbSaveClient(userEmail, client); } catch { await saveClient(client); } } else { await saveClient(client); }
+  }, [userEmail]);
+  const wClientTask = useCallback(async (task: ClientTask) => {
+    if (userEmail) { try { await sbSaveClientTask(userEmail, task); } catch { await saveClientTask(task); } } else { await saveClientTask(task); }
+  }, [userEmail]);
+  const wSession = useCallback(async (session: ClientSession) => {
+    if (userEmail) { try { await sbSaveSession(userEmail, session); } catch { await saveSession(session); } } else { await saveSession(session); }
+  }, [userEmail]);
+
   const addClient = useCallback(async (name: string, color: string): Promise<Client> => {
     const client: Client = { id: crypto.randomUUID(), name, color, createdAt: Date.now() };
-    if (userEmail) await sbSaveClient(userEmail, client); else await saveClient(client);
+    await wClient(client);
     setClients((prev) => [...prev, client]);
     setTasksByClient((prev) => ({ ...prev, [client.id]: [] }));
     return client;
-  }, [userEmail]);
+  }, [wClient]);
 
   const updateClient = useCallback(async (updated: Client) => {
-    if (userEmail) await sbSaveClient(userEmail, updated); else await saveClient(updated);
+    await wClient(updated);
     setClients((prev) => prev.map((c) => c.id === updated.id ? updated : c));
-  }, [userEmail]);
+  }, [wClient]);
 
   const removeClient = useCallback(async (id: string) => {
     if (userEmail) await sbDeleteClient(id); else await deleteClient(id);
@@ -85,15 +95,15 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
 
   const addClientTask = useCallback(async (clientId: string, text: string, dueDate?: string | null): Promise<ClientTask> => {
     const task: ClientTask = { id: crypto.randomUUID(), clientId, text, done: false, doneAt: null, dueDate: dueDate ?? null, archived: false, archivedAt: null, createdAt: Date.now() };
-    if (userEmail) await sbSaveClientTask(userEmail, task); else await saveClientTask(task);
+    await wClientTask(task);
     setTasksByClient((prev) => ({ ...prev, [clientId]: [...(prev[clientId] ?? []), task] }));
     return task;
-  }, [userEmail]);
+  }, [wClientTask]);
 
   const updateClientTask = useCallback(async (clientId: string, updated: ClientTask) => {
-    if (userEmail) await sbSaveClientTask(userEmail, updated); else await saveClientTask(updated);
+    await wClientTask(updated);
     setTasksByClient((prev) => ({ ...prev, [clientId]: (prev[clientId] ?? []).map((t) => t.id === updated.id ? updated : t) }));
-  }, [userEmail]);
+  }, [wClientTask]);
 
   const toggleClientTask = useCallback(async (clientId: string, taskId: string) => {
     setTasksByClient((prev) => {
@@ -101,10 +111,10 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
         t.id === taskId ? { ...t, done: !t.done, doneAt: !t.done ? Date.now() : null } : t
       );
       const task = updated.find((t) => t.id === taskId);
-      if (task) { if (userEmail) sbSaveClientTask(userEmail, task); else saveClientTask(task); }
+      if (task) wClientTask(task);
       return { ...prev, [clientId]: updated };
     });
-  }, [userEmail]);
+  }, [wClientTask]);
 
   const archiveClientTask = useCallback(async (clientId: string, taskId: string) => {
     setTasksByClient((prev) => {
@@ -112,10 +122,10 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
         t.id === taskId ? { ...t, archived: true, archivedAt: Date.now(), done: true, doneAt: t.doneAt ?? Date.now() } : t
       );
       const task = updated.find((t) => t.id === taskId);
-      if (task) { if (userEmail) sbSaveClientTask(userEmail, task); else saveClientTask(task); }
+      if (task) wClientTask(task);
       return { ...prev, [clientId]: updated };
     });
-  }, [userEmail]);
+  }, [wClientTask]);
 
   const removeClientTask = useCallback(async (clientId: string, taskId: string) => {
     if (userEmail) await sbDeleteClientTask(taskId); else await deleteClientTask(taskId);
@@ -124,15 +134,15 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
 
   const addSession = useCallback(async (partial: Omit<ClientSession, "id" | "createdAt">): Promise<ClientSession> => {
     const session: ClientSession = { ...partial, id: crypto.randomUUID(), createdAt: Date.now() };
-    if (userEmail) await sbSaveSession(userEmail, session); else await saveSession(session);
+    await wSession(session);
     setSessions((prev) => [...prev, session]);
     return session;
-  }, [userEmail]);
+  }, [wSession]);
 
   const updateSession = useCallback(async (updated: ClientSession) => {
-    if (userEmail) await sbSaveSession(userEmail, updated); else await saveSession(updated);
+    await wSession(updated);
     setSessions((prev) => prev.map((s) => s.id === updated.id ? updated : s));
-  }, [userEmail]);
+  }, [wSession]);
 
   const removeSession = useCallback(async (id: string) => {
     if (userEmail) await sbDeleteSession(id); else await deleteSession(id);
