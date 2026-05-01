@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import type { Client } from "@/types";
 
 type MobileScreen = string;
@@ -23,6 +24,7 @@ const NAVY = "#1e6091";
 const RASPBERRY = "#D4909E";
 
 export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAddClient }: MobileDrawerProps) {
+  const { data: session } = useSession();
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [addingProject, setAddingProject] = useState(false);
@@ -211,6 +213,32 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
               </div>
             )}
           </div>
+        </div>
+
+        {/* Auth */}
+        <div className="flex-shrink-0 border-t border-paper-line/30 px-6 py-3">
+          {session ? (
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-paper-ink-light truncate" style={{ fontFamily: "var(--font-serif)" }}>
+                {session.user?.email}
+              </span>
+              <button
+                onClick={() => signOut()}
+                className="text-[10px] text-paper-ink-light underline underline-offset-2 ml-3 flex-shrink-0"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => signIn("google")}
+              className="w-full text-xs py-2 border border-paper-ink/20 text-paper-ink-light hover:text-paper-ink transition-colors"
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              Sign in with Google
+            </button>
+          )}
         </div>
 
         {/* Footer credit */}
