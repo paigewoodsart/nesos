@@ -13,6 +13,7 @@ import { MonthView } from "./MonthView";
 import { StickyBoard } from "./StickyBoard";
 import { ClientPanel } from "@/components/clients/ClientPanel";
 import { MobileView } from "@/components/mobile/MobileView";
+import { MobileHome } from "@/components/mobile/MobileHome";
 import type { View } from "./ViewToggle";
 import type { Client, ClientSession } from "@/types";
 
@@ -35,6 +36,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [openSession, setOpenSession] = useState<ClientSession | null>(null);
+  const [bypassLanding, setBypassLanding] = useState(false);
 
   const handleDayChange = useCallback((d: Date) => {
     setActiveDate(d);
@@ -44,6 +46,10 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const handleSelectSession = useCallback((session: ClientSession) => {
     setOpenSession(session);
   }, []);
+
+  if (!isMobile && authStatus === "unauthenticated" && !bypassLanding) {
+    return <MobileHome isLoggedIn={false} onOpenDrawer={() => setBypassLanding(true)} />;
+  }
 
   if (authStatus === "loading" || !store.loaded || !clientStore.loaded) {
     return (
