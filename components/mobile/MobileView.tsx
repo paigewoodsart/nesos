@@ -64,7 +64,7 @@ export function MobileView({
   onAddClient, onUpdateClient, onRemoveClient,
   events, activeDate, onDayChange,
 }: MobileViewProps) {
-  const [screen, setScreen] = useState<MobileScreen>(userEmail ? "thisweek" : "home");
+  const [screen, setScreen] = useState<MobileScreen>("home");
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const navigate = useCallback((s: string) => {

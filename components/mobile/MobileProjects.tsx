@@ -85,24 +85,21 @@ export function MobileProjects({ clients, onSelectProject, onAddClient, onBack, 
     </div>
   );
 
-  const hasProjects = clients.length > 0;
-
   return (
     <div className="flex flex-col h-screen board-breathe board-grid">
       <MobileScreenHeader title="Projects" onBack={onBack} onOpenDrawer={onOpenDrawer} />
 
       <div className="flex-1 overflow-y-auto">
-        {/* Add project form at TOP when no projects */}
-        {!hasProjects && !adding && (
+        {/* Add project — always at top */}
+        {!adding ? (
           <button
             onClick={() => setAdding(true)}
-            className="w-full py-5 text-sm font-bold tracking-[0.22em] uppercase text-white"
+            className="w-full py-3 text-sm font-bold tracking-[0.22em] uppercase text-white"
             style={{ backgroundColor: PURPLE, fontFamily: "var(--font-body)" }}
           >
             + Add Project
           </button>
-        )}
-        {!hasProjects && adding && addForm}
+        ) : addForm}
 
         {/* Project list */}
         <div className="flex flex-col gap-[3px] pt-[3px]">
@@ -110,7 +107,7 @@ export function MobileProjects({ clients, onSelectProject, onAddClient, onBack, 
             <button
               key={c.id}
               onClick={() => onSelectProject(c.id)}
-              className="w-full flex items-center justify-between px-5 py-5 text-left active:opacity-80 transition-opacity"
+              className="w-full flex items-center justify-between px-5 py-3 text-left active:opacity-80 transition-opacity"
               style={{ backgroundColor: c.color }}
             >
               <span
@@ -123,21 +120,7 @@ export function MobileProjects({ clients, onSelectProject, onAddClient, onBack, 
             </button>
           ))}
         </div>
-
-        {/* Add project form at BOTTOM when projects exist */}
-        {hasProjects && adding && addForm}
       </div>
-
-      {/* Add project button at bottom when projects exist */}
-      {hasProjects && !adding && (
-        <button
-          onClick={() => setAdding(true)}
-          className="flex-shrink-0 w-full py-5 text-sm font-bold tracking-[0.22em] uppercase text-white"
-          style={{ backgroundColor: PURPLE, fontFamily: "var(--font-body)" }}
-        >
-          + Add Project
-        </button>
-      )}
     </div>
   );
 }
