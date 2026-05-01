@@ -16,12 +16,16 @@ export function MobileHome({ onOpenDrawer }: MobileHomeProps) {
 
   return (
     <div className="h-screen flex flex-col items-center justify-center board-breathe board-grid">
-      {/* Logo — fades in, then out */}
+      {/* Logo — fades in, then scales up and dissolves */}
       <img
         src="/nesos-icon.webp"
         alt="Nesos"
-        className="h-24 w-24 object-contain absolute transition-opacity duration-700"
-        style={{ opacity: phase === "logo" ? 1 : 0 }}
+        className="h-24 w-24 object-contain absolute"
+        style={{
+          opacity: phase === "logo" ? 1 : 0,
+          transform: phase === "logo" ? "scale(1)" : "scale(2)",
+          transition: "opacity 700ms ease-out, transform 700ms ease-out",
+        }}
       />
 
       {/* BEGIN button — fades in after logo */}
