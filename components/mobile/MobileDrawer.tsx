@@ -16,7 +16,6 @@ const NAVY = "#1e6091";
 
 export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawerProps) {
   const { data: session } = useSession();
-  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const go = (s: MobileScreen) => { onNavigate(s); };
 
@@ -88,36 +87,6 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
           {navItem("Projects", "projects")}
           {navItem("Archive", "archive")}
 
-          {/* Calendar accordion */}
-          <div>
-            <button
-              onClick={() => setCalendarOpen((v) => !v)}
-              className="w-full flex items-center gap-4 px-6 py-3.5 text-left transition-colors active:bg-paper-warm/40"
-            >
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0 border"
-                style={{
-                  backgroundColor: screen.startsWith("calendar") ? NAVY : "transparent",
-                  borderColor: screen.startsWith("calendar") ? NAVY : "rgba(26,26,26,0.22)",
-                }}
-              />
-              <span className="text-xs uppercase tracking-[0.22em] font-bold flex-1"
-                style={{ fontFamily: "var(--font-body)", color: screen.startsWith("calendar") ? NAVY : "rgba(26,26,26,0.75)" }}>
-                Calendar
-              </span>
-              <span className="text-[10px] text-paper-ink-light">{calendarOpen ? "∧" : "∨"}</span>
-            </button>
-            {calendarOpen && (
-              <div className="pl-12 pr-6 pb-2 space-y-0.5">
-                <button onClick={() => go("calendar-week")} className="w-full flex items-center gap-2 py-2 text-left">
-                  <span className="text-xs" style={{ fontFamily: "var(--font-serif)", color: screen === "calendar-week" ? NAVY : "#1A1A1A" }}>Week</span>
-                </button>
-                <button onClick={() => go("calendar-month")} className="w-full flex items-center gap-2 py-2 text-left">
-                  <span className="text-xs" style={{ fontFamily: "var(--font-serif)", color: screen === "calendar-month" ? NAVY : "#1A1A1A" }}>Month</span>
-                </button>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Spotify brain music */}
