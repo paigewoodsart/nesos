@@ -30,19 +30,28 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [c, s] = await Promise.all([
-        sb ? sbGetAllClients(userEmail!) : getAllClients(),
-        sb ? sbGetSessionsByWeek(userEmail!, weekId) : getSessionsByWeek(weekId),
-      ]);
+      let c: Client[], s: ClientSession[];
+      try {
+        [c, s] = await Promise.all([
+          sb ? sbGetAllClients(userEmail!) : getAllClients(),
+          sb ? sbGetSessionsByWeek(userEmail!, weekId) : getSessionsByWeek(weekId),
+        ]);
+      } catch (err) {
+        console.error("[useClientStore] Supabase load failed, falling back to IDB:", err);
+        [c, s] = await Promise.all([getAllClients(), getSessionsByWeek(weekId)]);
+      }
       if (cancelled) return;
       setClients(c);
       setSessions(s);
 
       const taskMap: Record<string, ClientTask[]> = {};
       await Promise.all(c.map(async (client) => {
-        const raw = sb
-          ? await sbGetClientTasks(userEmail!, client.id)
-          : await getClientTasks(client.id);
+        let raw: ClientTask[];
+        try {
+          raw = sb ? await sbGetClientTasks(userEmail!, client.id) : await getClientTasks(client.id);
+        } catch {
+          raw = await getClientTasks(client.id);
+        }
         taskMap[client.id] = raw.map((t) => ({
           ...t,
           archived: (t as ClientTask & { archived?: boolean }).archived ?? false,

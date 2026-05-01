@@ -4,27 +4,31 @@ import type { Client, ClientTask, ClientSession } from "@/types";
 // ── Clients ──────────────────────────────────────────────────────
 
 export async function sbGetAllClients(userEmail: string): Promise<Client[]> {
-  const { data } = await supabase.from("clients").select("*").eq("user_email", userEmail);
+  const { data, error } = await supabase.from("clients").select("*").eq("user_email", userEmail);
+  if (error) { console.error("[sb] getAllClients:", error); throw error; }
   return (data ?? []).map(r => ({ id: r.id, name: r.name, color: r.color, createdAt: r.created_at }));
 }
 
 export async function sbSaveClient(userEmail: string, client: Client): Promise<void> {
-  await supabase.from("clients").upsert({ id: client.id, user_email: userEmail, name: client.name, color: client.color, created_at: client.createdAt });
+  const { error } = await supabase.from("clients").upsert({ id: client.id, user_email: userEmail, name: client.name, color: client.color, created_at: client.createdAt });
+  if (error) console.error("[sb] saveClient:", error);
 }
 
 export async function sbDeleteClient(id: string): Promise<void> {
-  await supabase.from("clients").delete().eq("id", id);
+  const { error } = await supabase.from("clients").delete().eq("id", id);
+  if (error) console.error("[sb] deleteClient:", error);
 }
 
 // ── Client Tasks ─────────────────────────────────────────────────
 
 export async function sbGetClientTasks(userEmail: string, clientId: string): Promise<ClientTask[]> {
-  const { data } = await supabase.from("client_tasks").select("*").eq("user_email", userEmail).eq("client_id", clientId);
+  const { data, error } = await supabase.from("client_tasks").select("*").eq("user_email", userEmail).eq("client_id", clientId);
+  if (error) { console.error("[sb] getClientTasks:", error); throw error; }
   return (data ?? []).map(rowToClientTask);
 }
 
 export async function sbSaveClientTask(userEmail: string, task: ClientTask): Promise<void> {
-  await supabase.from("client_tasks").upsert({
+  const { error } = await supabase.from("client_tasks").upsert({
     id: task.id,
     user_email: userEmail,
     client_id: task.clientId,
@@ -36,21 +40,24 @@ export async function sbSaveClientTask(userEmail: string, task: ClientTask): Pro
     archived_at: task.archivedAt,
     created_at: task.createdAt,
   });
+  if (error) console.error("[sb] saveClientTask:", error);
 }
 
 export async function sbDeleteClientTask(id: string): Promise<void> {
-  await supabase.from("client_tasks").delete().eq("id", id);
+  const { error } = await supabase.from("client_tasks").delete().eq("id", id);
+  if (error) console.error("[sb] deleteClientTask:", error);
 }
 
 // ── Client Sessions ──────────────────────────────────────────────
 
 export async function sbGetSessionsByWeek(userEmail: string, weekId: string): Promise<ClientSession[]> {
-  const { data } = await supabase.from("client_sessions").select("*").eq("user_email", userEmail).eq("week_id", weekId);
+  const { data, error } = await supabase.from("client_sessions").select("*").eq("user_email", userEmail).eq("week_id", weekId);
+  if (error) { console.error("[sb] getSessionsByWeek:", error); throw error; }
   return (data ?? []).map(rowToSession);
 }
 
 export async function sbSaveSession(userEmail: string, session: ClientSession): Promise<void> {
-  await supabase.from("client_sessions").upsert({
+  const { error } = await supabase.from("client_sessions").upsert({
     id: session.id,
     user_email: userEmail,
     client_id: session.clientId,
@@ -63,10 +70,12 @@ export async function sbSaveSession(userEmail: string, session: ClientSession): 
     date: session.date,
     created_at: session.createdAt,
   });
+  if (error) console.error("[sb] saveSession:", error);
 }
 
 export async function sbDeleteSession(id: string): Promise<void> {
-  await supabase.from("client_sessions").delete().eq("id", id);
+  const { error } = await supabase.from("client_sessions").delete().eq("id", id);
+  if (error) console.error("[sb] deleteSession:", error);
 }
 
 // ── Row mappers ──────────────────────────────────────────────────

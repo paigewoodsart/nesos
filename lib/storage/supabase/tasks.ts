@@ -2,25 +2,27 @@ import { supabase } from "@/lib/supabase";
 import type { Task } from "@/types";
 
 export async function sbGetTasksByWeek(userEmail: string, weekId: string): Promise<Task[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("tasks")
     .select("*")
     .eq("user_email", userEmail)
     .eq("week_id", weekId);
+  if (error) { console.error("[sb] getTasksByWeek:", error); throw error; }
   return (data ?? []).map(rowToTask);
 }
 
 export async function sbGetRecurringTasks(userEmail: string): Promise<Task[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("tasks")
     .select("*")
     .eq("user_email", userEmail)
     .eq("recurring", true);
+  if (error) { console.error("[sb] getRecurringTasks:", error); throw error; }
   return (data ?? []).map(rowToTask);
 }
 
 export async function sbSaveTask(userEmail: string, task: Task): Promise<void> {
-  await supabase.from("tasks").upsert({
+  const { error } = await supabase.from("tasks").upsert({
     id: task.id,
     user_email: userEmail,
     week_id: task.weekId,
@@ -34,10 +36,12 @@ export async function sbSaveTask(userEmail: string, task: Task): Promise<void> {
     recurring_pattern: task.recurringPattern,
     created_at: task.createdAt,
   });
+  if (error) console.error("[sb] saveTask:", error);
 }
 
 export async function sbDeleteTask(id: string): Promise<void> {
-  await supabase.from("tasks").delete().eq("id", id);
+  const { error } = await supabase.from("tasks").delete().eq("id", id);
+  if (error) console.error("[sb] deleteTask:", error);
 }
 
 function rowToTask(r: Record<string, unknown>): Task {

@@ -24,13 +24,25 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [t, n, wg, lg, bd] = await Promise.all([
-        sb ? sbGetTasksByWeek(userEmail!, weekId) : getTasksByWeek(weekId),
-        sb ? sbGetNotesByWeek(userEmail!, weekId) : getNotesByWeek(weekId),
-        sb ? sbGetGoalsByWeek(userEmail!, weekId) : getGoalsByWeek(weekId),
-        sb ? sbGetLongtermGoals(userEmail!) : getLongtermGoals(),
-        sb ? sbGetBrainDump(userEmail!, weekId) : getBrainDump(weekId),
-      ]);
+      let t: Task[], n: Note[], wg: Goal[], lg: Goal[], bd: BrainDump | undefined;
+      try {
+        [t, n, wg, lg, bd] = await Promise.all([
+          sb ? sbGetTasksByWeek(userEmail!, weekId) : getTasksByWeek(weekId),
+          sb ? sbGetNotesByWeek(userEmail!, weekId) : getNotesByWeek(weekId),
+          sb ? sbGetGoalsByWeek(userEmail!, weekId) : getGoalsByWeek(weekId),
+          sb ? sbGetLongtermGoals(userEmail!) : getLongtermGoals(),
+          sb ? sbGetBrainDump(userEmail!, weekId) : getBrainDump(weekId),
+        ]);
+      } catch (err) {
+        console.error("[useWeekStore] Supabase load failed, falling back to IDB:", err);
+        [t, n, wg, lg, bd] = await Promise.all([
+          getTasksByWeek(weekId),
+          getNotesByWeek(weekId),
+          getGoalsByWeek(weekId),
+          getLongtermGoals(),
+          getBrainDump(weekId),
+        ]);
+      }
 
       if (t.length === 0) {
         const recurring = sb
