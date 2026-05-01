@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { format, addMonths, subMonths } from "date-fns";
 import { prevWeekId, nextWeekId, getWeekId, formatWeekRange } from "@/lib/dates";
 import { MigrateDataButton } from "./MigrateDataButton";
-import { ViewToggle } from "./ViewToggle";
 import { useSession, signIn, signOut } from "next-auth/react";
 import type { View } from "./ViewToggle";
 import type { BloomState } from "@/types";
@@ -209,8 +208,6 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
         >
           <img src="/spotify-logo.webp" alt="Spotify" className="w-5 h-5 object-contain opacity-60 hover:opacity-100 transition-opacity" />
         </a>
-
-        <ViewToggle view={view} onChange={onViewChange} />
 
         {/* Sign in (not authenticated) */}
         {!session && (
