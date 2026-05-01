@@ -95,7 +95,10 @@ export function MobileThisWeek({
             {weekTasks7.map((t) => (
               <div key={t.id} className="flex items-center gap-3 py-2.5 border-b border-paper-line/30">
                 <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: t.clientColor }} />
-                <span className={`flex-1 text-sm truncate ${t.done ? "line-through opacity-40" : ""}`} style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}>{t.text}</span>
+                <div className="flex-1 min-w-0">
+                  <span className={`block text-sm truncate ${t.done ? "line-through opacity-40" : ""}`} style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}>{t.text}</span>
+                  <span className="block text-[10px] uppercase tracking-[0.15em] mt-0.5" style={{ fontFamily: "var(--font-body)", color: t.clientColor, opacity: 0.8 }}>{t.clientName}</span>
+                </div>
                 <DueBadge due={t.dueDate} />
                 <button
                   onClick={() => onToggleClientTask(t.clientId, t.id)}
