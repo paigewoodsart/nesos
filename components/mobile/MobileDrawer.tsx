@@ -122,7 +122,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
 
         {/* Spotify brain music */}
         <a
-          href="https://open.spotify.com/playlist/5vZGF73NyIiJdofAj1HPdR"
+          href="https://open.spotify.com/playlist/1DS3PGYtl7dV8YGTXfbPRt"
           target="_blank"
           rel="noopener noreferrer"
           className="w-full flex items-center gap-4 px-6 py-3.5 text-left transition-colors active:bg-paper-warm/40"

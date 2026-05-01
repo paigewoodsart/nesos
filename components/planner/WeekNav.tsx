@@ -200,7 +200,7 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
 
         {/* Spotify brain music */}
         <a
-          href="https://open.spotify.com/playlist/5vZGF73NyIiJdofAj1HPdR"
+          href="https://open.spotify.com/playlist/1DS3PGYtl7dV8YGTXfbPRt"
           target="_blank"
           rel="noopener noreferrer"
           title="brain music"
