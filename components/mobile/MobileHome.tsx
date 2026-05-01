@@ -10,7 +10,7 @@ export function MobileHome({ onOpenDrawer }: MobileHomeProps) {
   const [phase, setPhase] = useState<"logo" | "begin">("logo");
 
   useEffect(() => {
-    const timer = setTimeout(() => setPhase("begin"), 2000);
+    const timer = setTimeout(() => setPhase("begin"), 50);
     return () => clearTimeout(timer);
   }, []);
 
@@ -62,7 +62,7 @@ export function MobileHome({ onOpenDrawer }: MobileHomeProps) {
             border: "1px solid rgba(26,96,145,0.4)",
           }}
         >
-          BEGIN
+          PLAN
         </button>
       </div>
     </div>
