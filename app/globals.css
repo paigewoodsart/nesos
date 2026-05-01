@@ -154,8 +154,3 @@ body::before {
   opacity: 1;
   transition: opacity 0.3s ease;
 }
-
-/* Theme filter overlays — applied to <html> */
-.theme-blue  { filter: grayscale(1) sepia(1) saturate(4) hue-rotate(175deg); }
-.theme-green { filter: grayscale(1) sepia(1) saturate(1.5) hue-rotate(90deg); }
-.theme-grey  { filter: grayscale(1); }

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { ThemeSelector } from "@/components/ui/ThemeSelector";
 
 type MobileScreen = string;
 
@@ -133,11 +132,6 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
             Brain Music
           </span>
         </a>
-
-        {/* Theme */}
-        <div className="flex-shrink-0 border-t border-paper-line/20 px-6 py-3">
-          <ThemeSelector />
-        </div>
 
         {/* Auth */}
         <div className="flex-shrink-0 border-t border-paper-line/30 px-6 py-3">
