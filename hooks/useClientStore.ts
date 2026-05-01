@@ -61,7 +61,7 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
       if (!cancelled) { setTasksByClient(taskMap); setLoaded(true); }
     }
     setLoaded(false);
-    load();
+    load().catch((err) => { console.error("[useClientStore] load crashed:", err); setLoaded(true); });
     return () => { cancelled = true; };
   }, [weekId, userEmail]); // eslint-disable-line
 

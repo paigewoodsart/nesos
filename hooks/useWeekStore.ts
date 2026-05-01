@@ -25,6 +25,7 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
     let cancelled = false;
     async function load() {
       let t: Task[], n: Note[], wg: Goal[], lg: Goal[], bd: BrainDump | undefined;
+      let usingSb = sb;
       try {
         [t, n, wg, lg, bd] = await Promise.all([
           sb ? sbGetTasksByWeek(userEmail!, weekId) : getTasksByWeek(weekId),
@@ -35,6 +36,7 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
         ]);
       } catch (err) {
         console.error("[useWeekStore] Supabase load failed, falling back to IDB:", err);
+        usingSb = false;
         [t, n, wg, lg, bd] = await Promise.all([
           getTasksByWeek(weekId),
           getNotesByWeek(weekId),
@@ -45,8 +47,8 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
       }
 
       if (t.length === 0) {
-        const recurring = sb
-          ? await sbGetRecurringTasks(userEmail!)
+        const recurring = usingSb
+          ? await sbGetRecurringTasks(userEmail!).catch(() => getRecurringTasks())
           : await getRecurringTasks();
         const seeded: Task[] = recurring
           .filter((rt) => !t.find((e) => e.text === rt.text && e.dayIndex === rt.dayIndex))
@@ -68,7 +70,7 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
       }
     }
     setLoaded(false);
-    load();
+    load().catch((err) => { console.error("[useWeekStore] load crashed:", err); setLoaded(true); });
     return () => { cancelled = true; };
   }, [weekId, userEmail]); // eslint-disable-line
 
