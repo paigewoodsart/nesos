@@ -5,7 +5,7 @@ import { useTheme, type Theme } from "@/hooks/useTheme";
 const THEMES: { id: Theme; label: string; bg: string }[] = [
   { id: "default", label: "Default", bg: "conic-gradient(from 0deg, #ffdfe5, #d9ed92, #52b69a, #168aad, #ffdfe5)" },
   { id: "blue",    label: "Blue",    bg: "#2b6cb0" },
-  { id: "green",   label: "Green",   bg: "#276749" },
+  { id: "green",   label: "Green",   bg: "#c9eca9" },
   { id: "grey",    label: "Grey",    bg: "#6b7280" },
 ];
 
