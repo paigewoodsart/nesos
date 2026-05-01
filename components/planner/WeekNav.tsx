@@ -6,6 +6,7 @@ import { format, addMonths, subMonths } from "date-fns";
 import { prevWeekId, nextWeekId, getWeekId, formatWeekRange } from "@/lib/dates";
 import { MigrateDataButton } from "./MigrateDataButton";
 import { ViewToggle } from "./ViewToggle";
+import { ThemeSelector } from "@/components/ui/ThemeSelector";
 import { useSession, signIn, signOut } from "next-auth/react";
 import type { View } from "./ViewToggle";
 import type { BloomState } from "@/types";
@@ -72,6 +73,11 @@ function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSessi
             {/* Migrate */}
             <div className="px-4 py-2 border-b border-paper-line/30">
               <MigrateDataButton userEmail={email} />
+            </div>
+
+            {/* Theme */}
+            <div className="px-4 py-3 border-b border-paper-line/30">
+              <ThemeSelector />
             </div>
 
             {/* Sign out */}
