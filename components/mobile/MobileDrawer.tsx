@@ -215,6 +215,19 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, clients, onAdd
           </div>
         </div>
 
+        {/* Spotify brain music */}
+        <a
+          href="https://open.spotify.com/playlist/5vZGF73NyIiJdofAj1HPdR"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-4 px-6 py-3.5 text-left transition-colors active:bg-paper-warm/40"
+        >
+          <img src="/spotify-logo.webp" alt="Spotify" className="w-4 h-4 object-contain flex-shrink-0" />
+          <span className="text-xs uppercase tracking-[0.22em] font-bold" style={{ fontFamily: "var(--font-body)", color: "rgba(26,26,26,0.75)" }}>
+            Brain Music
+          </span>
+        </a>
+
         {/* Auth */}
         <div className="flex-shrink-0 border-t border-paper-line/30 px-6 py-3">
           {session ? (

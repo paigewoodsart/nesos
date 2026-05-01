@@ -195,6 +195,18 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
       {/* Right: sign in / menu → view toggle → nav arrows */}
       <div className="flex items-center gap-4">
 
+        {/* Spotify brain music */}
+        <a
+          href="https://open.spotify.com/playlist/5vZGF73NyIiJdofAj1HPdR"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="brain music"
+          className="flex items-center justify-center w-8 h-8"
+          aria-label="Brain music playlist"
+        >
+          <img src="/spotify-logo.webp" alt="Spotify" className="w-5 h-5 object-contain opacity-60 hover:opacity-100 transition-opacity" />
+        </a>
+
         <ViewToggle view={view} onChange={onViewChange} />
 
         {/* Sign in (not authenticated) */}

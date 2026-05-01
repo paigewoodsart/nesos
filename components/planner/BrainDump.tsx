@@ -31,7 +31,7 @@ export function BrainDump({ value, onChange, onOrganize }: BrainDumpProps) {
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="dump everything here... thoughts, ideas, worries, random things you don't want to forget. no structure needed."
+            placeholder="scattered thoughts... big ideas that won't leave you alone... tasks that need a home... things you overheard and can't forget... half-baked plans... words that feel important... dreams you almost remembered... things you're worried about... things you're excited about... the thought you had in the shower... the email you keep forgetting to send..."
             rows={5}
             className="w-full text-sm bg-paper-warm/60 border border-paper-line rounded-sm px-3 py-2.5 outline-none resize-none text-paper-ink placeholder:text-paper-line focus:border-paper-ink-light transition-colors leading-relaxed"
             style={{ fontFamily: "var(--font-body)", fontStyle: "italic" }}
