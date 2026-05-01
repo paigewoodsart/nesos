@@ -168,7 +168,7 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
     : isCurrentWeek;
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-3.5 border-b-2 border-paper-ink/10 bg-paper-cream/98 backdrop-blur-sm">
+    <header className="sticky top-0 z-30 flex items-center justify-between px-6 py-3.5 border-b border-paper-line/30 bg-paper-cream/40 backdrop-blur-md">
 
       {/* Left: logo + title */}
       <div className="flex items-center gap-3">
