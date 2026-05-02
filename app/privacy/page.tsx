@@ -102,7 +102,7 @@ export default function PrivacyPage() {
               rel="noopener noreferrer"
               className="underline underline-offset-2"
             >
-              www.paigewoods.art
+              Paige Woods
             </a>
             . This policy may be updated as the app evolves.
           </p>
