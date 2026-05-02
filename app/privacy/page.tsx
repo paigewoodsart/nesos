@@ -40,7 +40,7 @@ export default function PrivacyPage() {
               When you sign in with Google, Nesos receives your name and email address from Google. We store this to identify your account and scope your data.
             </p>
             <p className="mt-3">
-              We also store content you create within the app: tasks, goals, projects, brain dump notes, calendar sessions, and any other planning data you enter. This content is associated with your email address and stored in a secure database.
+              We also store content you create within the app: tasks, goals, projects, notes, calendar sessions, and any other planning data you enter. This content is associated with your email address and stored in a secure database.
             </p>
           </section>
 
