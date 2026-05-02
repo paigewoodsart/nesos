@@ -802,6 +802,20 @@ export function StickyBoard({
               onDelete={() => { onRemoveClient(activeClient.id); setActiveClientId(null); }}
               footer={<ProgressBar done={doneCount} total={active.length} color={activeClient.color} />}
             >
+              {/* Project notes */}
+              <textarea
+                key={activeClient.id}
+                defaultValue={activeClient.notes ?? ""}
+                onBlur={(e) => {
+                  const val = e.target.value;
+                  if (val !== (activeClient.notes ?? "")) onUpdateClient({ ...activeClient, notes: val });
+                }}
+                placeholder="project notes..."
+                rows={2}
+                className="w-full text-xs bg-transparent border-b border-paper-line/30 outline-none resize-none text-paper-ink leading-relaxed pb-1 mb-3 italic"
+                style={{ fontFamily: "var(--font-serif)" }}
+              />
+
               {sortedActive.length === 0 && archived.length === 0 && (
                 <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.5 }}>No tasks yet.</p>
               )}
