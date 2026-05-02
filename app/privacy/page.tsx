@@ -97,7 +97,7 @@ export default function PrivacyPage() {
           <p className="text-xs text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>
             Nesos is made by{" "}
             <a
-              href="https://www.paigewoods.art"
+              href="https://paigewoods.art"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2"

@@ -157,7 +157,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
           <p className="text-[10px] text-paper-ink-light leading-relaxed" style={{ fontFamily: "var(--font-serif)" }}>
             created with love by{" "}
             <a
-              href="https://www.paigewoods.art"
+              href="https://paigewoods.art"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 hover:text-paper-ink transition-colors"
