@@ -155,15 +155,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
         <div className="flex-shrink-0 border-t border-paper-line/30 px-6 py-4 flex items-center gap-3">
           <img src="/nesos-icon.webp" alt="Nesos" className="h-7 w-7 object-contain opacity-60 flex-shrink-0" />
           <p className="text-[10px] text-paper-ink-light leading-relaxed" style={{ fontFamily: "var(--font-serif)" }}>
-            created with love by{" "}
-            <a
-              href="https://paigewoods.art"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-paper-ink transition-colors"
-            >
-              Paige Woods
-            </a>
+            made with love by Paige Woods
           </p>
         </div>
       </div>

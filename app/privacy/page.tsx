@@ -95,16 +95,7 @@ export default function PrivacyPage() {
 
           <hr className="border-paper-line/40 mt-10" />
           <p className="text-xs text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>
-            Nesos is made by{" "}
-            <a
-              href="https://paigewoods.art"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2"
-            >
-              Paige Woods
-            </a>
-            . This policy may be updated as the app evolves.
+            This policy may be updated as the app evolves.
           </p>
         </div>
       </div>

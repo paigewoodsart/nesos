@@ -96,6 +96,11 @@ function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSessi
             >
               {deleting ? "Deleting..." : "Delete account"}
             </button>
+            <div className="px-4 py-3 border-t border-paper-line/30">
+              <p className="text-[10px] text-paper-ink-light" style={{ fontFamily: "var(--font-serif)", fontStyle: "italic" }}>
+                made with love by Paige Woods
+              </p>
+            </div>
           </div>
         </>
       )}
