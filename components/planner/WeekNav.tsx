@@ -206,7 +206,7 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
           className="flex items-center justify-center w-8 h-8"
           aria-label="Brain music playlist"
         >
-          <img src="/spotify-logo.webp" alt="Spotify" className="w-5 h-5 object-contain opacity-60 hover:opacity-100 transition-opacity" />
+          <img src="/spotify-logo.webp" alt="Spotify" className="w-5 h-5 object-contain opacity-60 hover:opacity-100 transition-opacity" style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.4))" }} />
         </a>
 
         {/* Sign in (not authenticated) */}

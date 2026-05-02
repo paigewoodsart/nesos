@@ -45,6 +45,7 @@ interface MobileViewProps {
   onAddClientTask: (clientId: string, text: string, due?: string | null) => Promise<ClientTask>;
   onToggleClientTask: (clientId: string, taskId: string) => void;
   onArchiveClientTask: (clientId: string, taskId: string) => void;
+  onRemoveClientTask: (clientId: string, taskId: string) => void;
   onUpdateClientTask: (clientId: string, task: ClientTask) => void;
   onAddClient: (name: string, color: string) => Promise<Client>;
   onUpdateClient: (client: Client) => Promise<void>;
@@ -60,7 +61,7 @@ export function MobileView({
   onAddTask, onToggleTask, onRemoveTask,
   onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal, onBrainDumpChange,
   clients, tasksByClient,
-  onAddClientTask, onToggleClientTask, onArchiveClientTask, onUpdateClientTask,
+  onAddClientTask, onToggleClientTask, onArchiveClientTask, onRemoveClientTask, onUpdateClientTask,
   onAddClient, onUpdateClient, onRemoveClient,
   events, activeDate, onDayChange,
 }: MobileViewProps) {
@@ -142,6 +143,7 @@ export function MobileView({
             onToggleTask={onToggleClientTask}
             onArchiveTask={onArchiveClientTask}
             onUpdateTask={onUpdateClientTask}
+            onRemoveTask={onRemoveClientTask}
             onUpdateClient={onUpdateClient}
             onRemoveClient={onRemoveClient}
             onBack={() => setScreen("projects")}

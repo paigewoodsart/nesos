@@ -290,7 +290,7 @@ const SYSTEM_DEFAULTS: Record<SystemKey, SystemConfig> = {
   "__today__":     { color: "#D4909E", title: "Today" },
   "__week__":      { color: "#F4956A", title: "This Week" },
   "__goals__":     { color: "#F4956A", title: "Goals" },
-  "__braindump__": { color: "#F4956A", title: "Brain Dump" },
+  "__braindump__": { color: "#F4956A", title: "Notes" },
 };
 
 function loadSystemConfig(): Record<SystemKey, SystemConfig> {

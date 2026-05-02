@@ -26,6 +26,7 @@ interface MobileProjectProps {
   onToggleTask: (clientId: string, taskId: string) => void;
   onArchiveTask: (clientId: string, taskId: string) => void;
   onUpdateTask: (clientId: string, task: ClientTask) => void;
+  onRemoveTask: (clientId: string, taskId: string) => void;
   onUpdateClient: (client: Client) => void;
   onRemoveClient: (id: string) => void;
   onBack: () => void;
@@ -35,7 +36,7 @@ interface MobileProjectProps {
 export function MobileProject({
   client, tasks,
   onAddTask, onToggleTask, onArchiveTask, onUpdateTask,
-  onUpdateClient, onRemoveClient,
+  onRemoveTask, onUpdateClient, onRemoveClient,
   onBack, onOpenDrawer,
 }: MobileProjectProps) {
   const [addOpen, setAddOpen] = useState(false);
@@ -293,6 +294,12 @@ export function MobileProject({
                 style={{ fontFamily: "var(--font-body)" }}
               >
                 done
+              </button>
+              <button
+                onClick={() => onRemoveTask(client.id, t.id)}
+                className="flex-shrink-0 text-lg leading-none text-paper-ink-light active:text-red-400"
+              >
+                ×
               </button>
               <button
                 onClick={() => onToggleTask(client.id, t.id)}

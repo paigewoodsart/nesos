@@ -87,6 +87,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         onAddClientTask={clientStore.addClientTask}
         onToggleClientTask={clientStore.toggleClientTask}
         onArchiveClientTask={clientStore.archiveClientTask}
+        onRemoveClientTask={clientStore.removeClientTask}
         onUpdateClientTask={clientStore.updateClientTask}
         onAddClient={clientStore.addClient}
         onUpdateClient={clientStore.updateClient}
@@ -106,6 +107,15 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {/* Beta bar — desktop only, pinned to bottom */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-20 py-1.5 px-4 text-center text-[11px] tracking-wide border-t border-paper-line/30"
+        style={{ fontFamily: "var(--font-body)", color: "var(--color-paper-rust)", backgroundColor: "rgba(249,248,246,0.9)", backdropFilter: "blur(8px)" }}
+      >
+        This resource is still in beta — please email{" "}
+        <a href="mailto:nesosplanner@gmail.com" className="underline underline-offset-2">nesosplanner@gmail.com</a>
+        {" "}to submit feedback
+      </div>
       <WeekNav
         weekId={activeWeekId}
         bloomState={store.bloomState}

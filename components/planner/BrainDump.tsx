@@ -21,7 +21,7 @@ export function BrainDump({ value, onChange, onOrganize }: BrainDumpProps) {
           className="text-xs uppercase tracking-widest text-paper-ink-light"
           style={{ fontFamily: "var(--font-serif)", fontSize: "10px" }}
         >
-          Brain Dump {value.trim() && <span className="text-paper-rust">•</span>}
+          Notes {value.trim() && <span className="text-paper-rust">•</span>}
         </span>
         <span className="text-paper-ink-light text-xs">{open ? "▾" : "▸"}</span>
       </button>
@@ -31,7 +31,7 @@ export function BrainDump({ value, onChange, onOrganize }: BrainDumpProps) {
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="scattered thoughts... big ideas that won't leave you alone... tasks that need a home... things you overheard and can't forget... half-baked plans... words that feel important... dreams you almost remembered... things you're worried about... things you're excited about... the thought you had in the shower... the email you keep forgetting to send..."
+            placeholder=""
             rows={5}
             className="w-full text-sm bg-paper-warm/60 border border-paper-line rounded-sm px-3 py-2.5 outline-none resize-none text-paper-ink placeholder:text-paper-line focus:border-paper-ink-light transition-colors leading-relaxed"
             style={{ fontFamily: "var(--font-body)", fontStyle: "italic" }}

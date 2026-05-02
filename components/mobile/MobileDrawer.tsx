@@ -82,7 +82,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
 
         <div className="flex-1 overflow-y-auto py-2">
           {navItem("This Week", "thisweek")}
-          {navItem("Brain Dump", "braindump")}
+          {navItem("Notes", "braindump")}
           {navItem("Goals", "goals")}
           {navItem("Projects", "projects")}
           {navItem("Archive", "archive")}
@@ -96,7 +96,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
           rel="noopener noreferrer"
           className="w-full flex items-center gap-4 px-6 py-3.5 text-left transition-colors active:bg-paper-warm/40"
         >
-          <img src="/spotify-logo.webp" alt="Spotify" className="w-4 h-4 object-contain flex-shrink-0" />
+          <img src="/spotify-logo.webp" alt="Spotify" className="w-4 h-4 object-contain flex-shrink-0" style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.4))" }} />
           <span className="text-xs uppercase tracking-[0.22em] font-bold" style={{ fontFamily: "var(--font-body)", color: "rgba(26,26,26,0.75)" }}>
             Brain Music
           </span>
@@ -126,6 +126,16 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
               Sign in with Google
             </button>
           )}
+        </div>
+
+        {/* Beta note */}
+        <div className="flex-shrink-0 border-t border-paper-line/20 px-6 py-2.5">
+          <p className="text-[10px] text-paper-ink-light text-center" style={{ fontFamily: "var(--font-body)" }}>
+            beta —{" "}
+            <a href="mailto:nesosplanner@gmail.com" className="underline underline-offset-2">
+              nesosplanner@gmail.com
+            </a>
+          </p>
         </div>
 
         {/* Footer credit */}
