@@ -7,14 +7,6 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-paper-cream px-6 py-16">
       <div className="max-w-2xl mx-auto">
 
-        <a
-          href="/planner"
-          className="text-xs uppercase tracking-[0.2em] text-paper-ink-light hover:text-paper-ink transition-colors mb-10 inline-block"
-          style={{ fontFamily: "var(--font-body)" }}
-        >
-          ← Back to Nesos
-        </a>
-
         <h1
           className="text-4xl font-bold tracking-tight text-paper-ink mt-2 mb-2"
           style={{ fontFamily: "var(--font-aboreto)" }}
