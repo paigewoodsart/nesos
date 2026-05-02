@@ -24,7 +24,7 @@ const aboreto = Aboreto({
 export const metadata: Metadata = {
   title: "Nesos",
   description: "A planner for ADHD minds",
-  icons: { icon: "/nesos-icon.webp", apple: "/nesos-icon.webp" },
+  icons: { icon: "/nesos-favicon-lm.webp", apple: "/nesos-favicon-lm.webp" },
 };
 
 export const viewport: Viewport = {
