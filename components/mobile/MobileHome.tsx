@@ -18,6 +18,13 @@ export function MobileHome({ onOpenDrawer, isLoggedIn }: MobileHomeProps) {
 
   return (
     <div className="h-screen flex flex-col items-center justify-center board-breathe board-grid relative overflow-hidden">
+      <a
+        href="/privacy"
+        className="absolute bottom-4 left-0 right-0 text-center text-[10px] text-paper-ink-light underline underline-offset-2"
+        style={{ fontFamily: "var(--font-body)", opacity: 0.6 }}
+      >
+        Privacy Policy
+      </a>
 
       {/* Hamburger — top right, fades in with phase 2 */}
       <button
