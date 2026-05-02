@@ -67,6 +67,17 @@ function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSessi
               <p className="text-[10px] text-paper-ink-light truncate" style={{ fontFamily: "var(--font-body)" }}>{email}</p>
             </div>
 
+            {/* Privacy policy */}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full px-4 py-2.5 text-sm text-paper-ink-light hover:bg-paper-warm transition-colors border-b border-paper-line/30"
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              Privacy Policy
+            </a>
+
             {/* Sign out */}
             <button
               onClick={() => { setOpen(false); signOut(); }}

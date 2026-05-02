@@ -138,6 +138,19 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
           </p>
         </div>
 
+        {/* Privacy policy */}
+        <div className="flex-shrink-0 border-t border-paper-line/20 px-6 py-2.5 text-center">
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-paper-ink-light underline underline-offset-2"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
+            Privacy Policy
+          </a>
+        </div>
+
         {/* Footer credit */}
         <div className="flex-shrink-0 border-t border-paper-line/30 px-6 py-4 flex items-center gap-3">
           <img src="/nesos-icon.webp" alt="Nesos" className="h-7 w-7 object-contain opacity-60 flex-shrink-0" />
