@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, addMonths, subMonths } from "date-fns";
 import { prevWeekId, nextWeekId, getWeekId, formatWeekRange } from "@/lib/dates";
-import { MigrateDataButton } from "./MigrateDataButton";
 import { useSession, signIn, signOut } from "next-auth/react";
 import type { View } from "./ViewToggle";
 import type { BloomState } from "@/types";
@@ -66,11 +65,6 @@ function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSessi
             <div className="px-4 py-3 border-b border-paper-line/30">
               <p className="text-sm font-semibold text-paper-ink" style={{ fontFamily: "var(--font-serif)" }}>{name}</p>
               <p className="text-[10px] text-paper-ink-light truncate" style={{ fontFamily: "var(--font-body)" }}>{email}</p>
-            </div>
-
-            {/* Migrate */}
-            <div className="px-4 py-2 border-b border-paper-line/30">
-              <MigrateDataButton userEmail={email} />
             </div>
 
             {/* Sign out */}
