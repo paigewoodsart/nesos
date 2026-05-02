@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# design files in root
+*.psd
+*.ai
+*.sketch
+*copy*.webp
+*copy*.png
