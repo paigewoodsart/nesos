@@ -12,7 +12,6 @@ interface MobileGoalsProps {
   onToggleGoal: (id: string) => void;
   onRemoveGoal: (id: string) => void;
   onAddGoal: (text: string, type: "weekly" | "longterm") => void;
-  onBack: () => void;
   onOpenDrawer: () => void;
 }
 
@@ -38,8 +37,8 @@ function GoalRow({ goal, color, onToggle, onRemove }: GoalRowProps) {
         )}
       </button>
       <span
-        className={`flex-1 text-sm ${goal.completed ? "line-through opacity-40" : "text-paper-ink"}`}
-        style={{ fontFamily: "var(--font-serif)" }}
+        className={`flex-1 text-base ${goal.completed ? "line-through opacity-40" : "text-paper-ink"}`}
+        style={{ fontFamily: "var(--font-body)" }}
       >
         {goal.text}
       </span>
@@ -64,7 +63,7 @@ function GoalSection({ title, color, goals, type, onToggle, onRemove, onAdd }: G
 
   return (
     <div className="mb-6">
-      <p className="text-[9px] uppercase tracking-widest mb-2" style={{ fontFamily: "var(--font-body)", color }}>
+      <p className="text-[13px] uppercase tracking-widest mb-2" style={{ fontFamily: "var(--font-body)", color }}>
         {title}
       </p>
       {pending.map((g) => (
@@ -72,7 +71,7 @@ function GoalSection({ title, color, goals, type, onToggle, onRemove, onAdd }: G
       ))}
       {done.length > 0 && (
         <details className="mt-1">
-          <summary className="text-[10px] italic cursor-pointer list-none select-none text-paper-ink-light py-1" style={{ fontFamily: "var(--font-serif)" }}>
+          <summary className="text-[14px] cursor-pointer list-none select-none text-paper-ink-light py-1" style={{ fontFamily: "var(--font-body)" }}>
             ▸ {done.length} done
           </summary>
           {done.map((g) => (
@@ -84,8 +83,8 @@ function GoalSection({ title, color, goals, type, onToggle, onRemove, onAdd }: G
         <span className="text-base font-bold" style={{ color }}>+</span>
         <input
           placeholder="add a goal..."
-          className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-paper-ink-light text-paper-ink"
-          style={{ fontFamily: "var(--font-serif)" }}
+          className="flex-1 text-base bg-transparent border-none outline-none placeholder:text-paper-ink-light text-paper-ink"
+          style={{ fontFamily: "var(--font-body)" }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && e.currentTarget.value.trim()) {
               onAdd(e.currentTarget.value.trim(), type);
@@ -98,29 +97,13 @@ function GoalSection({ title, color, goals, type, onToggle, onRemove, onAdd }: G
   );
 }
 
-export function MobileGoals({ weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onAddGoal, onBack, onOpenDrawer }: MobileGoalsProps) {
+export function MobileGoals({ weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onAddGoal, onOpenDrawer }: MobileGoalsProps) {
   return (
-    <div className="flex flex-col h-screen board-breathe board-grid">
-      <MobileScreenHeader title="Goals" onBack={onBack} onOpenDrawer={onOpenDrawer} accent={WEEK_COLOR} />
-      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-4 bg-paper-cream/60 backdrop-blur-sm">
-        <GoalSection
-          title="This Week"
-          color={WEEK_COLOR}
-          goals={weekGoals}
-          type="weekly"
-          onToggle={onToggleGoal}
-          onRemove={onRemoveGoal}
-          onAdd={onAddGoal}
-        />
-        <GoalSection
-          title="Long-Term"
-          color={LONG_COLOR}
-          goals={longtermGoals}
-          type="longterm"
-          onToggle={onToggleGoal}
-          onRemove={onRemoveGoal}
-          onAdd={onAddGoal}
-        />
+    <div className="flex flex-col h-dvh board-breathe board-grid">
+      <MobileScreenHeader title="Goals" onOpenDrawer={onOpenDrawer} accent={WEEK_COLOR} />
+      <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-4 bg-white/10 backdrop-blur-md">
+        <GoalSection title="This Week" color={WEEK_COLOR} goals={weekGoals} type="weekly" onToggle={onToggleGoal} onRemove={onRemoveGoal} onAdd={onAddGoal} />
+        <GoalSection title="Long-Term" color={LONG_COLOR} goals={longtermGoals} type="longterm" onToggle={onToggleGoal} onRemove={onRemoveGoal} onAdd={onAddGoal} />
       </div>
     </div>
   );

@@ -1,28 +1,39 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { MobileHome } from "./MobileHome";
 import { MobileDrawer } from "./MobileDrawer";
 import { MobileThisWeek } from "./MobileThisWeek";
+import { MobileToday } from "./MobileToday";
 import { MobileBrainDump } from "./MobileBrainDump";
 import { MobileGoals } from "./MobileGoals";
-import { MobileProject } from "./MobileProject";
 import { MobileArchive } from "./MobileArchive";
 import { MobileProjects } from "./MobileProjects";
-import { MobileWeekCalendar } from "./MobileWeekCalendar";
-import { MobileMonthCalendar } from "./MobileMonthCalendar";
 import type { Task, Goal, Client, ClientTask, ClientSession, CalendarEvent } from "@/types";
+
+const LAST_VISIT_KEY = "nesos-last-visit";
+const LAST_SCREEN_KEY = "nesos-last-screen";
+const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
 type MobileScreen =
   | "home"
+  | "today"
   | "thisweek"
   | "braindump"
   | "goals"
   | "projects"
-  | `project:${string}`
-  | "archive"
-  | "calendar-week"
-  | "calendar-month";
+  | "archive";
+
+function getInitialScreen(): MobileScreen {
+  try {
+    const last = localStorage.getItem(LAST_VISIT_KEY);
+    const lastScreen = localStorage.getItem(LAST_SCREEN_KEY) as MobileScreen | null;
+    if (last && Date.now() - Number(last) < TWENTY_FOUR_HOURS && lastScreen && lastScreen !== "home") {
+      return lastScreen;
+    }
+  } catch {}
+  return "home";
+}
 
 interface MobileViewProps {
   weekId: string;
@@ -56,6 +67,7 @@ interface MobileViewProps {
 }
 
 export function MobileView({
+  weekId,
   userEmail,
   tasks, weekGoals, longtermGoals, brainDump, sessions,
   onAddTask, onToggleTask, onRemoveTask,
@@ -65,8 +77,16 @@ export function MobileView({
   onAddClient, onUpdateClient, onRemoveClient,
   events, activeDate, onDayChange,
 }: MobileViewProps) {
-  const [screen, setScreen] = useState<MobileScreen>("home");
+  const [screen, setScreen] = useState<MobileScreen>(getInitialScreen);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Persist screen + visit timestamp
+  useEffect(() => {
+    try {
+      localStorage.setItem(LAST_VISIT_KEY, String(Date.now()));
+      localStorage.setItem(LAST_SCREEN_KEY, screen);
+    } catch {}
+  }, [screen]);
 
   const navigate = useCallback((s: string) => {
     setScreen(s as MobileScreen);
@@ -80,9 +100,21 @@ export function MobileView({
     onAddTask({ dayIndex: -1, text, completed: false, startMinute: null, endMinute: null, recurring: false, recurringPattern: null });
 
   return (
-    <div className="relative h-screen overflow-hidden bg-paper-cream">
+    <div className="relative h-dvh overflow-hidden bg-paper-cream">
       {screen === "home" && (
         <MobileHome onOpenDrawer={openDrawer} isLoggedIn={!!userEmail} />
+      )}
+
+      {screen === "today" && (
+        <MobileToday
+          clients={clients}
+          tasksByClient={tasksByClient}
+          onToggleClientTask={onToggleClientTask}
+          onArchiveClientTask={onArchiveClientTask}
+          onRemoveClientTask={onRemoveClientTask}
+          onUpdateClientTask={onUpdateClientTask}
+          onOpenDrawer={openDrawer}
+        />
       )}
 
       {screen === "thisweek" && (
@@ -95,16 +127,15 @@ export function MobileView({
           onRemoveWeekTask={onRemoveTask}
           onAddWeekTask={addWeekTask}
           onToggleClientTask={onToggleClientTask}
-          onBack={() => setScreen("home")}
           onOpenDrawer={openDrawer}
         />
       )}
 
       {screen === "braindump" && (
         <MobileBrainDump
+          weekId={weekId}
           brainDump={brainDump}
           onBrainDumpChange={onBrainDumpChange}
-          onBack={() => setScreen("home")}
           onOpenDrawer={openDrawer}
         />
       )}
@@ -116,7 +147,6 @@ export function MobileView({
           onToggleGoal={onToggleGoal}
           onRemoveGoal={onRemoveGoal}
           onAddGoal={onAddGoal}
-          onBack={() => setScreen("home")}
           onOpenDrawer={openDrawer}
         />
       )}
@@ -124,61 +154,23 @@ export function MobileView({
       {screen === "projects" && (
         <MobileProjects
           clients={clients}
-          onSelectProject={(id) => navigate(`project:${id}`)}
+          tasksByClient={tasksByClient}
           onAddClient={onAddClient}
-          onBack={() => setScreen("home")}
+          onUpdateClient={onUpdateClient}
+          onRemoveClient={onRemoveClient}
+          onAddClientTask={onAddClientTask}
+          onToggleClientTask={onToggleClientTask}
+          onArchiveClientTask={onArchiveClientTask}
+          onRemoveClientTask={onRemoveClientTask}
+          onUpdateClientTask={onUpdateClientTask}
           onOpenDrawer={openDrawer}
         />
       )}
-
-      {screen.startsWith("project:") && (() => {
-        const clientId = screen.slice(8);
-        const client = clients.find((c) => c.id === clientId);
-        if (!client) return null;
-        return (
-          <MobileProject
-            client={client}
-            tasks={tasksByClient[clientId] ?? []}
-            onAddTask={onAddClientTask}
-            onToggleTask={onToggleClientTask}
-            onArchiveTask={onArchiveClientTask}
-            onUpdateTask={onUpdateClientTask}
-            onRemoveTask={onRemoveClientTask}
-            onUpdateClient={onUpdateClient}
-            onRemoveClient={onRemoveClient}
-            onBack={() => setScreen("projects")}
-            onOpenDrawer={openDrawer}
-          />
-        );
-      })()}
 
       {screen === "archive" && (
         <MobileArchive
           clients={clients}
           tasksByClient={tasksByClient}
-          onBack={() => setScreen("home")}
-          onOpenDrawer={openDrawer}
-        />
-      )}
-
-      {screen === "calendar-week" && (
-        <MobileWeekCalendar
-          activeDate={activeDate}
-          tasks={tasks}
-          events={events}
-          onBack={() => setScreen("home")}
-          onOpenDrawer={openDrawer}
-        />
-      )}
-
-      {screen === "calendar-month" && (
-        <MobileMonthCalendar
-          activeDate={activeDate}
-          tasks={tasks}
-          sessions={sessions}
-          clients={clients}
-          onSelectDay={(d) => { onDayChange(d); navigate("calendar-week"); }}
-          onBack={() => setScreen("home")}
           onOpenDrawer={openDrawer}
         />
       )}

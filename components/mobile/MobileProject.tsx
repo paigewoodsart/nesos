@@ -113,7 +113,7 @@ export function MobileProject({
 
   return (
     <div className="flex flex-col h-screen board-breathe">
-      <MobileScreenHeader title="" onBack={onBack} onOpenDrawer={onOpenDrawer} />
+      <MobileScreenHeader title="" onOpenDrawer={onOpenDrawer} />
 
       {/* Hidden task date input */}
       <input

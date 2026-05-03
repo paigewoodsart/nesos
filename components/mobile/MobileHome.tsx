@@ -17,7 +17,7 @@ export function MobileHome({ onOpenDrawer, isLoggedIn }: MobileHomeProps) {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center board-breathe board-grid relative overflow-hidden">
+    <div className="h-dvh flex flex-col items-center justify-center board-breathe board-grid relative overflow-hidden">
       <a
         href="/privacy"
         className="absolute bottom-4 left-0 right-0 text-center text-[10px] text-paper-ink-light underline underline-offset-2"
@@ -29,15 +29,16 @@ export function MobileHome({ onOpenDrawer, isLoggedIn }: MobileHomeProps) {
       {/* Hamburger — top right, fades in with phase 2 */}
       <button
         onClick={onOpenDrawer}
-        className="absolute top-4 right-4 w-11 h-11 flex items-center justify-center text-paper-ink-light z-10"
+        className="absolute w-11 h-11 flex items-center justify-center text-paper-ink-light z-10"
         style={{
+          top: 19, right: 19,
           opacity: phase === "begin" ? 1 : 0,
           transition: "opacity 800ms ease-in",
         }}
         aria-label="Menu"
       >
-        <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
-          <path d="M0 1h20M0 8h20M0 15h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+        <svg width="23" height="19" viewBox="0 0 23 19" fill="none">
+          <path d="M0 1h23M0 9.5h23M0 18h23" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
         </svg>
       </button>
 

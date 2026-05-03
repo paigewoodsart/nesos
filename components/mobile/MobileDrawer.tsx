@@ -24,7 +24,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
     return (
       <button
         onClick={() => go(key)}
-        className="w-full flex items-center gap-4 px-6 py-3.5 text-left transition-colors active:bg-paper-warm/40"
+        className="w-full flex items-center gap-4 px-8 py-3.5 text-left transition-colors active:bg-paper-warm/40"
       >
         <span
           className="w-2 h-2 rounded-full flex-shrink-0 border"
@@ -81,26 +81,26 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
+          {navItem("Today", "today")}
           {navItem("This Week", "thisweek")}
           {navItem("Notes", "braindump")}
           {navItem("Goals", "goals")}
           {navItem("Projects", "projects")}
           {navItem("Archive", "archive")}
 
+          {/* Brain Music — below main nav */}
+          <a
+            href="https://open.spotify.com/playlist/1DS3PGYtl7dV8YGTXfbPRt"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-4 px-8 py-3.5 text-left transition-colors active:bg-paper-warm/40 mt-1 border-t border-paper-line/20"
+          >
+            <img src="/spotify-logo.webp" alt="Spotify" className="w-4 h-4 object-contain flex-shrink-0" style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.4))" }} />
+            <span className="text-xs uppercase tracking-[0.22em] font-bold" style={{ fontFamily: "var(--font-body)", color: "rgba(26,26,26,0.75)" }}>
+              Brain Music
+            </span>
+          </a>
         </div>
-
-        {/* Spotify brain music */}
-        <a
-          href="https://open.spotify.com/playlist/1DS3PGYtl7dV8YGTXfbPRt"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center gap-4 px-6 py-3.5 text-left transition-colors active:bg-paper-warm/40"
-        >
-          <img src="/spotify-logo.webp" alt="Spotify" className="w-4 h-4 object-contain flex-shrink-0" style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.4))" }} />
-          <span className="text-xs uppercase tracking-[0.22em] font-bold" style={{ fontFamily: "var(--font-body)", color: "rgba(26,26,26,0.75)" }}>
-            Brain Music
-          </span>
-        </a>
 
         {/* Auth */}
         <div className="flex-shrink-0 border-t border-paper-line/30 px-6 py-3">
