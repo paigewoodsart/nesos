@@ -123,8 +123,8 @@ function ProjectPanel({
             onChange={(e) => setEditingText(e.target.value)}
             onBlur={() => saveEditWithDue(t)}
             onKeyDown={(e) => { if (e.key === "Enter") saveEditWithDue(t); if (e.key === "Escape") setEditingId(null); }}
-            className="flex-1 text-base bg-transparent border-b border-paper-line outline-none text-paper-ink pb-0.5"
-            style={{ fontFamily: "var(--font-body)" }}
+            className="flex-1 bg-transparent border-b border-paper-line outline-none text-paper-ink pb-0.5"
+            style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
           />
           {/* Date picker */}
           <button onMouseDown={(e) => { e.preventDefault(); openEditDatePicker(); }} className="flex-shrink-0 text-paper-ink-light active:text-paper-rust">
@@ -215,8 +215,8 @@ function ProjectPanel({
               onChange={(e) => setAddText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") commitAdd(); if (e.key === "Escape") setAddOpen(false); }}
               placeholder="Task name..."
-              className="w-full text-sm bg-transparent border-b border-paper-line outline-none pb-2 text-paper-ink"
-              style={{ fontFamily: "var(--font-body)" }}
+              className="w-full bg-transparent border-b border-paper-line outline-none pb-2 text-paper-ink"
+              style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
             />
             <div className="flex items-center justify-between mt-3 gap-2">
               <button
@@ -297,8 +297,8 @@ export function MobileProjects({
         <input ref={inputRef} value={name} onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setAdding(false); }}
           placeholder="Project name..."
-          className="w-full text-sm bg-transparent border-b border-paper-line outline-none pb-2 text-paper-ink"
-          style={{ fontFamily: "var(--font-body)" }}
+          className="w-full bg-transparent border-b border-paper-line outline-none pb-2 text-paper-ink"
+          style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
         />
         <div className="mt-4 flex flex-wrap gap-2">
           {PROJECT_COLORS.map((c) => (
