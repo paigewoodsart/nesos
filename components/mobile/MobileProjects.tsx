@@ -172,7 +172,7 @@ function ProjectPanel({
         onClick={() => setNotesOpen((v) => !v)}
         className="w-full flex items-center gap-2 px-4 py-2.5 text-left border-b border-paper-line/20"
       >
-        <span className="text-[13px] uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-body)", color: client.color }}>
+        <span className="text-[13px] uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-body)", color: "rgba(26,26,26,0.75)" }}>
           {notesOpen ? "▾" : "▸"} Notes
         </span>
       </button>
@@ -202,7 +202,7 @@ function ProjectPanel({
               setAddOpen(true);
             }}
             className="flex items-center gap-2 py-2 text-sm"
-            style={{ color: client.color, fontFamily: "var(--font-body)" }}
+            style={{ color: "rgba(26,26,26,0.75)", fontFamily: "var(--font-body)" }}
           >
             <span className="text-lg font-bold leading-none">+</span>
             <span>Add task</span>
