@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { parseDueDate, dueDateUrgency, isWithinNextDays, isEventToday, formatEventTime, isoToMinutes } from "@/lib/dates";
 import { noteTextColor } from "@/lib/colors";
 import { DueBadge } from "@/components/shared/DueBadge";
@@ -633,15 +633,7 @@ export function StickyBoard({
   const manualDone = weekTasks.filter((t) => t.completed);
   const weekColor = systemConfig["__week__"].color;
 
-  const col2Ref = useRef<HTMLDivElement>(null);
-  const projectsStartRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (col2Ref.current && projectsStartRef.current) {
-      col2Ref.current.scrollTop = projectsStartRef.current.offsetTop;
-    }
-  }, []);
-
-  const overdueItems = allClientTasks
+const overdueItems = allClientTasks
     .filter((t) => !t.done && dueDateUrgency(t.dueDate) === "overdue")
     .sort((a, b) => parseDueDate(a.dueDate)!.getTime() - parseDueDate(b.dueDate)!.getTime());
 
@@ -719,38 +711,7 @@ export function StickyBoard({
       </div>
 
       {/* ── Col 2: Project list ── */}
-      <div ref={col2Ref} className="w-[300px] flex-shrink-0 flex flex-col gap-2 p-3 overflow-y-auto border-r border-white/20">
-        {/* Archive — hidden above project list, reveal by scrolling up */}
-        <div className="pb-4 mb-2 border-b border-paper-line/30">
-          <p className="text-[10px] uppercase tracking-widest text-paper-ink-light mb-2" style={{ fontFamily: "var(--font-body)" }}>Archive</p>
-          {clients.map((c) => {
-            const archived = (tasksByClient[c.id] ?? []).filter((t) => t.archived);
-            if (!archived.length) return null;
-            return (
-              <details key={c.id} className="mb-2">
-                <summary className="flex items-center gap-2 py-1 cursor-pointer list-none select-none">
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
-                  <span className="text-xs font-semibold text-paper-ink flex-1" style={{ fontFamily: "var(--font-body)" }}>{c.name}</span>
-                  <span className="text-[10px] text-paper-ink-light">{archived.length}</span>
-                </summary>
-                <div className="pl-3 mt-0.5">
-                  {archived.map((t) => (
-                    <div key={t.id} className="py-1.5 border-b border-paper-line/20 opacity-55">
-                      <span className="text-xs line-through text-paper-ink truncate block" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            );
-          })}
-          {clients.every((c) => !(tasksByClient[c.id] ?? []).some((t) => t.archived)) && (
-            <p className="text-[10px] text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Nothing archived yet.</p>
-          )}
-        </div>
-
-        {/* Scroll anchor — col scrolls here on mount */}
-        <div ref={projectsStartRef} />
-
+      <div className="w-[300px] flex-shrink-0 flex flex-col gap-2 p-3 overflow-y-auto border-r border-white/20">
         {(() => {
           const orderMap = new Map(clientOrder.map((id, i) => [id, i]));
           const ordered = [...clients].sort((a, b) => {
