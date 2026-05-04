@@ -15,6 +15,7 @@ interface WeekNavProps {
   onViewChange: (v: View) => void;
   activeDate: Date;
   onDayChange: (d: Date) => void;
+  onToggleArchive: () => void;
 }
 
 function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSession>["data"]> }) {
@@ -147,7 +148,7 @@ function NesosPhonetic() {
   );
 }
 
-export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, activeDate, onDayChange }: WeekNavProps) {
+export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, activeDate, onDayChange, onToggleArchive }: WeekNavProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const isCurrentWeek = weekId === getWeekId(new Date());
@@ -206,6 +207,20 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
 
       {/* Right: sign in / menu → view toggle → nav arrows */}
       <div className="flex items-center gap-4">
+
+        {/* Archive */}
+        <button
+          onClick={onToggleArchive}
+          title="Archive"
+          className="flex items-center justify-center w-8 h-8 text-paper-ink-light hover:text-paper-ink transition-colors"
+          aria-label="Archive"
+        >
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="1" width="14" height="4" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+            <path d="M2 5v9a1 1 0 001 1h10a1 1 0 001-1V5" stroke="currentColor" strokeWidth="1.3"/>
+            <path d="M6 8h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+          </svg>
+        </button>
 
         {/* Spotify brain music */}
         <a

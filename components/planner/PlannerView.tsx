@@ -37,6 +37,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [openSession, setOpenSession] = useState<ClientSession | null>(null);
   const [bypassLanding, setBypassLanding] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
 
   const handleDayChange = useCallback((d: Date) => {
     setActiveDate(d);
@@ -123,6 +124,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         onViewChange={setView}
         activeDate={activeDate}
         onDayChange={handleDayChange}
+        onToggleArchive={() => setShowArchive((v) => !v)}
       />
 
       <div className="flex flex-1 min-h-0">
@@ -193,6 +195,44 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
           />
         )}
       </div>
+
+      {/* Archive panel */}
+      {showArchive && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowArchive(false)} />
+          <div className="fixed top-0 right-0 z-50 h-full w-80 flex flex-col shadow-2xl border-l border-paper-line/30" style={{ backgroundColor: "rgba(249,248,246,0.97)", backdropFilter: "blur(12px)" }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-paper-line/30 flex-shrink-0">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-paper-ink" style={{ fontFamily: "var(--font-body)" }}>Archive</h2>
+              <button onClick={() => setShowArchive(false)} className="text-paper-ink-light hover:text-paper-ink text-xl leading-none">×</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {clientStore.clients.map((c) => {
+                const archived = (clientStore.tasksByClient[c.id] ?? []).filter((t) => t.archived);
+                if (!archived.length) return null;
+                return (
+                  <details key={c.id} className="mb-4">
+                    <summary className="flex items-center gap-2 py-1.5 cursor-pointer list-none select-none">
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                      <span className="text-sm font-semibold text-paper-ink flex-1" style={{ fontFamily: "var(--font-body)" }}>{c.name}</span>
+                      <span className="text-xs text-paper-ink-light">{archived.length}</span>
+                    </summary>
+                    <div className="pl-4 mt-1">
+                      {archived.map((t) => (
+                        <div key={t.id} className="flex items-center gap-2 py-2 border-b border-paper-line/20 opacity-60">
+                          <span className="flex-1 text-sm line-through text-paper-ink truncate" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                );
+              })}
+              {clientStore.clients.every((c) => !(clientStore.tasksByClient[c.id] ?? []).some((t) => t.archived)) && (
+                <p className="text-sm text-paper-ink-light text-center mt-8" style={{ fontFamily: "var(--font-body)" }}>Nothing archived yet.</p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {openSession && openSessionClient && (
         <>
