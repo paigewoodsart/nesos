@@ -70,7 +70,6 @@ function ProjectPanel({
   const [addDue, setAddDue] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
-  const dateRef = useRef<HTMLInputElement>(null);
 
   const active = tasks.filter((t) => !t.archived).sort((a, b) => {
     const da = parseDueDate(a.dueDate), db = parseDueDate(b.dueDate);
@@ -96,13 +95,9 @@ function ProjectPanel({
     if (confirm("Are you sure you want to delete this task?")) { onRemoveTask(client.id, t.id); setEditingId(null); }
   };
 
-  const openDatePicker = () => { try { dateRef.current?.showPicker(); } catch { dateRef.current?.click(); } };
-
-  const lightText = false; // tasks area is always on light bg
+const lightText = false; // tasks area is always on light bg
 
   const [editDue, setEditDue] = useState("");
-  const editDateRef = useRef<HTMLInputElement>(null);
-  const openEditDatePicker = () => { try { editDateRef.current?.showPicker(); } catch { editDateRef.current?.click(); } };
 
   const saveEditWithDue = (t: ClientTask) => {
     const updates: Partial<ClientTask> = {};
@@ -126,11 +121,14 @@ function ProjectPanel({
             className="flex-1 bg-transparent border-b border-paper-line outline-none text-paper-ink pb-0.5"
             style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
           />
-          {/* Date picker */}
-          <button onMouseDown={(e) => { e.preventDefault(); openEditDatePicker(); }} className="flex-shrink-0 text-paper-ink-light active:text-paper-rust">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-          </button>
-          <input ref={editDateRef} type="date" defaultValue={t.dueDate ?? ""} onChange={(e) => setEditDue(e.target.value)} className="sr-only" />
+          {/* Date picker — transparent overlay for iOS compatibility */}
+          <div className="relative flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+            <input type="date" defaultValue={t.dueDate ?? ""} onChange={(e) => setEditDue(e.target.value)}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              style={{ fontSize: 16 }}
+            />
+          </div>
           {/* Save check */}
           <button onMouseDown={(e) => { e.preventDefault(); saveEditWithDue(t); }} className="flex-shrink-0 text-paper-ink-light active:text-green-600">
             <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -219,21 +217,22 @@ function ProjectPanel({
               style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
             />
             <div className="flex items-center justify-between mt-3 gap-2">
-              <button
-                onClick={openDatePicker}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs flex-shrink-0"
-                style={{ color: addDue ? client.color : "rgba(26,26,26,0.5)", borderColor: addDue ? client.color : "rgba(26,26,26,0.18)", backgroundColor: addDue ? `${client.color}12` : "transparent", fontFamily: "var(--font-body)" }}
-              >
+              {/* Date picker — transparent overlay for iOS compatibility */}
+              <div className="relative flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs flex-shrink-0 cursor-pointer"
+                style={{ color: addDue ? client.color : "rgba(26,26,26,0.5)", borderColor: addDue ? client.color : "rgba(26,26,26,0.18)", backgroundColor: addDue ? `${client.color}12` : "transparent", fontFamily: "var(--font-body)" }}>
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-                {addDue || "Due date"}
-                {addDue && <span onClick={(e) => { e.stopPropagation(); setAddDue(""); }} className="ml-1 opacity-50">×</span>}
-              </button>
+                <span>{addDue || "Due date"}</span>
+                {addDue && <span onPointerDown={(e) => { e.stopPropagation(); setAddDue(""); }} className="ml-1 opacity-50">×</span>}
+                <input type="date" value={addDue} onChange={(e) => setAddDue(e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                  style={{ fontSize: 16 }}
+                />
+              </div>
               <div className="flex gap-2">
                 <button onClick={() => { setAddOpen(false); setAddText(""); setAddDue(""); }} className="text-xs text-paper-ink-light px-2" style={{ fontFamily: "var(--font-body)" }}>Cancel</button>
                 <button onClick={commitAdd} disabled={!addText.trim()} className="px-3 py-1.5 text-xs font-bold text-white rounded" style={{ backgroundColor: addText.trim() ? client.color : "rgba(0,0,0,0.12)", fontFamily: "var(--font-body)" }}>Add task</button>
               </div>
             </div>
-            <input ref={dateRef} type="date" value={addDue} onChange={(e) => setAddDue(e.target.value)} className="sr-only" />
           </div>
         )}
       </div>
