@@ -57,8 +57,8 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
       return <MobileHome isLoggedIn={authStatus === "authenticated"} onOpenDrawer={() => {}} />;
     }
     return (
-      <div className="flex items-center justify-center h-full board-breathe board-grid">
-        <img src="/nesos-favicon-lm.webp" alt="Nesos" className="h-16 w-16 object-contain animate-pulse-soft" />
+      <div className="flex items-center justify-center h-full bg-paper-cream">
+        <img src="/nesos-favicon-lm.webp" alt="Nesos" className="h-10 w-10 object-contain animate-pulse-soft" />
       </div>
     );
   }
