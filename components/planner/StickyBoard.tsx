@@ -23,13 +23,17 @@ function ClientTaskRow({
   const [textDraft, setTextDraft] = useState(task.text);
   const editDueRef = useRef(task.dueDate ?? "");
   const tappingDate = useRef(false);
+  const committed = useRef(false);
 
   const commit = () => {
+    if (committed.current) return;
+    committed.current = true;
     const t = textDraft.trim();
     if (t && t !== task.text) onRename(t); else setTextDraft(task.text);
     const newDue = editDueRef.current;
     if (newDue !== (task.dueDate ?? "")) onSetDue(newDue || null);
     setEditing(false);
+    setTimeout(() => { committed.current = false; }, 200);
   };
 
   const handleDelete = () => {
@@ -87,7 +91,7 @@ function ClientTaskRow({
           <span
             className={`text-sm leading-snug truncate cursor-text ${task.done ? "line-through opacity-50" : "font-medium"}`}
             style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
-            onClick={() => { setTextDraft(task.text); editDueRef.current = task.dueDate ?? ""; setEditing(true); }}
+            onClick={() => { setTextDraft(task.text); editDueRef.current = task.dueDate ?? ""; committed.current = false; setEditing(true); }}
           >{task.text}</span>
           <button onClick={onToggle}
             className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center mx-auto"
