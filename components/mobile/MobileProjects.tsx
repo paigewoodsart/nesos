@@ -70,6 +70,7 @@ function ProjectPanel({
   const [addDue, setAddDue] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
+  const tappingDate = useRef(false);
 
   const active = tasks.filter((t) => !t.archived).sort((a, b) => {
     const da = parseDueDate(a.dueDate), db = parseDueDate(b.dueDate);
@@ -111,24 +112,26 @@ const lightText = false; // tasks area is always on light bg
   const TaskRow = ({ t }: { t: ClientTask }) => (
     <div className="border-b border-paper-line/20">
       {editingId === t.id ? (
-        <div data-edit-row={t.id} className="flex items-center gap-2 py-2.5 px-1">
+        <div className="flex items-center gap-2 py-2.5 px-1">
           <input
             autoFocus
             value={editingText}
             onChange={(e) => setEditingText(e.target.value)}
-            onBlur={(e) => {
-              const rowEl = e.currentTarget.closest(`[data-edit-row="${t.id}"]`);
+            onBlur={() => {
               setTimeout(() => {
-                if (rowEl?.contains(document.activeElement)) return;
+                if (tappingDate.current) return;
                 saveEditWithDue(t);
-              }, 50);
+              }, 100);
             }}
             onKeyDown={(e) => { if (e.key === "Enter") saveEditWithDue(t); if (e.key === "Escape") setEditingId(null); }}
             className="flex-1 bg-transparent border-b border-paper-line outline-none text-paper-ink pb-0.5"
             style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
           />
           {/* Date picker — transparent overlay for iOS compatibility */}
-          <div className="relative flex-shrink-0 w-10 h-10 flex items-center justify-center">
+          <div
+            className="relative flex-shrink-0 w-10 h-10 flex items-center justify-center"
+            onTouchStart={() => { tappingDate.current = true; setTimeout(() => { tappingDate.current = false; }, 800); }}
+          >
             <svg width="20" height="20" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light pointer-events-none"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
             <input type="date" defaultValue={t.dueDate ?? ""} onChange={(e) => setEditDue(e.target.value)}
               className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
