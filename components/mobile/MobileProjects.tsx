@@ -122,10 +122,10 @@ const lightText = false; // tasks area is always on light bg
             style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
           />
           {/* Date picker — transparent overlay for iOS compatibility */}
-          <div className="relative flex-shrink-0">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+          <div className="relative flex-shrink-0 w-10 h-10 flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light pointer-events-none"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
             <input type="date" defaultValue={t.dueDate ?? ""} onChange={(e) => setEditDue(e.target.value)}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
               style={{ fontSize: 16 }}
             />
           </div>
