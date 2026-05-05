@@ -98,15 +98,16 @@ function ProjectPanel({
 
 const lightText = false; // tasks area is always on light bg
 
-  const [editDue, setEditDue] = useState("");
+  const editDueRef = useRef(""); // ref avoids re-render that destroys date picker
 
   const saveEditWithDue = (t: ClientTask) => {
     const updates: Partial<ClientTask> = {};
     if (editingText.trim() && editingText !== t.text) updates.text = editingText.trim();
-    if (editDue !== (t.dueDate ?? "")) updates.dueDate = editDue || null;
+    const newDue = editDueRef.current;
+    if (newDue !== (t.dueDate ?? "")) updates.dueDate = newDue || null;
     if (Object.keys(updates).length) onUpdateTask(client.id, { ...t, ...updates });
     setEditingId(null);
-    setEditDue("");
+    editDueRef.current = "";
   };
 
   const TaskRow = ({ t }: { t: ClientTask }) => (
@@ -127,13 +128,21 @@ const lightText = false; // tasks area is always on light bg
             className="flex-1 bg-transparent border-b border-paper-line outline-none text-paper-ink pb-0.5"
             style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
           />
-          {/* Date picker — transparent overlay for iOS compatibility */}
+          {/* Date picker — transparent overlay, ref-based to avoid re-render */}
           <div
             className="relative flex-shrink-0 w-10 h-10 flex items-center justify-center"
             onTouchStart={() => { tappingDate.current = true; setTimeout(() => { tappingDate.current = false; }, 800); }}
           >
             <svg width="20" height="20" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light pointer-events-none"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-            <input type="date" defaultValue={t.dueDate ?? ""} onChange={(e) => setEditDue(e.target.value)}
+            <input
+              type="date"
+              defaultValue={t.dueDate ?? ""}
+              onChange={(e) => {
+                editDueRef.current = e.target.value;
+                // Update the icon color as visual confirmation
+                const icon = e.currentTarget.previousElementSibling as SVGElement | null;
+                if (icon) icon.style.color = client.color;
+              }}
               className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
               style={{ fontSize: 16 }}
             />
