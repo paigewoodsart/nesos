@@ -111,12 +111,18 @@ const lightText = false; // tasks area is always on light bg
   const TaskRow = ({ t }: { t: ClientTask }) => (
     <div className="border-b border-paper-line/20">
       {editingId === t.id ? (
-        <div className="flex items-center gap-2 py-2.5 px-1">
+        <div data-edit-row={t.id} className="flex items-center gap-2 py-2.5 px-1">
           <input
             autoFocus
             value={editingText}
             onChange={(e) => setEditingText(e.target.value)}
-            onBlur={() => saveEditWithDue(t)}
+            onBlur={(e) => {
+              const rowEl = e.currentTarget.closest(`[data-edit-row="${t.id}"]`);
+              setTimeout(() => {
+                if (rowEl?.contains(document.activeElement)) return;
+                saveEditWithDue(t);
+              }, 50);
+            }}
             onKeyDown={(e) => { if (e.key === "Enter") saveEditWithDue(t); if (e.key === "Escape") setEditingId(null); }}
             className="flex-1 bg-transparent border-b border-paper-line outline-none text-paper-ink pb-0.5"
             style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
