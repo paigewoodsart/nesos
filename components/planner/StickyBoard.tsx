@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { parseDueDate, dueDateUrgency, isWithinNextDays, isEventToday, formatEventTime, isoToMinutes } from "@/lib/dates";
 import { noteTextColor } from "@/lib/colors";
 import { DueBadge } from "@/components/shared/DueBadge";
@@ -19,64 +19,92 @@ function ClientTaskRow({
   onSetDue: (due: string | null) => void;
   onArchive: () => void; onRename: (text: string) => void;
 }) {
-  const [editingDue, setEditingDue] = useState(false);
-  const [dueInput, setDueInput] = useState(task.dueDate ?? "");
-  const [editingText, setEditingText] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [textDraft, setTextDraft] = useState(task.text);
+  const editDueRef = useRef(task.dueDate ?? "");
+  const tappingDate = useRef(false);
 
-  const commitDue = () => { onSetDue(dueInput.trim() || null); setEditingDue(false); };
-  const commitText = () => {
+  const commit = () => {
     const t = textDraft.trim();
     if (t && t !== task.text) onRename(t); else setTextDraft(task.text);
-    setEditingText(false);
+    const newDue = editDueRef.current;
+    if (newDue !== (task.dueDate ?? "")) onSetDue(newDue || null);
+    setEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (confirm("Are you sure you want to delete this task?")) onRemove();
   };
 
   return (
     <div className="group grid items-center gap-x-2 py-1" style={{ gridTemplateColumns: "72px 1fr 24px 20px" }}>
-      <div className="flex items-center min-w-0">
-        {editingDue ? (
-          <input autoFocus value={dueInput} onChange={(e) => setDueInput(e.target.value)}
-            onBlur={commitDue}
-            onKeyDown={(e) => { if (e.key === "Enter") commitDue(); if (e.key === "Escape") setEditingDue(false); }}
-            placeholder="4/24"
-            className="w-full text-[10px] bg-transparent border-b border-paper-ink-light/50 outline-none pb-0.5"
-            style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}
+      {editing ? (
+        <div className="col-span-4 flex items-center gap-2 py-0.5">
+          <input
+            autoFocus
+            value={textDraft}
+            onChange={(e) => setTextDraft(e.target.value)}
+            onBlur={() => setTimeout(() => { if (tappingDate.current) return; commit(); }, 100)}
+            onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
+            className="flex-1 text-sm bg-transparent border-b border-paper-ink-light/50 outline-none"
+            style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
           />
-        ) : (
-          <button onClick={() => { setDueInput(task.dueDate ?? ""); setEditingDue(true); }} className="text-left w-full">
-            <DueBadge due={task.dueDate} />
+          {/* Calendar — overlay input, ref-based to avoid re-render */}
+          <div
+            className="relative w-7 h-7 flex items-center justify-center flex-shrink-0"
+            onMouseDown={() => { tappingDate.current = true; setTimeout(() => { tappingDate.current = false; }, 500); }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light pointer-events-none">
+              <rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+              <path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+            <input type="date" defaultValue={task.dueDate ?? ""}
+              onChange={(e) => { editDueRef.current = e.target.value; }}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              style={{ fontSize: 16 }}
+            />
+          </div>
+          {/* Check */}
+          <button onMouseDown={(e) => { e.preventDefault(); commit(); }}
+            className="flex-shrink-0 text-paper-ink-light hover:text-green-600 transition-colors">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M2 8l4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
-        )}
-      </div>
-      {editingText ? (
-        <input autoFocus value={textDraft} onChange={(e) => setTextDraft(e.target.value)}
-          onBlur={commitText}
-          onKeyDown={(e) => { if (e.key === "Enter") commitText(); if (e.key === "Escape") { setTextDraft(task.text); setEditingText(false); } }}
-          className="text-sm bg-transparent border-b border-paper-ink-light/50 outline-none font-medium"
-          style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}
-        />
+          {/* Trash */}
+          <button onMouseDown={(e) => { e.preventDefault(); handleDelete(); }}
+            className="flex-shrink-0 text-paper-ink-light hover:text-red-400 transition-colors">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
       ) : (
-        <span
-          className={`text-sm leading-snug truncate cursor-text ${task.done ? "line-through opacity-50" : "font-medium"}`}
-          style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}
-          onDoubleClick={() => { setTextDraft(task.text); setEditingText(true); }}
-          title="Double-click to edit"
-        >{task.text}</span>
+        <>
+          <div className="flex items-center min-w-0">
+            <DueBadge due={task.dueDate} />
+          </div>
+          <span
+            className={`text-sm leading-snug truncate cursor-text ${task.done ? "line-through opacity-50" : "font-medium"}`}
+            style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
+            onClick={() => { setTextDraft(task.text); editDueRef.current = task.dueDate ?? ""; setEditing(true); }}
+          >{task.text}</span>
+          <button onClick={onToggle}
+            className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center mx-auto"
+            style={{ borderColor: task.done ? color : "rgba(26,26,26,0.25)", backgroundColor: task.done ? color : "transparent" }}>
+            {task.done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+          </button>
+          <button onClick={onArchive}
+            className="flex-shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-paper-ink-light hover:text-paper-rust text-[13px] flex items-center justify-center"
+            title="Archive task">
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+              <rect x="1" y="1" width="12" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
+              <path d="M2 4v7.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V4" stroke="currentColor" strokeWidth="1.2"/>
+              <path d="M5 7h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </>
       )}
-      <button onClick={onToggle}
-        className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center mx-auto"
-        style={{ borderColor: task.done ? color : "rgba(26,26,26,0.25)", backgroundColor: task.done ? color : "transparent" }}>
-        {task.done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-      </button>
-      <button onClick={onArchive}
-        className="flex-shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-paper-ink-light hover:text-paper-rust text-[13px] flex items-center justify-center"
-        title="Archive task">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-          <rect x="1" y="1" width="12" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
-          <path d="M2 4v7.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V4" stroke="currentColor" strokeWidth="1.2"/>
-          <path d="M5 7h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-        </svg>
-      </button>
     </div>
   );
 }
