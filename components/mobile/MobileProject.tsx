@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { MobileScreenHeader } from "./MobileScreenHeader";
+import { MobileFooter } from "./MobileFooter";
+import { SwipeRow } from "./SwipeRow";
 import { DueBadge } from "@/components/shared/DueBadge";
 import { parseDueDate } from "@/lib/dates";
 import { noteTextColor } from "@/lib/colors";
@@ -128,6 +130,7 @@ export function MobileProject({
         }}
       />
 
+      <MobileFooter />
       {/* Color band */}
       <div className="flex-shrink-0 px-5 py-3" style={{ backgroundColor: bandColor }}>
         <div className="flex items-center justify-between">
@@ -177,11 +180,11 @@ export function MobileProject({
                 Save
               </button>
               <button onClick={() => setEditing(false)} className="text-xs px-2 py-1"
-                style={{ color: bandLight ? "rgba(255,255,255,0.7)" : "rgba(26,26,26,0.5)", fontFamily: "var(--font-serif)" }}>
+                style={{ color: bandLight ? "rgba(255,255,255,0.7)" : "rgba(26,26,26,0.5)", fontFamily: "var(--font-body)" }}>
                 Cancel
               </button>
               <button onClick={handleDelete} className="text-xs px-2 py-1 ml-auto"
-                style={{ color: "#ef4444", fontFamily: "var(--font-serif)" }}>
+                style={{ color: "#ef4444", fontFamily: "var(--font-body)" }}>
                 Delete project
               </button>
             </div>
@@ -194,7 +197,7 @@ export function MobileProject({
                 style={{ width: `${pct}%`, backgroundColor: lightText ? "rgba(255,255,255,0.85)" : "rgba(26,26,26,0.4)" }} />
             </div>
             <span className="text-xs flex-shrink-0"
-              style={{ fontFamily: "var(--font-serif)", color: lightText ? "rgba(255,255,255,0.65)" : "rgba(26,26,26,0.5)" }}>
+              style={{ fontFamily: "var(--font-body)", color: lightText ? "rgba(255,255,255,0.65)" : "rgba(26,26,26,0.5)" }}>
               {doneCount}/{total}
             </span>
           </div>
@@ -215,7 +218,7 @@ export function MobileProject({
           rows={projectNotes ? Math.min(projectNotes.split("\n").length + 1, 5) : 2}
           className="w-full bg-transparent outline-none resize-none text-sm leading-relaxed placeholder:opacity-40"
           style={{
-            fontFamily: "var(--font-serif)",
+            fontFamily: "var(--font-body)",
             fontStyle: "italic",
             color: lightText ? "rgba(255,255,255,0.85)" : "rgba(26,26,26,0.75)",
           }}
@@ -245,7 +248,7 @@ export function MobileProject({
               onKeyDown={(e) => e.key === "Enter" && commit()}
               placeholder="Task name..."
               className="w-full text-sm bg-transparent border-b border-paper-line outline-none pb-2 text-paper-ink font-medium"
-              style={{ fontFamily: "var(--font-serif)" }}
+              style={{ fontFamily: "var(--font-body)" }}
             />
             <div className="flex items-center justify-between mt-3 gap-2">
               <button
@@ -283,35 +286,29 @@ export function MobileProject({
 
         <div className="px-5 py-2 pt-12">
           {pending.map((t) => (
-            <div key={t.id} className="flex items-center gap-3 py-3 border-b border-paper-line/20">
-              <button onClick={() => openTaskDatePicker(t)} className="flex-shrink-0">
-                <DueBadge due={t.dueDate} />
-              </button>
-              <span className="flex-1 text-sm text-paper-ink" style={{ fontFamily: "var(--font-serif)" }}>{t.text}</span>
-              <button
-                onClick={() => onArchiveTask(client.id, t.id)}
-                className="flex-shrink-0 text-[10px] text-paper-ink-light px-1.5 py-0.5 rounded border border-paper-line/40 active:opacity-60"
-                style={{ fontFamily: "var(--font-body)" }}
-              >
-                done
-              </button>
-              <button
-                onClick={() => onRemoveTask(client.id, t.id)}
-                className="flex-shrink-0 text-lg leading-none text-paper-ink-light active:text-red-400"
-              >
-                ×
-              </button>
-              <button
-                onClick={() => onToggleTask(client.id, t.id)}
-                className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all"
-                style={{ borderColor: "rgba(26,26,26,0.22)" }}
-              />
-            </div>
+            <SwipeRow
+              key={t.id}
+              onArchive={() => onArchiveTask(client.id, t.id)}
+              onDelete={() => onRemoveTask(client.id, t.id)}
+              archiveColor={client.color}
+            >
+              <div className="flex items-center gap-3 py-3 border-b border-paper-line/20 bg-transparent">
+                <button onClick={() => openTaskDatePicker(t)} className="flex-shrink-0">
+                  <DueBadge due={t.dueDate} />
+                </button>
+                <span className="flex-1 text-base text-paper-ink" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
+                <button
+                  onClick={() => onToggleTask(client.id, t.id)}
+                  className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all"
+                  style={{ borderColor: "rgba(26,26,26,0.22)" }}
+                />
+              </div>
+            </SwipeRow>
           ))}
 
           {done.length > 0 && (
             <details className="mt-2">
-              <summary className="text-[10px] italic cursor-pointer list-none select-none text-paper-ink-light py-2" style={{ fontFamily: "var(--font-serif)" }}>
+              <summary className="text-[10px] italic cursor-pointer list-none select-none text-paper-ink-light py-2" style={{ fontFamily: "var(--font-body)" }}>
                 ▸ {done.length} done
               </summary>
               {done.map((t) => (
@@ -323,7 +320,7 @@ export function MobileProject({
                       <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  <span className="flex-1 text-sm line-through opacity-40 text-paper-ink truncate" style={{ fontFamily: "var(--font-serif)" }}>{t.text}</span>
+                  <span className="flex-1 text-sm line-through opacity-40 text-paper-ink truncate" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
                   <DueBadge due={t.dueDate} />
                 </div>
               ))}
@@ -332,20 +329,20 @@ export function MobileProject({
 
           {archived.length > 0 && (
             <details className="mt-2">
-              <summary className="text-[10px] italic cursor-pointer list-none select-none text-paper-ink-light py-2" style={{ fontFamily: "var(--font-serif)" }}>
+              <summary className="text-[10px] italic cursor-pointer list-none select-none text-paper-ink-light py-2" style={{ fontFamily: "var(--font-body)" }}>
                 ▸ {archived.length} archived
               </summary>
               {archived.map((t) => (
                 <div key={t.id} className="flex items-center gap-3 py-2.5 border-b border-paper-line/20 opacity-55">
                   <DueBadge due={t.dueDate} />
-                  <span className="flex-1 text-sm line-through text-paper-ink truncate" style={{ fontFamily: "var(--font-serif)" }}>{t.text}</span>
+                  <span className="flex-1 text-sm line-through text-paper-ink truncate" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
                 </div>
               ))}
             </details>
           )}
 
           {active.length === 0 && !addOpen && (
-            <p className="text-sm italic text-paper-ink-light text-center mt-12" style={{ fontFamily: "var(--font-serif)" }}>No tasks yet.</p>
+            <p className="text-sm italic text-paper-ink-light text-center mt-12" style={{ fontFamily: "var(--font-body)" }}>No tasks yet.</p>
           )}
         </div>
       </div>

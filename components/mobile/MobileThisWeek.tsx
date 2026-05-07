@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { MobileScreenHeader } from "./MobileScreenHeader";
+import { MobileFooter } from "./MobileFooter";
+import { SwipeRow } from "./SwipeRow";
 import { formatEventTime, isoToMinutes, isWithinNextDays, isEventToday, parseDueDate } from "@/lib/dates";
 import { DueBadge } from "@/components/shared/DueBadge";
 import type { Task, Client, ClientTask, CalendarEvent } from "@/types";
@@ -113,11 +115,12 @@ export function MobileThisWeek({
           <div className="mb-4">
             <p className="text-[13px] uppercase tracking-widest mb-2 text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>On My Plate</p>
             {pending.map((t) => (
-              <div key={t.id} className="group flex items-center gap-3 py-3 border-b border-paper-line/30">
-                <button onClick={() => onToggleWeekTask(t.id)} className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all" style={{ borderColor: "rgba(26,26,26,0.25)" }} />
-                <span className="flex-1 text-base text-paper-ink" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
-                <button onClick={() => onRemoveWeekTask(t.id)} className="text-paper-ink-light hover:text-paper-rust text-lg font-bold leading-none">×</button>
-              </div>
+              <SwipeRow key={t.id} onDelete={() => onRemoveWeekTask(t.id)}>
+                <div className="flex items-center gap-3 py-3 border-b border-paper-line/30 bg-transparent">
+                  <button onClick={() => onToggleWeekTask(t.id)} className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all" style={{ borderColor: "rgba(26,26,26,0.25)" }} />
+                  <span className="flex-1 text-base text-paper-ink" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
+                </div>
+              </SwipeRow>
             ))}
           </div>
         )}
@@ -143,6 +146,7 @@ export function MobileThisWeek({
         )}
       </div>
 
+      <MobileFooter />
       <div className="flex-shrink-0 border-t border-paper-line/30 px-5 py-3 bg-paper-cream/70 backdrop-blur-sm pb-8">
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold" style={{ color: CREAMSICLE }}>+</span>

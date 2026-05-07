@@ -1,6 +1,8 @@
 "use client";
 
 import { MobileScreenHeader } from "./MobileScreenHeader";
+import { MobileFooter } from "./MobileFooter";
+import { SwipeRow } from "./SwipeRow";
 import type { Goal } from "@/types";
 
 const WEEK_COLOR = "#168aad";
@@ -24,26 +26,27 @@ interface GoalRowProps {
 
 function GoalRow({ goal, color, onToggle, onRemove }: GoalRowProps) {
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-paper-line/30">
-      <button
-        onClick={onToggle}
-        className="flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
-        style={{ borderColor: goal.completed ? color : "rgba(26,26,26,0.25)", backgroundColor: goal.completed ? color : "transparent" }}
-      >
-        {goal.completed && (
-          <svg width="7" height="5" viewBox="0 0 10 8" fill="none">
-            <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        )}
-      </button>
-      <span
-        className={`flex-1 text-base ${goal.completed ? "line-through opacity-40" : "text-paper-ink"}`}
-        style={{ fontFamily: "var(--font-body)" }}
-      >
-        {goal.text}
-      </span>
-      <button onClick={onRemove} className="text-paper-ink-light hover:text-paper-rust text-lg font-bold leading-none">×</button>
-    </div>
+    <SwipeRow onDelete={onRemove}>
+      <div className="flex items-center gap-3 py-3 border-b border-paper-line/30 bg-transparent">
+        <button
+          onClick={onToggle}
+          className="flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+          style={{ borderColor: goal.completed ? color : "rgba(26,26,26,0.25)", backgroundColor: goal.completed ? color : "transparent" }}
+        >
+          {goal.completed && (
+            <svg width="7" height="5" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </button>
+        <span
+          className={`flex-1 text-base ${goal.completed ? "line-through opacity-40" : "text-paper-ink"}`}
+          style={{ fontFamily: "var(--font-body)" }}
+        >
+          {goal.text}
+        </span>
+      </div>
+    </SwipeRow>
   );
 }
 
@@ -105,6 +108,7 @@ export function MobileGoals({ weekGoals, longtermGoals, onToggleGoal, onRemoveGo
         <GoalSection title="This Week" color={WEEK_COLOR} goals={weekGoals} type="weekly" onToggle={onToggleGoal} onRemove={onRemoveGoal} onAdd={onAddGoal} />
         <GoalSection title="Long-Term" color={LONG_COLOR} goals={longtermGoals} type="longterm" onToggle={onToggleGoal} onRemove={onRemoveGoal} onAdd={onAddGoal} />
       </div>
+      <MobileFooter />
     </div>
   );
 }

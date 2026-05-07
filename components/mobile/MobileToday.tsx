@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { MobileScreenHeader } from "./MobileScreenHeader";
+import { MobileFooter } from "./MobileFooter";
+import { SwipeRow } from "./SwipeRow";
 import { parseDueDate } from "@/lib/dates";
 import { DueBadge } from "@/components/shared/DueBadge";
 import type { Client, ClientTask } from "@/types";
@@ -63,10 +65,10 @@ export function MobileToday({
     }
   };
 
-  const TaskRow = ({ t }: { t: typeof todayTasks[0] }) => (
-    <div className="border-b border-paper-line/30">
-      {editingId === t.id ? (
-        <div className="py-3 px-1 relative">
+  const TaskRow = ({ t }: { t: typeof todayTasks[0] }) => {
+    if (editingId === t.id) {
+      return (
+        <div className="border-b border-paper-line/30 py-3 px-1 relative">
           <input
             autoFocus
             value={editingText}
@@ -79,30 +81,27 @@ export function MobileToday({
           <button
             onMouseDown={(e) => { e.preventDefault(); confirmDelete(t); }}
             className="absolute bottom-3 right-1 text-paper-ink-light active:text-red-500"
-            title="Delete task"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
               <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         </div>
-      ) : (
-        <div className="flex items-center gap-3 py-2.5">
+      );
+    }
+    return (
+      <SwipeRow
+        onArchive={() => onArchiveClientTask(t.clientId, t.id)}
+        onDelete={() => onRemoveClientTask(t.clientId, t.id)}
+        archiveColor={t.clientColor}
+      >
+        <div className="border-b border-paper-line/30 flex items-center gap-3 py-2.5 bg-transparent">
           <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: t.clientColor }} />
           <div className="flex-1 min-w-0" onClick={() => startEdit(t)}>
             <span className={`block text-base truncate cursor-text ${t.done ? "line-through opacity-40" : ""}`} style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}>{t.text}</span>
             <span className="block text-[14px] uppercase tracking-[0.15em] mt-0.5" style={{ fontFamily: "var(--font-body)", color: t.clientColor, opacity: 0.8 }}>{t.clientName}</span>
           </div>
           <DueBadge due={t.dueDate} />
-          {/* Archive icon */}
-          <button onClick={() => onArchiveClientTask(t.clientId, t.id)} className="flex-shrink-0 text-paper-ink-light active:text-paper-rust">
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="1" width="14" height="4" rx="1" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M2 5v9a1 1 0 001 1h10a1 1 0 001-1V5" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M6 8h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-            </svg>
-          </button>
-          {/* Done circle */}
           <button
             onClick={() => onToggleClientTask(t.clientId, t.id)}
             className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center"
@@ -111,9 +110,9 @@ export function MobileToday({
             {t.done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
           </button>
         </div>
-      )}
-    </div>
-  );
+      </SwipeRow>
+    );
+  };
 
   return (
     <div className="flex flex-col h-dvh board-breathe board-grid">
@@ -134,6 +133,7 @@ export function MobileToday({
           <p className="text-sm text-paper-ink-light text-center mt-12" style={{ fontFamily: "var(--font-body)" }}>Nothing due today.</p>
         )}
       </div>
+      <MobileFooter />
     </div>
   );
 }

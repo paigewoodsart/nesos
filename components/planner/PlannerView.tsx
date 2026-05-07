@@ -57,7 +57,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
       return <MobileHome isLoggedIn={authStatus === "authenticated"} onOpenDrawer={() => {}} />;
     }
     return (
-      <div className="flex items-center justify-center h-full bg-paper-cream">
+      <div className="flex items-center justify-center h-dvh bg-paper-cream">
         <img src="/nesos-favicon-lm.webp" alt="Nesos" className="h-10 w-10 object-contain animate-pulse-soft" />
       </div>
     );
@@ -91,6 +91,8 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         onAddClient={clientStore.addClient}
         onUpdateClient={clientStore.updateClient}
         onRemoveClient={clientStore.removeClient}
+        onArchiveClient={clientStore.archiveClient}
+        onUnarchiveClient={clientStore.unarchiveClient}
         events={events}
         activeDate={activeDate}
         onDayChange={handleDayChange}
@@ -105,7 +107,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const weekTasks = store.tasks.filter((t) => t.dayIndex === -1);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden board-breathe board-grid">
       {/* Beta bar — desktop only, pinned to bottom */}
       <div
         className="fixed bottom-0 left-0 right-0 z-20 py-1.5 px-4 text-center text-[11px] tracking-wide border-t border-paper-line/30"
@@ -139,6 +141,8 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
             onAddClient={clientStore.addClient}
             onUpdateClient={clientStore.updateClient}
             onRemoveClient={clientStore.removeClient}
+            onArchiveClient={clientStore.archiveClient}
+            onUnarchiveClient={clientStore.unarchiveClient}
             weekTasks={weekTasks}
             onAddWeekTask={(text) =>
               store.addTask({ dayIndex: -1, text, completed: false, startMinute: null, endMinute: null, recurring: false, recurringPattern: null })

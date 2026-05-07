@@ -7,6 +7,8 @@ import { DueBadge } from "@/components/shared/DueBadge";
 import { ProgressBar } from "@/components/shared/ProgressBar";
 import { AddTaskInput } from "@/components/shared/AddTaskInput";
 import { AddGoalInline } from "@/components/shared/AddGoalInline";
+import { MiniCalendar } from "./MiniCalendar";
+import { DailyAffirmation } from "./DailyAffirmation";
 import type { Client, ClientTask, Task, Goal, CalendarEvent } from "@/types";
 
 // ── Client task row ─────────────────────────────────────────────
@@ -117,7 +119,7 @@ function ArchivedTaskRow({ task }: { task: ClientTask }) {
   return (
     <div className="grid items-center gap-x-2 py-0.5 opacity-55" style={{ gridTemplateColumns: "72px 1fr" }}>
       <DueBadge due={task.dueDate} />
-      <span className="text-xs leading-snug truncate line-through" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }} title={task.text}>{task.text}</span>
+      <span className="text-xs leading-snug truncate line-through" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }} title={task.text}>{task.text}</span>
     </div>
   );
 }
@@ -135,7 +137,7 @@ function AggregatedTaskRow({ task, clientColor, onToggle, onOpenProject }: {
         title={`Open ${task.clientName}`}
       >
         <span className="block text-sm leading-snug truncate group-hover:underline decoration-dotted underline-offset-2"
-          style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", textDecoration: task.done ? "line-through" : undefined, opacity: task.done ? 0.45 : 1 }}>
+          style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", textDecoration: task.done ? "line-through" : undefined, opacity: task.done ? 0.45 : 1 }}>
           {task.text}
         </span>
         <span className="block text-[10px] leading-none mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 truncate" style={{ fontFamily: "var(--font-body)", color: clientColor }}>
@@ -175,12 +177,12 @@ function WeekTaskRow({ task, color, onToggle, onRemove, onRename }: {
           onBlur={commit}
           onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setDraft(task.text); setEditing(false); } }}
           className="flex-1 text-sm bg-transparent border-b border-paper-ink-light/50 outline-none font-medium"
-          style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}
+          style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
         />
       ) : (
         <span
           className={`flex-1 text-sm cursor-text ${task.completed ? "line-through opacity-50" : "font-medium"}`}
-          style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}
+          style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
           onDoubleClick={() => { setDraft(task.text); setEditing(true); }}
         >{task.text}</span>
       )}
@@ -192,8 +194,8 @@ function WeekTaskRow({ task, color, onToggle, onRemove, onRename }: {
 function MeetingRow({ event }: { event: CalendarEvent }) {
   return (
     <div className="flex items-center gap-2 py-1">
-      <span className="text-[10px] font-medium text-paper-ink-light w-10 flex-shrink-0" style={{ fontFamily: "var(--font-serif)" }}>{formatEventTime(event.start)}</span>
-      <span className="flex-1 text-sm truncate" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}>{event.summary}</span>
+      <span className="text-[10px] font-medium text-paper-ink-light w-10 flex-shrink-0" style={{ fontFamily: "var(--font-body)" }}>{formatEventTime(event.start)}</span>
+      <span className="flex-1 text-sm truncate" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}>{event.summary}</span>
     </div>
   );
 }
@@ -235,12 +237,12 @@ function GoalRow({ goal, color, onToggle, onRemove, onRename }: {
           onBlur={commit}
           onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") { setDraft(goal.text); setEditing(false); } }}
           className="flex-1 text-sm bg-transparent border-b border-paper-ink-light/50 outline-none font-medium"
-          style={{ fontFamily: "var(--font-serif)", color }}
+          style={{ fontFamily: "var(--font-body)", color }}
         />
       ) : (
         <span
           className={`flex-1 text-sm leading-snug cursor-text ${goal.completed ? "line-through opacity-50" : "font-medium"}`}
-          style={{ fontFamily: "var(--font-serif)", color: goal.completed ? "#1A1A1A" : color }}
+          style={{ fontFamily: "var(--font-body)", color: goal.completed ? "#1A1A1A" : color }}
           onDoubleClick={() => { setDraft(goal.text); setEditing(true); }}
           title="Double-click to edit"
         >
@@ -262,7 +264,7 @@ function AddWeekTaskInline({ onAdd, color }: { onAdd: (text: string) => void; co
         onKeyDown={(e) => e.key === "Enter" && commit()} onBlur={commit}
         placeholder="add task..."
         className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-paper-ink-light font-medium"
-        style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}
+        style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
       />
     </div>
   );
@@ -359,8 +361,8 @@ const LINED_BODY: React.CSSProperties = {
 
 function NotePanel({
   title, color, children, footer, className = "", style: styleProp,
-  onTitleChange, onColorChange, colorOptions, onDelete,
-  collapsed = false, onToggleCollapse,
+  onTitleChange, onColorChange, colorOptions, onDelete, onArchive,
+  collapsed = false, onToggleCollapse, lined = true,
 }: {
   title: string; color: string;
   children: React.ReactNode;
@@ -371,8 +373,10 @@ function NotePanel({
   onColorChange?: (c: string) => void;
   colorOptions?: string[];
   onDelete?: () => void;
+  onArchive?: () => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  lined?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [titleDraft, setTitleDraft] = useState(title);
@@ -447,7 +451,7 @@ function NotePanel({
               onKeyDown={(e) => { if (e.key === "Enter") commitTitle(); if (e.key === "Escape") { setTitleDraft(title); setEditing(false); } }}
               onBlur={commitTitle}
               className="w-full text-sm font-semibold bg-white/60 border-b-2 border-paper-ink-light/30 outline-none px-2 py-1 text-paper-ink"
-              style={{ fontFamily: "var(--font-serif)" }}
+              style={{ fontFamily: "var(--font-body)" }}
             />
           )}
           {onColorChange && colorOptions && (
@@ -462,15 +466,29 @@ function NotePanel({
               ))}
             </div>
           )}
-          {onDelete && (
-            <button
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => { if (confirm("Remove this project?")) { onDelete(); setEditing(false); } }}
-              className="w-full py-1.5 text-xs uppercase tracking-[0.15em] text-paper-ink-light hover:text-white hover:bg-paper-ink transition-colors border border-paper-line/40"
-              style={{ fontFamily: "var(--font-body)" }}
-            >
-              Remove project
-            </button>
+          {(onDelete || onArchive) && (
+            <div className="flex gap-2">
+              {onArchive && (
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { onArchive(); setEditing(false); }}
+                  className="flex-1 py-1.5 text-xs uppercase tracking-[0.15em] text-paper-ink-light hover:bg-paper-line/20 transition-colors border border-paper-line/40"
+                  style={{ fontFamily: "var(--font-body)" }}
+                >
+                  Archive
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { if (confirm("Remove this project?")) { onDelete(); setEditing(false); } }}
+                  className="flex-1 py-1.5 text-xs uppercase tracking-[0.15em] text-paper-ink-light hover:text-white hover:bg-paper-ink transition-colors border border-paper-line/40"
+                  style={{ fontFamily: "var(--font-body)" }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -486,7 +504,7 @@ function NotePanel({
             borderRight: "1px solid rgba(255,255,255,0.45)",
             borderBottom: "1px solid rgba(255,255,255,0.45)",
           }}>
-          <div className="flex-1 overflow-y-auto px-4 py-3" style={LINED_BODY}>
+          <div className="flex-1 overflow-y-auto px-4 py-3" style={lined ? LINED_BODY : undefined}>
             {children}
           </div>
           {footer && (
@@ -538,7 +556,7 @@ function AddProjectInline({ onAdd }: { onAdd: (name: string, color: string) => P
             onKeyDown={(e) => e.key === "Enter" && commit()}
             placeholder="Project name..."
             className="w-full text-sm border-b-2 border-paper-ink-light/40 bg-transparent outline-none pb-1 font-medium placeholder:text-paper-ink-light"
-            style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A" }}
+            style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
           />
           <div className="flex gap-1.5 flex-wrap">
             {CLIENT_COLORS_PALETTE.map((c) => (
@@ -551,12 +569,12 @@ function AddProjectInline({ onAdd }: { onAdd: (name: string, color: string) => P
           <div className="flex gap-2">
             <button onClick={commit} disabled={!name.trim()}
               className="flex-1 py-1.5 text-sm font-medium text-white disabled:opacity-40"
-              style={{ backgroundColor: color, fontFamily: "var(--font-serif)" }}>
+              style={{ backgroundColor: color, fontFamily: "var(--font-body)" }}>
               Add {name.trim() || "project"}
             </button>
             <button onClick={() => setOpen(false)}
               className="px-3 text-sm text-paper-ink-light hover:text-paper-ink"
-              style={{ fontFamily: "var(--font-serif)" }}>
+              style={{ fontFamily: "var(--font-body)" }}>
               Cancel
             </button>
           </div>
@@ -580,6 +598,8 @@ interface StickyBoardProps {
   onAddClient: (name: string, color: string) => Promise<Client>;
   onUpdateClient: (client: Client) => void;
   onRemoveClient: (id: string) => void;
+  onArchiveClient: (id: string) => void;
+  onUnarchiveClient: (id: string) => void;
   weekTasks: Task[];
   onAddWeekTask: (text: string) => void;
   onToggleWeekTask: (id: string) => void;
@@ -598,7 +618,7 @@ interface StickyBoardProps {
 export function StickyBoard({
   clients, tasksByClient, events,
   onAddClientTask, onToggleClientTask, onRemoveClientTask, onUpdateClientTask, onArchiveClientTask,
-  onAddClient, onUpdateClient, onRemoveClient,
+  onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
   weekTasks, onAddWeekTask, onToggleWeekTask, onRemoveWeekTask, onRenameWeekTask,
   weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal,
   brainDump, onBrainDumpChange,
@@ -693,12 +713,12 @@ const overdueItems = allClientTasks
                 setPanelDragKey(null);
               }}
               onDragEnd={() => setPanelDragKey(null)}
-              style={{ flex: panelCollapsed[key] ? "0 0 auto" : (isGoals ? 2 : 1), minHeight: 0, opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
+              style={{ flex: panelCollapsed[key] ? "0 0 auto" : (isGoals ? "0 0 auto" : 1), minHeight: 0, opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
               className="flex flex-col overflow-hidden"
             >
               {isGoals ? (
                 <NotePanel
-                  title={systemConfig["__goals__"].title}
+                  title={new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                   color={systemConfig["__goals__"].color}
                   colorOptions={WARM_COLORS}
                   onTitleChange={(title) => updateSystemConfig("__goals__", { title })}
@@ -706,20 +726,13 @@ const overdueItems = allClientTasks
                   collapsed={!!panelCollapsed["__goals__"]}
                   onToggleCollapse={() => togglePanelCollapse("__goals__")}
                   className="flex-1"
+                  lined={false}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.6 }}>This Week</p>
-                  {weekGoals.length === 0 && <p className="text-xs italic mb-2" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.45 }}>No goals yet.</p>}
-                  {weekGoals.map((g) => <GoalRow key={g.id} goal={g} color="#168aad" onToggle={onToggleGoal} onRemove={onRemoveGoal} onRename={onRenameGoal} />)}
-                  <AddGoalInline onAdd={(t) => onAddGoal(t, "weekly")} color="#168aad" placeholder="add weekly goal..." />
-                  <div className="mt-3 mb-2 border-t" style={{ borderColor: "rgba(26,26,26,0.08)" }} />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.6 }}>Long-Term</p>
-                  {longtermGoals.length === 0 && <p className="text-xs italic mb-2" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.45 }}>Dream big.</p>}
-                  {longtermGoals.map((g) => <GoalRow key={g.id} goal={g} color="#34a0a4" onToggle={onToggleGoal} onRemove={onRemoveGoal} onRename={onRenameGoal} />)}
-                  <AddGoalInline onAdd={(t) => onAddGoal(t, "longterm")} color="#34a0a4" placeholder="add long-term goal..." />
+                  <DailyAffirmation color={systemConfig["__goals__"].color} />
                 </NotePanel>
               ) : (
                 <NotePanel
-                  title={systemConfig["__braindump__"].title}
+                  title="Calendar"
                   color={systemConfig["__braindump__"].color}
                   colorOptions={WARM_COLORS}
                   onTitleChange={(title) => updateSystemConfig("__braindump__", { title })}
@@ -727,14 +740,9 @@ const overdueItems = allClientTasks
                   collapsed={!!panelCollapsed["__braindump__"]}
                   onToggleCollapse={() => togglePanelCollapse("__braindump__")}
                   className="flex-1"
+                  lined={false}
                 >
-                  <textarea
-                    value={brainDump}
-                    onChange={(e) => onBrainDumpChange(e.target.value)}
-                    placeholder="dump it all here — no judgment, no structure needed."
-                    className="w-full h-full bg-transparent border-none outline-none resize-none text-sm leading-relaxed placeholder:text-paper-ink-light/70"
-                    style={{ fontFamily: "var(--font-body)", fontStyle: "italic", color: "#1A1A1A", minHeight: 80 }}
-                  />
+                  <MiniCalendar />
                 </NotePanel>
               )}
             </div>
@@ -746,12 +754,15 @@ const overdueItems = allClientTasks
       <div className="w-[300px] flex-shrink-0 flex flex-col gap-2 p-3 overflow-y-auto border-r border-white/20">
         {(() => {
           const orderMap = new Map(clientOrder.map((id, i) => [id, i]));
-          const ordered = [...clients].sort((a, b) => {
+          const allOrdered = [...clients].sort((a, b) => {
             const ai = orderMap.has(a.id) ? orderMap.get(a.id)! : clients.length;
             const bi = orderMap.has(b.id) ? orderMap.get(b.id)! : clients.length;
             return ai - bi;
           });
-          return ordered.map((c, i) => {
+          const ordered = allOrdered.filter((c) => !c.archived);
+          const archivedClients = allOrdered.filter((c) => c.archived);
+          return (<>
+          {ordered.map((c, i) => {
           const active = activeClientId === c.id;
           const tc = noteTextColor(c.color);
           const isDragging = dragId === c.id;
@@ -803,7 +814,31 @@ const overdueItems = allClientTasks
               </button>
             </div>
           );
-          });
+          })}
+          {archivedClients.length > 0 && (
+            <details className="mt-2">
+              <summary className="text-[10px] uppercase tracking-[0.2em] cursor-pointer list-none select-none text-paper-ink-light py-1 px-1 flex items-center gap-1.5"
+                style={{ fontFamily: "var(--font-body)" }}>
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 2.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {archivedClients.length} archived
+              </summary>
+              <div className="mt-1 flex flex-col gap-1.5">
+                {archivedClients.map((c) => (
+                  <div key={c.id} className="flex items-center gap-2 px-3 py-2 rounded-sm"
+                    style={{ backgroundColor: `${c.color}30`, border: `1px solid ${c.color}40` }}>
+                    <span className="flex-1 text-xs uppercase tracking-[0.15em] truncate text-paper-ink-light"
+                      style={{ fontFamily: "var(--font-body)" }}>{c.name}</span>
+                    <button onClick={() => onUnarchiveClient(c.id)}
+                      className="text-[10px] text-paper-ink-light hover:text-paper-ink uppercase tracking-[0.12em] flex-shrink-0"
+                      style={{ fontFamily: "var(--font-body)" }}>
+                      restore
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+          </>);
         })()}
         <AddProjectInline onAdd={async (name, color) => {
           const client = await onAddClient(name, color);
@@ -831,6 +866,7 @@ const overdueItems = allClientTasks
               colorOptions={CLIENT_COLORS_PALETTE}
               onTitleChange={(name) => onUpdateClient({ ...activeClient, name })}
               onColorChange={(color) => onUpdateClient({ ...activeClient, color })}
+              onArchive={() => { onArchiveClient(activeClient.id); setActiveClientId(null); }}
               onDelete={() => { onRemoveClient(activeClient.id); setActiveClientId(null); }}
               footer={<ProgressBar done={doneCount} total={active.length} color={activeClient.color} />}
             >
@@ -844,12 +880,12 @@ const overdueItems = allClientTasks
                 }}
                 placeholder="project notes..."
                 rows={2}
-                className="w-full text-xs bg-transparent border-b border-paper-line/30 outline-none resize-none text-paper-ink leading-relaxed pb-1 mb-3 italic"
-                style={{ fontFamily: "var(--font-serif)" }}
+                className="w-full text-sm bg-transparent border-b border-paper-line/30 outline-none resize-none text-paper-ink leading-relaxed pb-1 mb-3"
+                style={{ fontFamily: "var(--font-body)" }}
               />
 
               {sortedActive.length === 0 && archived.length === 0 && (
-                <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.5 }}>No tasks yet.</p>
+                <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>No tasks yet.</p>
               )}
               {sortedActive.length > 0 && (
                 <>
@@ -867,7 +903,7 @@ const overdueItems = allClientTasks
               )}
               {archived.length > 0 && (
                 <details className="mt-2">
-                  <summary className="text-[10px] italic cursor-pointer list-none flex items-center gap-1 pb-1 select-none" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.45 }}>
+                  <summary className="text-[10px] italic cursor-pointer list-none flex items-center gap-1 pb-1 select-none" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.45 }}>
                     ▸ {archived.length} archived
                   </summary>
                   <div className="mt-1 space-y-0.5">
@@ -880,7 +916,7 @@ const overdueItems = allClientTasks
           );
         })() : (
           <div className="h-full flex items-center justify-center">
-            <p className="text-sm italic text-paper-ink-light" style={{ fontFamily: "var(--font-serif)" }}>← select a project</p>
+            <p className="text-sm italic text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>← select a project</p>
           </div>
         )}
       </div>
@@ -923,7 +959,7 @@ const overdueItems = allClientTasks
                   className="flex-1"
                 >
                   {overdueItems.length === 0 ? (
-                    <p className="text-xs italic" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.5 }}>Nothing overdue.</p>
+                    <p className="text-xs italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Nothing overdue.</p>
                   ) : (
                     overdueItems.map((t) => (
                       <AggregatedTaskRow key={t.id} task={t} clientColor={t.clientColor}
@@ -945,7 +981,7 @@ const overdueItems = allClientTasks
                   className="flex-1"
                 >
                   {todayMeetings.length === 0 && todayTasks.length === 0 && (
-                    <p className="text-xs italic" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.5 }}>Nothing due today.</p>
+                    <p className="text-xs italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Nothing due today.</p>
                   )}
                   {todayMeetings.length > 0 && (
                     <>
@@ -992,7 +1028,7 @@ const overdueItems = allClientTasks
                   )}
                   <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>On My Plate</p>
                   {manualPending.length === 0 && weekTasks7.length === 0 && weekMeetings.length === 0 && (
-                    <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.4 }}>Nothing yet.</p>
+                    <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>Nothing yet.</p>
                   )}
                   {manualPending.map((t) => (
                     <WeekTaskRow key={t.id} task={t} color={weekColor}
@@ -1003,7 +1039,7 @@ const overdueItems = allClientTasks
                   ))}
                   {manualDone.length > 0 && (
                     <details className="mt-1">
-                      <summary className="text-[10px] italic cursor-pointer list-none flex items-center gap-1 pb-1 select-none" style={{ fontFamily: "var(--font-serif)", color: "#1A1A1A", opacity: 0.5 }}>▸ {manualDone.length} done</summary>
+                      <summary className="text-[10px] italic cursor-pointer list-none flex items-center gap-1 pb-1 select-none" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>▸ {manualDone.length} done</summary>
                       {manualDone.map((t) => (
                         <WeekTaskRow key={t.id} task={t} color={weekColor}
                           onToggle={() => onToggleWeekTask(t.id)}

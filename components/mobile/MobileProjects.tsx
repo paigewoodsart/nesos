@@ -2,9 +2,147 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MobileScreenHeader } from "./MobileScreenHeader";
+import { MobileFooter } from "./MobileFooter";
+import { SwipeRow } from "./SwipeRow";
 import { parseDueDate } from "@/lib/dates";
 import { DueBadge } from "@/components/shared/DueBadge";
+import {
+  DndContext, TouchSensor, useSensor, useSensors, closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Client, ClientTask } from "@/types";
+
+function loadTaskOrder(clientId: string): string[] {
+  try { return JSON.parse(localStorage.getItem(`task-order-${clientId}`) ?? "[]"); } catch { return []; }
+}
+function saveTaskOrder(clientId: string, ids: string[]) {
+  try { localStorage.setItem(`task-order-${clientId}`, JSON.stringify(ids)); } catch {}
+}
+
+function GripIcon() {
+  return (
+    <svg width="10" height="14" viewBox="0 0 10 14" fill="none" className="touch-none">
+      <circle cx="3" cy="2.5" r="1.2" fill="currentColor"/>
+      <circle cx="7" cy="2.5" r="1.2" fill="currentColor"/>
+      <circle cx="3" cy="7" r="1.2" fill="currentColor"/>
+      <circle cx="7" cy="7" r="1.2" fill="currentColor"/>
+      <circle cx="3" cy="11.5" r="1.2" fill="currentColor"/>
+      <circle cx="7" cy="11.5" r="1.2" fill="currentColor"/>
+    </svg>
+  );
+}
+
+interface SortableTaskItemProps {
+  t: ClientTask;
+  client: Client;
+  editingId: string | null;
+  editingText: string;
+  editDueRef: React.MutableRefObject<string>;
+  tappingDate: React.MutableRefObject<boolean>;
+  onStartEdit: (t: ClientTask) => void;
+  onSaveEdit: (t: ClientTask) => void;
+  onCancelEdit: () => void;
+  onSetEditText: (s: string) => void;
+  onConfirmDelete: (t: ClientTask) => void;
+  onArchive: (t: ClientTask) => void;
+  onRemove: (t: ClientTask) => void;
+  onToggle: (t: ClientTask) => void;
+}
+
+function SortableTaskItem({
+  t, client, editingId, editingText, editDueRef, tappingDate,
+  onStartEdit, onSaveEdit, onCancelEdit, onSetEditText, onConfirmDelete,
+  onArchive, onRemove, onToggle,
+}: SortableTaskItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: t.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    position: "relative",
+    zIndex: isDragging ? 20 : "auto",
+  };
+
+  if (editingId === t.id) {
+    return (
+      <div ref={setNodeRef} style={style} className="border-b border-paper-line/20 flex items-center gap-2 py-2.5 px-1">
+        <input
+          autoFocus
+          value={editingText}
+          onChange={(e) => onSetEditText(e.target.value)}
+          onBlur={() => { setTimeout(() => { if (tappingDate.current) return; onSaveEdit(t); }, 100); }}
+          onKeyDown={(e) => { if (e.key === "Enter") onSaveEdit(t); if (e.key === "Escape") onCancelEdit(); }}
+          className="flex-1 bg-transparent border-b border-paper-line outline-none text-paper-ink pb-0.5"
+          style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
+        />
+        <div
+          className="relative flex-shrink-0 w-10 h-10 flex items-center justify-center"
+          onTouchStart={() => { tappingDate.current = true; setTimeout(() => { tappingDate.current = false; }, 800); }}
+        >
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light pointer-events-none">
+            <rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/>
+            <path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+          <input
+            type="date"
+            defaultValue={t.dueDate ?? ""}
+            onChange={(e) => {
+              editDueRef.current = e.target.value;
+              const icon = e.currentTarget.previousElementSibling as SVGElement | null;
+              if (icon) icon.style.color = client.color;
+            }}
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            style={{ fontSize: 16 }}
+          />
+        </div>
+        <button onMouseDown={(e) => { e.preventDefault(); onSaveEdit(t); }} className="flex-shrink-0 text-paper-ink-light active:text-green-600">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <button onMouseDown={(e) => { e.preventDefault(); onConfirmDelete(t); }} className="flex-shrink-0 text-paper-ink-light active:text-red-500 scale-125">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <SwipeRow onArchive={() => onArchive(t)} onDelete={() => onRemove(t)} archiveColor={client.color}>
+        <div className="border-b border-paper-line/20 flex items-center gap-2 py-2.5 px-1 bg-white/10">
+          <button
+            {...attributes}
+            {...listeners}
+            className="flex-shrink-0 text-paper-ink-light/30 active:text-paper-ink-light p-0.5 touch-none"
+            tabIndex={-1}
+          >
+            <GripIcon />
+          </button>
+          <DueBadge due={t.dueDate} />
+          <span
+            className={`flex-1 text-base cursor-text ${t.done ? "line-through opacity-40" : "text-paper-ink"}`}
+            style={{ fontFamily: "var(--font-body)" }}
+            onClick={() => !t.done && onStartEdit(t)}
+          >
+            {t.text}
+          </span>
+          <button
+            onClick={() => onToggle(t)}
+            className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center"
+            style={{ borderColor: t.done ? client.color : "rgba(26,26,26,0.22)", backgroundColor: t.done ? client.color : "transparent" }}
+          >
+            {t.done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+          </button>
+        </div>
+      </SwipeRow>
+    </div>
+  );
+}
 
 const PROJECT_COLORS = [
   "#d9ed92","#b5e48c","#99d98c","#76c893","#52b69a","#34a0a4","#168aad","#1a759f",
@@ -20,6 +158,8 @@ interface MobileProjectsProps {
   onAddClient: (name: string, color: string) => Promise<Client>;
   onUpdateClient: (client: Client) => void;
   onRemoveClient: (id: string) => void;
+  onArchiveClient: (id: string) => void;
+  onUnarchiveClient: (id: string) => void;
   onAddClientTask: (clientId: string, text: string, due?: string | null) => Promise<ClientTask>;
   onToggleClientTask: (clientId: string, taskId: string) => void;
   onArchiveClientTask: (clientId: string, taskId: string) => void;
@@ -28,29 +168,13 @@ interface MobileProjectsProps {
   onOpenDrawer: () => void;
 }
 
-function ArchiveIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-      <rect x="1" y="1" width="14" height="4" rx="1" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M2 5v9a1 1 0 001 1h10a1 1 0 001-1V5" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M6 8h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
 
 interface ProjectPanelProps {
   client: Client;
   tasks: ClientTask[];
   onUpdateClient: (c: Client) => void;
   onRemoveClient: (id: string) => void;
+  onArchiveClient: (id: string) => void;
   onAddTask: (clientId: string, text: string, due?: string | null) => Promise<ClientTask>;
   onToggleTask: (clientId: string, taskId: string) => void;
   onArchiveTask: (clientId: string, taskId: string) => void;
@@ -60,11 +184,14 @@ interface ProjectPanelProps {
 
 function ProjectPanel({
   client, tasks,
-  onUpdateClient, onRemoveClient,
+  onUpdateClient, onRemoveClient, onArchiveClient,
   onAddTask, onToggleTask, onArchiveTask, onRemoveTask, onUpdateTask,
 }: ProjectPanelProps) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState(client.notes ?? "");
+  const [editingProject, setEditingProject] = useState(false);
+  const [editName, setEditName] = useState(client.name);
+  const [editColor, setEditColor] = useState(client.color);
   const [addOpen, setAddOpen] = useState(false);
   const [addText, setAddText] = useState("");
   const [addDue, setAddDue] = useState("");
@@ -72,14 +199,32 @@ function ProjectPanel({
   const [editingText, setEditingText] = useState("");
   const tappingDate = useRef(false);
 
-  const active = tasks.filter((t) => !t.archived).sort((a, b) => {
-    const da = parseDueDate(a.dueDate), db = parseDueDate(b.dueDate);
-    if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
-    return da.getTime() - db.getTime();
+  const [taskOrder, setTaskOrder] = useState<string[]>(() => loadTaskOrder(client.id));
+  const sensors = useSensors(useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }));
+
+  const active = tasks.filter((t) => !t.archived);
+  const pendingUnsorted = active.filter((t) => !t.done);
+  const pending = [...pendingUnsorted].sort((a, b) => {
+    const ai = taskOrder.indexOf(a.id), bi = taskOrder.indexOf(b.id);
+    if (ai === -1 && bi === -1) {
+      const da = parseDueDate(a.dueDate), db = parseDueDate(b.dueDate);
+      if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
+      return da.getTime() - db.getTime();
+    }
+    if (ai === -1) return 1; if (bi === -1) return -1;
+    return ai - bi;
   });
-  const pending = active.filter((t) => !t.done);
   const done = active.filter((t) => t.done);
   const archived = tasks.filter((t) => t.archived);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active: dragActive, over } = event;
+    if (!over || dragActive.id === over.id) return;
+    const ids = pending.map((t) => t.id);
+    const newOrder = arrayMove(ids, ids.indexOf(dragActive.id as string), ids.indexOf(over.id as string));
+    setTaskOrder(newOrder);
+    saveTaskOrder(client.id, newOrder);
+  };
 
   const commitAdd = async () => {
     if (!addText.trim()) return;
@@ -87,16 +232,20 @@ function ProjectPanel({
     setAddText(""); setAddDue(""); setAddOpen(false);
   };
 
-  const startEdit = (t: ClientTask) => { setEditingId(t.id); setEditingText(t.text); };
-  const saveEdit = (t: ClientTask) => {
-    if (editingText.trim() && editingText !== t.text) onUpdateTask(client.id, { ...t, text: editingText.trim() });
-    setEditingId(null);
+  const saveProjectEdit = () => {
+    onUpdateClient({ ...client, name: editName.trim() || client.name, color: editColor });
+    setEditingProject(false);
   };
+
+  const handleDeleteProject = () => {
+    if (!confirm(`Delete "${client.name}" and all its tasks?`)) return;
+    onRemoveClient(client.id);
+  };
+
+  const startEdit = (t: ClientTask) => { setEditingId(t.id); setEditingText(t.text); };
   const confirmDelete = (t: ClientTask) => {
     if (confirm("Are you sure you want to delete this task?")) { onRemoveTask(client.id, t.id); setEditingId(null); }
   };
-
-const lightText = false; // tasks area is always on light bg
 
   const editDueRef = useRef(""); // ref avoids re-render that destroys date picker
 
@@ -110,79 +259,62 @@ const lightText = false; // tasks area is always on light bg
     editDueRef.current = "";
   };
 
-  const TaskRow = ({ t }: { t: ClientTask }) => (
-    <div className="border-b border-paper-line/20">
-      {editingId === t.id ? (
-        <div className="flex items-center gap-2 py-2.5 px-1">
-          <input
-            autoFocus
-            value={editingText}
-            onChange={(e) => setEditingText(e.target.value)}
-            onBlur={() => {
-              setTimeout(() => {
-                if (tappingDate.current) return;
-                saveEditWithDue(t);
-              }, 100);
-            }}
-            onKeyDown={(e) => { if (e.key === "Enter") saveEditWithDue(t); if (e.key === "Escape") setEditingId(null); }}
-            className="flex-1 bg-transparent border-b border-paper-line outline-none text-paper-ink pb-0.5"
-            style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
-          />
-          {/* Date picker — transparent overlay, ref-based to avoid re-render */}
-          <div
-            className="relative flex-shrink-0 w-10 h-10 flex items-center justify-center"
-            onTouchStart={() => { tappingDate.current = true; setTimeout(() => { tappingDate.current = false; }, 800); }}
-          >
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light pointer-events-none"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-            <input
-              type="date"
-              defaultValue={t.dueDate ?? ""}
-              onChange={(e) => {
-                editDueRef.current = e.target.value;
-                // Update the icon color as visual confirmation
-                const icon = e.currentTarget.previousElementSibling as SVGElement | null;
-                if (icon) icon.style.color = client.color;
-              }}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              style={{ fontSize: 16 }}
-            />
-          </div>
-          {/* Save check */}
-          <button onMouseDown={(e) => { e.preventDefault(); saveEditWithDue(t); }} className="flex-shrink-0 text-paper-ink-light active:text-green-600">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </button>
-          {/* Trash */}
-          <button onMouseDown={(e) => { e.preventDefault(); confirmDelete(t); }} className="flex-shrink-0 text-paper-ink-light active:text-red-500 scale-125">
-            <TrashIcon />
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 py-2.5 px-1">
-          <DueBadge due={t.dueDate} />
-          <span
-            className={`flex-1 text-base cursor-text ${t.done ? "line-through opacity-40" : "text-paper-ink"}`}
-            style={{ fontFamily: "var(--font-body)" }}
-            onClick={() => !t.done && startEdit(t)}
-          >
-            {t.text}
-          </span>
-          <button onClick={() => onArchiveTask(client.id, t.id)} className="flex-shrink-0 text-paper-ink-light active:text-paper-rust">
-            <ArchiveIcon />
-          </button>
-          <button
-            onClick={() => onToggleTask(client.id, t.id)}
-            className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center"
-            style={{ borderColor: t.done ? client.color : "rgba(26,26,26,0.22)", backgroundColor: t.done ? client.color : "transparent" }}
-          >
-            {t.done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-          </button>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="mx-0 mb-[3px] overflow-hidden bg-white/10 backdrop-blur-md">
+      {/* Edit project bar */}
+      {!editingProject ? (
+        <div className="flex items-center justify-between px-4 py-2 border-b border-paper-line/20">
+          <button
+            onClick={() => { setEditingProject(true); setEditName(client.name); setEditColor(client.color); }}
+            className="flex items-center gap-1.5 text-[12px] text-paper-ink-light active:opacity-60"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+              <path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Edit project
+          </button>
+        </div>
+      ) : (
+        <div className="px-4 pt-3 pb-3 border-b border-paper-line/20">
+          <input
+            autoFocus
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") saveProjectEdit(); if (e.key === "Escape") setEditingProject(false); }}
+            className="w-full bg-transparent border-b border-paper-line outline-none pb-1.5 text-paper-ink"
+            style={{ fontFamily: "var(--font-body)", fontSize: 15 }}
+          />
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {PROJECT_COLORS.map((c) => (
+              <button key={c} onClick={() => setEditColor(c)}
+                className="w-7 h-7 rounded-full active:scale-95 transition-transform"
+                style={{ backgroundColor: c, outline: c === editColor ? `3px solid ${c}` : "none", outlineOffset: 2, boxShadow: c === editColor ? "0 0 0 1px rgba(255,255,255,0.7) inset" : "none" }}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-3 mt-3">
+            <button onClick={saveProjectEdit} className="px-3 py-1.5 text-xs font-bold text-white"
+              style={{ backgroundColor: editColor, fontFamily: "var(--font-body)" }}>
+              Save
+            </button>
+            <button onClick={() => setEditingProject(false)} className="text-xs px-2 py-1.5 text-paper-ink-light"
+              style={{ fontFamily: "var(--font-body)" }}>
+              Cancel
+            </button>
+            <button onClick={() => { onArchiveClient(client.id); setEditingProject(false); }} className="text-xs px-2 py-1.5"
+              style={{ color: "#1a759f", fontFamily: "var(--font-body)" }}>
+              Archive
+            </button>
+            <button onClick={handleDeleteProject} className="text-xs px-2 py-1.5 ml-auto"
+              style={{ color: "#ef4444", fontFamily: "var(--font-body)" }}>
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Notes dropdown */}
       <button
         onClick={() => setNotesOpen((v) => !v)}
@@ -200,7 +332,7 @@ const lightText = false; // tasks area is always on light bg
             onBlur={() => { if (notes !== (client.notes ?? "")) onUpdateClient({ ...client, notes }); }}
             placeholder="project notes, context, ideas..."
             rows={3}
-            className="w-full bg-transparent outline-none resize-none text-sm leading-relaxed italic text-paper-ink placeholder:text-paper-ink-light/50"
+            className="w-full bg-transparent outline-none resize-none text-base leading-relaxed text-paper-ink placeholder:text-paper-ink-light/50"
             style={{ fontFamily: "var(--font-body)" }}
           />
         </div>
@@ -257,12 +389,44 @@ const lightText = false; // tasks area is always on light bg
 
       {/* Task list */}
       <div className="px-3">
-        {pending.map((t) => <TaskRow key={t.id} t={t} />)}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={pending.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+            {pending.map((t) => (
+              <SortableTaskItem
+                key={t.id}
+                t={t}
+                client={client}
+                editingId={editingId}
+                editingText={editingText}
+                editDueRef={editDueRef}
+                tappingDate={tappingDate}
+                onStartEdit={startEdit}
+                onSaveEdit={saveEditWithDue}
+                onCancelEdit={() => setEditingId(null)}
+                onSetEditText={setEditingText}
+                onConfirmDelete={confirmDelete}
+                onArchive={(t) => onArchiveTask(client.id, t.id)}
+                onRemove={(t) => onRemoveTask(client.id, t.id)}
+                onToggle={(t) => onToggleTask(client.id, t.id)}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
 
         {done.length > 0 && (
           <details>
             <summary className="text-[14px] cursor-pointer list-none select-none text-paper-ink-light py-2" style={{ fontFamily: "var(--font-body)" }}>▸ {done.length} done</summary>
-            {done.map((t) => <TaskRow key={t.id} t={t} />)}
+            {done.map((t) => (
+              <SwipeRow key={t.id} onArchive={() => onArchiveTask(client.id, t.id)} onDelete={() => onRemoveTask(client.id, t.id)} archiveColor={client.color}>
+                <div className="border-b border-paper-line/20 flex items-center gap-3 py-2.5 px-1 bg-white/10">
+                  <DueBadge due={t.dueDate} />
+                  <span className="flex-1 text-base line-through opacity-40 text-paper-ink" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
+                  <button onClick={() => onToggleTask(client.id, t.id)} className="flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center" style={{ borderColor: client.color, backgroundColor: client.color }}>
+                    <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                </div>
+              </SwipeRow>
+            ))}
           </details>
         )}
 
@@ -288,7 +452,7 @@ const lightText = false; // tasks area is always on light bg
 
 export function MobileProjects({
   clients, tasksByClient,
-  onAddClient, onUpdateClient, onRemoveClient,
+  onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
   onAddClientTask, onToggleClientTask, onArchiveClientTask, onRemoveClientTask, onUpdateClientTask,
   onOpenDrawer,
 }: MobileProjectsProps) {
@@ -338,6 +502,7 @@ export function MobileProjects({
   return (
     <div className="flex flex-col h-dvh board-breathe board-grid">
       <MobileScreenHeader title="Projects" onOpenDrawer={onOpenDrawer} />
+      <MobileFooter />
       <div className="flex-1 overflow-y-auto bg-white/5 backdrop-blur-sm">
         {/* Add project — always at top */}
         {!adding ? (
@@ -347,11 +512,10 @@ export function MobileProjects({
           </button>
         ) : addForm}
 
-        {/* Project list */}
+        {/* Project list — active only */}
         <div className="flex flex-col gap-[3px]">
-          {clients.map((c) => (
+          {clients.filter((c) => !c.archived).map((c) => (
             <div key={c.id}>
-              {/* Project header card */}
               <button
                 onClick={() => toggle(c.id)}
                 className="w-full flex items-center justify-between px-5 py-3 text-left active:opacity-80 transition-opacity"
@@ -360,14 +524,13 @@ export function MobileProjects({
                 <span className="text-sm font-bold tracking-[0.18em] uppercase text-white" style={{ fontFamily: "var(--font-body)" }}>{c.name}</span>
                 <span className="text-white text-lg font-light opacity-70">{openId === c.id ? "∨" : "›"}</span>
               </button>
-
-              {/* Accordion content */}
               {openId === c.id && (
                 <ProjectPanel
                   client={c}
                   tasks={tasksByClient[c.id] ?? []}
                   onUpdateClient={onUpdateClient}
                   onRemoveClient={(id) => { onRemoveClient(id); setOpenId(null); }}
+                  onArchiveClient={(id) => { onArchiveClient(id); setOpenId(null); }}
                   onAddTask={onAddClientTask}
                   onToggleTask={onToggleClientTask}
                   onArchiveTask={onArchiveClientTask}
@@ -378,6 +541,30 @@ export function MobileProjects({
             </div>
           ))}
         </div>
+
+        {/* Archived projects */}
+        {clients.some((c) => c.archived) && (
+          <details className="mt-2 px-4 pb-4">
+            <summary className="text-[11px] uppercase tracking-[0.2em] text-paper-ink-light py-2 cursor-pointer list-none select-none flex items-center gap-1.5"
+              style={{ fontFamily: "var(--font-body)" }}>
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 2.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              {clients.filter((c) => c.archived).length} archived
+            </summary>
+            <div className="mt-1 flex flex-col gap-1.5">
+              {clients.filter((c) => c.archived).map((c) => (
+                <div key={c.id} className="flex items-center gap-3 px-3 py-2 rounded-sm"
+                  style={{ backgroundColor: `${c.color}20`, border: `1px solid ${c.color}30` }}>
+                  <span className="flex-1 text-xs uppercase tracking-[0.15em] text-paper-ink-light truncate" style={{ fontFamily: "var(--font-body)" }}>{c.name}</span>
+                  <button onClick={() => onUnarchiveClient(c.id)}
+                    className="text-[11px] text-paper-ink-light uppercase tracking-[0.12em] flex-shrink-0"
+                    style={{ fontFamily: "var(--font-body)" }}>
+                    restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
       </div>
     </div>
   );

@@ -76,6 +76,7 @@ export interface Client {
   name: string;
   color: string; // hex
   notes?: string;
+  archived?: boolean;
   createdAt: number;
 }
 

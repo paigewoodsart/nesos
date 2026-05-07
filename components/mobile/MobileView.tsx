@@ -61,6 +61,8 @@ interface MobileViewProps {
   onAddClient: (name: string, color: string) => Promise<Client>;
   onUpdateClient: (client: Client) => Promise<void>;
   onRemoveClient: (id: string) => Promise<void>;
+  onArchiveClient: (id: string) => void;
+  onUnarchiveClient: (id: string) => void;
   events: CalendarEvent[];
   activeDate: Date;
   onDayChange: (d: Date) => void;
@@ -74,7 +76,7 @@ export function MobileView({
   onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal, onBrainDumpChange,
   clients, tasksByClient,
   onAddClientTask, onToggleClientTask, onArchiveClientTask, onRemoveClientTask, onUpdateClientTask,
-  onAddClient, onUpdateClient, onRemoveClient,
+  onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
   events, activeDate, onDayChange,
 }: MobileViewProps) {
   const [screen, setScreen] = useState<MobileScreen>(getInitialScreen);
@@ -158,6 +160,8 @@ export function MobileView({
           onAddClient={onAddClient}
           onUpdateClient={onUpdateClient}
           onRemoveClient={onRemoveClient}
+          onArchiveClient={onArchiveClient}
+          onUnarchiveClient={onUnarchiveClient}
           onAddClientTask={onAddClientTask}
           onToggleClientTask={onToggleClientTask}
           onArchiveClientTask={onArchiveClientTask}
@@ -171,6 +175,7 @@ export function MobileView({
         <MobileArchive
           clients={clients}
           tasksByClient={tasksByClient}
+          onUnarchiveClient={onUnarchiveClient}
           onOpenDrawer={openDrawer}
         />
       )}

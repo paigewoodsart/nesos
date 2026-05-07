@@ -179,8 +179,13 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
 
   return (
     <header
-      className="sticky top-0 z-30 flex items-center justify-between px-6 py-3.5 border-b backdrop-blur-md"
-      style={{ backgroundColor: "rgba(249,248,246,0.18)", borderColor: "rgba(213,211,207,0.3)" }}
+      className="sticky top-0 z-30 flex items-center justify-between px-6 py-3.5 border-b"
+      style={{
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderColor: "rgba(255,255,255,0.18)",
+        backdropFilter: "blur(18px) saturate(160%)",
+        WebkitBackdropFilter: "blur(18px) saturate(160%)",
+      }}
     >
 
       {/* Left: logo + title */}
@@ -238,10 +243,24 @@ export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, a
         {!session && (
           <button
             onClick={() => signIn("google")}
-            className="text-xs px-3 py-1.5 border border-paper-ink/20 text-paper-ink hover:bg-paper-ink hover:text-white transition-all"
-            style={{ fontFamily: "var(--font-serif)" }}
+            className="relative overflow-hidden text-[11px] px-4 py-1.5 font-semibold tracking-[0.12em] uppercase transition-opacity hover:opacity-80"
+            style={{
+              fontFamily: "var(--font-body)",
+              color: "rgba(26,26,26,0.78)",
+              borderRadius: "2px",
+              boxShadow: "0 2px 6px rgba(26,26,26,0.14), 0 1px 2px rgba(26,26,26,0.08)",
+            }}
           >
-            Sign in
+            <span
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage: "url('/gradient-nesos.jpg')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: 0.5,
+              }}
+            />
+            <span className="relative">Sign in</span>
           </button>
         )}
 

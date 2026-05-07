@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { MobileScreenHeader } from "./MobileScreenHeader";
+import { MobileFooter } from "./MobileFooter";
 
 const RASPBERRY = "#D4909E";
 
@@ -32,6 +33,7 @@ export function MobileBrainDump({ weekId: _weekId, brainDump, onBrainDumpChange,
     <div className="flex flex-col h-dvh board-breathe board-grid">
       <MobileScreenHeader title="Notes" onOpenDrawer={onOpenDrawer} accent={RASPBERRY} />
 
+      <MobileFooter />
       <div className="flex-1 flex flex-col px-5 pt-5 pb-6 min-h-0">
         {/* Controls */}
         <div className="flex items-center justify-between mb-4 flex-shrink-0">

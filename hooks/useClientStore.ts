@@ -19,6 +19,15 @@ export const CLIENT_COLORS = [
   "#76c893", "#b5e48c",
 ];
 
+const ARCHIVED_KEY = "nesos-archived-clients";
+
+function loadArchivedIds(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(ARCHIVED_KEY) ?? "[]")); } catch { return new Set(); }
+}
+function saveArchivedIds(ids: Set<string>) {
+  try { localStorage.setItem(ARCHIVED_KEY, JSON.stringify([...ids])); } catch {}
+}
+
 export function useClientStore(weekId: string, userEmail?: string | null) {
   const [clients, setClients] = useState<Client[]>([]);
   const [sessions, setSessions] = useState<ClientSession[]>([]);
@@ -41,7 +50,9 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
         [c, s] = await Promise.all([getAllClients(), getSessionsByWeek(weekId)]);
       }
       if (cancelled) return;
-      setClients(c);
+      const archivedIds = loadArchivedIds();
+      const clientsWithArchived = c.map((cl) => ({ ...cl, archived: archivedIds.has(cl.id) }));
+      setClients(clientsWithArchived);
       setSessions(s);
 
       const taskMap: Record<string, ClientTask[]> = {};
@@ -92,6 +103,20 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
     if (userEmail) await sbDeleteClient(id); else await deleteClient(id);
     setClients((prev) => prev.filter((c) => c.id !== id));
   }, [userEmail]);
+
+  const archiveClient = useCallback((id: string) => {
+    const ids = loadArchivedIds();
+    ids.add(id);
+    saveArchivedIds(ids);
+    setClients((prev) => prev.map((c) => c.id === id ? { ...c, archived: true } : c));
+  }, []);
+
+  const unarchiveClient = useCallback((id: string) => {
+    const ids = loadArchivedIds();
+    ids.delete(id);
+    saveArchivedIds(ids);
+    setClients((prev) => prev.map((c) => c.id === id ? { ...c, archived: false } : c));
+  }, []);
 
   const addClientTask = useCallback(async (clientId: string, text: string, dueDate?: string | null): Promise<ClientTask> => {
     const task: ClientTask = { id: crypto.randomUUID(), clientId, text, done: false, doneAt: null, dueDate: dueDate ?? null, archived: false, archivedAt: null, createdAt: Date.now() };
@@ -155,7 +180,7 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
 
   return {
     clients, sessions, tasksByClient, loaded,
-    addClient, updateClient, removeClient,
+    addClient, updateClient, removeClient, archiveClient, unarchiveClient,
     addClientTask, updateClientTask, toggleClientTask, archiveClientTask, removeClientTask,
     addSession, updateSession, removeSession,
     getWeekSessions,
