@@ -87,7 +87,7 @@ export function SwipeRow({ onArchive, onDelete, archiveColor = "#52b69a", childr
   const deleteReveal = Math.min(-x / THRESHOLD, 1);
 
   return (
-    <div className="relative overflow-hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+    <div className="relative overflow-hidden w-full" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       {/* Archive backing (right swipe) */}
       {onArchive && (
         <div

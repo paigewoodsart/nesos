@@ -118,7 +118,7 @@ function SortableTaskItem({
   }
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="w-full">
       <SwipeRow onArchive={() => onArchive(t)} onDelete={() => onRemove(t)} archiveColor={client.color}>
         <div className="border-b border-paper-line/20 flex items-center gap-2 py-2.5 px-1 bg-white/10">
           <button
@@ -487,9 +487,9 @@ function SortableProjectCard({
   const isOpen = openId === client.id;
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="w-full">
       {/* Project header */}
-      <div className="flex items-stretch" style={{ backgroundColor: client.color }}>
+      <div className="flex items-stretch w-full" style={{ backgroundColor: client.color }}>
         {/* Grip handle */}
         <button
           {...listeners}
