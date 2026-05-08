@@ -9,6 +9,7 @@ import { MobileBrainDump } from "./MobileBrainDump";
 import { MobileGoals } from "./MobileGoals";
 import { MobileArchive } from "./MobileArchive";
 import { MobileProjects } from "./MobileProjects";
+import { MobileDue } from "./MobileDue";
 import type { Task, Goal, Client, ClientTask, ClientSession, CalendarEvent } from "@/types";
 
 const LAST_VISIT_KEY = "nesos-last-visit";
@@ -17,6 +18,7 @@ const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
 type MobileScreen =
   | "home"
+  | "due"
   | "today"
   | "thisweek"
   | "braindump"
@@ -105,6 +107,17 @@ export function MobileView({
     <div className="relative h-dvh overflow-hidden bg-paper-cream">
       {screen === "home" && (
         <MobileHome onOpenDrawer={openDrawer} isLoggedIn={!!userEmail} />
+      )}
+
+      {screen === "due" && (
+        <MobileDue
+          clients={clients}
+          tasksByClient={tasksByClient}
+          onToggleClientTask={onToggleClientTask}
+          onArchiveClientTask={onArchiveClientTask}
+          onRemoveClientTask={onRemoveClientTask}
+          onOpenDrawer={openDrawer}
+        />
       )}
 
       {screen === "today" && (

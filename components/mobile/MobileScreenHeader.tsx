@@ -11,7 +11,7 @@ export function MobileScreenHeader({ title, onOpenDrawer, accent }: MobileScreen
     <div className="flex items-center justify-between px-4 py-3 border-b border-paper-line bg-paper-cream/95 backdrop-blur-sm flex-shrink-0">
       <h2
         className="text-base font-semibold text-paper-ink"
-        style={{ fontFamily: "var(--font-serif)", color: accent }}
+        style={{ fontFamily: "var(--font-body)", color: accent }}
       >
         {title}
       </h2>

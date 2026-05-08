@@ -70,7 +70,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
               <p className="text-[11px] tracking-[0.18em] text-paper-ink-light mt-1" style={{ fontFamily: "var(--font-body)" }}>
                 νῆσος · ne·sos
               </p>
-              <p className="text-[10px] italic text-paper-ink-light/70 mt-1" style={{ fontFamily: "var(--font-serif)" }}>
+              <p className="text-[10px] italic text-paper-ink-light/70 mt-1" style={{ fontFamily: "var(--font-body)" }}>
                 Your work. Your rhythm. Your island.
               </p>
             </div>
@@ -81,6 +81,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
+          {navItem("Due", "due")}
           {navItem("Today", "today")}
           {navItem("This Week", "thisweek")}
           {navItem("Notes", "braindump")}
@@ -106,13 +107,13 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
         <div className="flex-shrink-0 border-t border-paper-line/30 px-6 py-3">
           {session ? (
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-paper-ink-light truncate" style={{ fontFamily: "var(--font-serif)" }}>
+              <span className="text-[10px] text-paper-ink-light truncate" style={{ fontFamily: "var(--font-body)" }}>
                 {session.user?.email}
               </span>
               <button
                 onClick={() => signOut()}
                 className="text-[10px] text-paper-ink-light underline underline-offset-2 ml-3 flex-shrink-0"
-                style={{ fontFamily: "var(--font-serif)" }}
+                style={{ fontFamily: "var(--font-body)" }}
               >
                 Sign out
               </button>
@@ -121,7 +122,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
             <button
               onClick={() => signIn("google")}
               className="w-full text-xs py-2 border border-paper-ink/20 text-paper-ink-light hover:text-paper-ink transition-colors"
-              style={{ fontFamily: "var(--font-serif)" }}
+              style={{ fontFamily: "var(--font-body)" }}
             >
               Sign in with Google
             </button>
@@ -154,7 +155,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
         {/* Footer credit */}
         <div className="flex-shrink-0 border-t border-paper-line/30 px-6 py-4 flex items-center gap-3">
           <img src="/nesos-icon.webp" alt="Nesos" className="h-7 w-7 object-contain opacity-60 flex-shrink-0" />
-          <p className="text-[10px] text-paper-ink-light leading-relaxed" style={{ fontFamily: "var(--font-serif)" }}>
+          <p className="text-[10px] text-paper-ink-light leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>
             made with love by Paige Woods
           </p>
         </div>

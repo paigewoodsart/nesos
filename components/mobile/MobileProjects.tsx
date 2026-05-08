@@ -22,6 +22,12 @@ function loadTaskOrder(clientId: string): string[] {
 function saveTaskOrder(clientId: string, ids: string[]) {
   try { localStorage.setItem(`task-order-${clientId}`, JSON.stringify(ids)); } catch {}
 }
+function loadProjectOrder(): string[] {
+  try { return JSON.parse(localStorage.getItem("mobile-project-order") ?? "[]"); } catch { return []; }
+}
+function saveProjectOrder(ids: string[]) {
+  try { localStorage.setItem("mobile-project-order", JSON.stringify(ids)); } catch {}
+}
 
 function GripIcon() {
   return (
@@ -450,6 +456,79 @@ function ProjectPanel({
   );
 }
 
+interface SortableProjectCardProps {
+  client: Client;
+  tasks: ClientTask[];
+  openId: string | null;
+  setOpenId: (id: string | null) => void;
+  onUpdateClient: (c: Client) => void;
+  onRemoveClient: (id: string) => void;
+  onArchiveClient: (id: string) => void;
+  onAddTask: (clientId: string, text: string, due?: string | null) => Promise<ClientTask>;
+  onToggleTask: (clientId: string, taskId: string) => void;
+  onArchiveTask: (clientId: string, taskId: string) => void;
+  onRemoveTask: (clientId: string, taskId: string) => void;
+  onUpdateTask: (clientId: string, task: ClientTask) => void;
+}
+
+function SortableProjectCard({
+  client, tasks, openId, setOpenId,
+  onUpdateClient, onRemoveClient, onArchiveClient,
+  onAddTask, onToggleTask, onArchiveTask, onRemoveTask, onUpdateTask,
+}: SortableProjectCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: client.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.45 : 1,
+    zIndex: isDragging ? 50 : "auto",
+    position: "relative",
+  };
+  const isOpen = openId === client.id;
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {/* Project header */}
+      <div className="flex items-stretch" style={{ backgroundColor: client.color }}>
+        {/* Grip handle */}
+        <button
+          {...listeners}
+          {...attributes}
+          className="flex items-center justify-center px-3 touch-none flex-shrink-0 active:opacity-60"
+          tabIndex={-1}
+          style={{ backgroundColor: "rgba(0,0,0,0.08)" }}
+        >
+          <GripIcon />
+        </button>
+        {/* Accordion toggle */}
+        <button
+          onClick={() => setOpenId(isOpen ? null : client.id)}
+          className="flex-1 flex items-center justify-between px-4 py-3 text-left active:opacity-80 transition-opacity"
+        >
+          <span className="text-sm font-bold tracking-[0.18em] uppercase text-white" style={{ fontFamily: "var(--font-body)" }}>{client.name}</span>
+          <span className="text-white text-lg font-light opacity-70">{isOpen ? "∨" : "›"}</span>
+        </button>
+      </div>
+
+      {/* Accordion panel */}
+      {isOpen && (
+        <ProjectPanel
+          client={client}
+          tasks={tasks}
+          onUpdateClient={onUpdateClient}
+          onRemoveClient={(id) => { onRemoveClient(id); setOpenId(null); }}
+          onArchiveClient={(id) => { onArchiveClient(id); setOpenId(null); }}
+          onAddTask={onAddTask}
+          onToggleTask={onToggleTask}
+          onArchiveTask={onArchiveTask}
+          onRemoveTask={onRemoveTask}
+          onUpdateTask={onUpdateTask}
+        />
+      )}
+    </div>
+  );
+}
+
 export function MobileProjects({
   clients, tasksByClient,
   onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
@@ -460,7 +539,10 @@ export function MobileProjects({
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(PROJECT_COLORS[4]);
+  const [projectOrder, setProjectOrder] = useState<string[]>(loadProjectOrder);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const projectSensors = useSensors(useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }));
 
   useEffect(() => { if (adding) inputRef.current?.focus(); }, [adding]);
 
@@ -470,7 +552,24 @@ export function MobileProjects({
     setName(""); setColor(PROJECT_COLORS[4]); setAdding(false);
   };
 
-  const toggle = (id: string) => setOpenId((prev) => prev === id ? null : id);
+  const activeClients = clients.filter((c) => !c.archived);
+  const orderedClients = [...activeClients].sort((a, b) => {
+    const ai = projectOrder.indexOf(a.id);
+    const bi = projectOrder.indexOf(b.id);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
+  const handleProjectDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const ids = orderedClients.map((c) => c.id);
+    const newOrder = arrayMove(ids, ids.indexOf(active.id as string), ids.indexOf(over.id as string));
+    setProjectOrder(newOrder);
+    saveProjectOrder(newOrder);
+  };
 
   const addForm = (
     <div className="mx-0 mb-[3px] bg-white/10 backdrop-blur-md">
@@ -512,35 +611,30 @@ export function MobileProjects({
           </button>
         ) : addForm}
 
-        {/* Project list — active only */}
-        <div className="flex flex-col gap-[3px]">
-          {clients.filter((c) => !c.archived).map((c) => (
-            <div key={c.id}>
-              <button
-                onClick={() => toggle(c.id)}
-                className="w-full flex items-center justify-between px-5 py-3 text-left active:opacity-80 transition-opacity"
-                style={{ backgroundColor: c.color }}
-              >
-                <span className="text-sm font-bold tracking-[0.18em] uppercase text-white" style={{ fontFamily: "var(--font-body)" }}>{c.name}</span>
-                <span className="text-white text-lg font-light opacity-70">{openId === c.id ? "∨" : "›"}</span>
-              </button>
-              {openId === c.id && (
-                <ProjectPanel
+        {/* Project list — sortable */}
+        <DndContext sensors={projectSensors} collisionDetection={closestCenter} onDragEnd={handleProjectDragEnd}>
+          <SortableContext items={orderedClients.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            <div className="flex flex-col gap-[3px]">
+              {orderedClients.map((c) => (
+                <SortableProjectCard
+                  key={c.id}
                   client={c}
                   tasks={tasksByClient[c.id] ?? []}
+                  openId={openId}
+                  setOpenId={setOpenId}
                   onUpdateClient={onUpdateClient}
-                  onRemoveClient={(id) => { onRemoveClient(id); setOpenId(null); }}
-                  onArchiveClient={(id) => { onArchiveClient(id); setOpenId(null); }}
+                  onRemoveClient={onRemoveClient}
+                  onArchiveClient={onArchiveClient}
                   onAddTask={onAddClientTask}
                   onToggleTask={onToggleClientTask}
                   onArchiveTask={onArchiveClientTask}
                   onRemoveTask={onRemoveClientTask}
                   onUpdateTask={onUpdateClientTask}
                 />
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
 
         {/* Archived projects */}
         {clients.some((c) => c.archived) && (

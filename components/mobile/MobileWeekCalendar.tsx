@@ -92,17 +92,17 @@ export function MobileWeekCalendar({ activeDate, tasks, events, onBack, onOpenDr
 
         {dayEvents.map((e) => (
           <div key={e.id} className="flex items-center gap-3 py-2.5 border-b border-paper-line/30">
-            <span className="text-xs text-paper-ink-light w-12 flex-shrink-0" style={{ fontFamily: "var(--font-serif)" }}>
+            <span className="text-xs text-paper-ink-light w-12 flex-shrink-0" style={{ fontFamily: "var(--font-body)" }}>
               {formatEventTime(e.start)}
             </span>
-            <span className="flex-1 text-sm text-paper-ink" style={{ fontFamily: "var(--font-serif)" }}>{e.summary}</span>
+            <span className="flex-1 text-sm text-paper-ink" style={{ fontFamily: "var(--font-body)" }}>{e.summary}</span>
           </div>
         ))}
 
         {dayTasksSorted.map((t) => (
           <div key={t.id} className="flex items-center gap-3 py-2.5 border-b border-paper-line/30">
             {t.startMinute !== null ? (
-              <span className="text-xs text-paper-ink-light w-12 flex-shrink-0" style={{ fontFamily: "var(--font-serif)" }}>
+              <span className="text-xs text-paper-ink-light w-12 flex-shrink-0" style={{ fontFamily: "var(--font-body)" }}>
                 {`${Math.floor(t.startMinute / 60)}:${String(t.startMinute % 60).padStart(2, "0")}`}
               </span>
             ) : (
@@ -110,7 +110,7 @@ export function MobileWeekCalendar({ activeDate, tasks, events, onBack, onOpenDr
             )}
             <span
               className={`flex-1 text-sm ${t.completed ? "line-through opacity-40" : "text-paper-ink"}`}
-              style={{ fontFamily: "var(--font-serif)" }}
+              style={{ fontFamily: "var(--font-body)" }}
             >
               {t.text}
             </span>
@@ -118,7 +118,7 @@ export function MobileWeekCalendar({ activeDate, tasks, events, onBack, onOpenDr
         ))}
 
         {dayEvents.length === 0 && dayTasksSorted.length === 0 && (
-          <p className="text-sm italic text-paper-ink-light text-center mt-12" style={{ fontFamily: "var(--font-serif)" }}>
+          <p className="text-sm italic text-paper-ink-light text-center mt-12" style={{ fontFamily: "var(--font-body)" }}>
             Nothing on this day.
           </p>
         )}

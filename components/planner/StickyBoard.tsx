@@ -640,7 +640,10 @@ export function StickyBoard({
   });
   const [panelDragKey, setPanelDragKey] = useState<string | null>(null);
   const [panelCollapsed, setPanelCollapsed] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem("panel-collapsed") ?? "{}"); } catch { return {}; }
+    try {
+      const saved = JSON.parse(localStorage.getItem("panel-collapsed") ?? "{}");
+      return { ...saved, __goals__: false }; // affirmation tile always starts open
+    } catch { return {}; }
   });
   const togglePanelCollapse = (key: string) => {
     setPanelCollapsed((prev) => {
@@ -713,7 +716,7 @@ const overdueItems = allClientTasks
                 setPanelDragKey(null);
               }}
               onDragEnd={() => setPanelDragKey(null)}
-              style={{ flex: panelCollapsed[key] ? "0 0 auto" : (isGoals ? "0 0 auto" : 1), minHeight: 0, opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
+              style={{ flex: "0 0 auto", minHeight: 0, opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
               className="flex flex-col overflow-hidden"
             >
               {isGoals ? (
