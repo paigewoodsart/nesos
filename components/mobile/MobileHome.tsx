@@ -31,7 +31,7 @@ export function MobileHome({ onOpenDrawer, isLoggedIn }: MobileHomeProps) {
         onClick={onOpenDrawer}
         className="absolute w-11 h-11 flex items-center justify-center text-paper-ink-light z-10"
         style={{
-          top: 19, right: 19,
+          top: 52, right: 28,
           opacity: phase === "begin" ? 1 : 0,
           transition: "opacity 800ms ease-in",
         }}

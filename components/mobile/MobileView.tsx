@@ -27,13 +27,6 @@ type MobileScreen =
   | "archive";
 
 function getInitialScreen(): MobileScreen {
-  try {
-    const last = localStorage.getItem(LAST_VISIT_KEY);
-    const lastScreen = localStorage.getItem(LAST_SCREEN_KEY) as MobileScreen | null;
-    if (last && Date.now() - Number(last) < TWENTY_FOUR_HOURS && lastScreen && lastScreen !== "home") {
-      return lastScreen;
-    }
-  } catch {}
   return "home";
 }
 
