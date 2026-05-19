@@ -1,43 +1,29 @@
-import { supabase } from "@/lib/supabase";
 import type { Goal } from "@/types";
 
-export async function sbGetGoalsByWeek(userEmail: string, weekId: string): Promise<Goal[]> {
-  const { data, error } = await supabase
-    .from("goals")
-    .select("*")
-    .eq("user_email", userEmail)
-    .eq("week_id", weekId)
-    .eq("type", "weekly");
-  if (error) { console.error("[sb] getGoalsByWeek:", error); throw error; }
-  return (data ?? []).map(rowToGoal);
+export async function sbGetGoalsByWeek(_userEmail: string, weekId: string): Promise<Goal[]> {
+  const res = await fetch(`/api/db/goals?weekId=${encodeURIComponent(weekId)}&type=weekly`);
+  if (!res.ok) throw new Error(await res.text());
+  return (await res.json()).map(rowToGoal);
 }
 
-export async function sbGetLongtermGoals(userEmail: string): Promise<Goal[]> {
-  const { data, error } = await supabase
-    .from("goals")
-    .select("*")
-    .eq("user_email", userEmail)
-    .eq("type", "longterm");
-  if (error) { console.error("[sb] getLongtermGoals:", error); throw error; }
-  return (data ?? []).map(rowToGoal);
+export async function sbGetLongtermGoals(_userEmail: string): Promise<Goal[]> {
+  const res = await fetch("/api/db/goals?type=longterm");
+  if (!res.ok) throw new Error(await res.text());
+  return (await res.json()).map(rowToGoal);
 }
 
-export async function sbSaveGoal(userEmail: string, goal: Goal): Promise<void> {
-  const { error } = await supabase.from("goals").upsert({
-    id: goal.id,
-    user_email: userEmail,
-    week_id: goal.weekId,
-    text: goal.text,
-    completed: goal.completed,
-    type: goal.type,
-    created_at: goal.createdAt,
+export async function sbSaveGoal(_userEmail: string, goal: Goal): Promise<void> {
+  const res = await fetch("/api/db/goals", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(goal),
   });
-  if (error) console.error("[sb] saveGoal:", error);
+  if (!res.ok) console.error("[sb] saveGoal:", await res.text());
 }
 
 export async function sbDeleteGoal(id: string): Promise<void> {
-  const { error } = await supabase.from("goals").delete().eq("id", id);
-  if (error) console.error("[sb] deleteGoal:", error);
+  const res = await fetch(`/api/db/goals?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) console.error("[sb] deleteGoal:", await res.text());
 }
 
 function rowToGoal(r: Record<string, unknown>): Goal {

@@ -1,33 +1,23 @@
-import { supabase } from "@/lib/supabase";
 import type { Note } from "@/types";
 
-export async function sbGetNotesByWeek(userEmail: string, weekId: string): Promise<Note[]> {
-  const { data, error } = await supabase
-    .from("notes")
-    .select("*")
-    .eq("user_email", userEmail)
-    .eq("week_id", weekId);
-  if (error) { console.error("[sb] getNotesByWeek:", error); throw error; }
-  return (data ?? []).map(rowToNote);
+export async function sbGetNotesByWeek(_userEmail: string, weekId: string): Promise<Note[]> {
+  const res = await fetch(`/api/db/notes?weekId=${encodeURIComponent(weekId)}`);
+  if (!res.ok) throw new Error(await res.text());
+  return (await res.json()).map(rowToNote);
 }
 
-export async function sbSaveNote(userEmail: string, note: Note): Promise<void> {
-  const { error } = await supabase.from("notes").upsert({
-    id: note.id,
-    user_email: userEmail,
-    week_id: note.weekId,
-    day_index: note.dayIndex,
-    text: note.text,
-    photo_ids: note.photoIds,
-    created_at: note.createdAt,
-    updated_at: note.updatedAt,
+export async function sbSaveNote(_userEmail: string, note: Note): Promise<void> {
+  const res = await fetch("/api/db/notes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(note),
   });
-  if (error) console.error("[sb] saveNote:", error);
+  if (!res.ok) console.error("[sb] saveNote:", await res.text());
 }
 
 export async function sbDeleteNote(id: string): Promise<void> {
-  const { error } = await supabase.from("notes").delete().eq("id", id);
-  if (error) console.error("[sb] deleteNote:", error);
+  const res = await fetch(`/api/db/notes?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) console.error("[sb] deleteNote:", await res.text());
 }
 
 function rowToNote(r: Record<string, unknown>): Note {
