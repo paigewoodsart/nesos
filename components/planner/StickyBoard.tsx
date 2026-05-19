@@ -390,7 +390,7 @@ function NotePanel({
   };
 
   return (
-    <div className={`flex flex-col overflow-hidden ${className}`}
+    <div className={`flex flex-col ${className}`}
       style={{ boxShadow: "3px 5px 18px rgba(26,26,26,0.11), 1px 1px 0 rgba(26,26,26,0.04)", ...styleProp }}>
 
       {/* Header band */}
@@ -495,7 +495,7 @@ function NotePanel({
 
       {/* Frosted glass body — hidden when collapsed */}
       {!collapsed && (
-        <div className="flex flex-col min-h-0 flex-1"
+        <div className="flex flex-col"
           style={{
             backgroundColor: `${color}18`,
             backdropFilter: "blur(14px)",
@@ -504,7 +504,7 @@ function NotePanel({
             borderRight: "1px solid rgba(255,255,255,0.45)",
             borderBottom: "1px solid rgba(255,255,255,0.45)",
           }}>
-          <div className="flex-1 overflow-y-auto px-4 py-3" style={lined ? LINED_BODY : undefined}>
+          <div className="px-4 py-3" style={lined ? LINED_BODY : undefined}>
             {children}
           </div>
           {footer && (
@@ -695,10 +695,10 @@ const overdueItems = allClientTasks
   const activeClient = activeClientId ? clients.find((c) => c.id === activeClientId) ?? null : null;
 
   return (
-    <div className="flex-1 flex overflow-hidden board-breathe">
+    <div className="flex-1 flex board-breathe">
 
       {/* ── Col 1: Goals + Brain Dump + Add Project (draggable order) ── */}
-      <div className="w-[280px] flex-shrink-0 flex flex-col gap-3 p-3 overflow-hidden border-r border-white/20">
+      <div className="w-[280px] flex-shrink-0 flex flex-col gap-3 p-3 border-r border-white/20">
         {leftOrder.map((key) => {
           const isGoals = key === "__goals__";
           return (
@@ -716,8 +716,8 @@ const overdueItems = allClientTasks
                 setPanelDragKey(null);
               }}
               onDragEnd={() => setPanelDragKey(null)}
-              style={{ flex: "0 0 auto", minHeight: 0, opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
-              className="flex flex-col overflow-hidden"
+              style={{ opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
+              className="flex flex-col"
             >
               {isGoals ? (
                 <NotePanel
@@ -754,7 +754,7 @@ const overdueItems = allClientTasks
       </div>
 
       {/* ── Col 2: Project list ── */}
-      <div className="w-[300px] flex-shrink-0 flex flex-col gap-2 p-3 overflow-y-auto border-r border-white/20">
+      <div className="w-[300px] flex-shrink-0 flex flex-col gap-2 p-3 border-r border-white/20">
         {(() => {
           const orderMap = new Map(clientOrder.map((id, i) => [id, i]));
           const allOrdered = [...clients].sort((a, b) => {
@@ -850,7 +850,7 @@ const overdueItems = allClientTasks
       </div>
 
       {/* ── Col 3: Project workspace ── */}
-      <div className="flex-1 p-3 overflow-y-auto min-w-0">
+      <div className="flex-1 p-3 min-w-0">
         {activeClient ? (() => {
           const allTasks = tasksByClient[activeClient.id] ?? [];
           const active = allTasks.filter((t) => !t.archived);
@@ -865,7 +865,7 @@ const overdueItems = allClientTasks
             <NotePanel
               title={activeClient.name}
               color={activeClient.color}
-              className="h-full"
+              className=""
               colorOptions={CLIENT_COLORS_PALETTE}
               onTitleChange={(name) => onUpdateClient({ ...activeClient, name })}
               onColorChange={(color) => onUpdateClient({ ...activeClient, color })}
@@ -925,7 +925,7 @@ const overdueItems = allClientTasks
       </div>
 
       {/* ── Col 4: Today + This Week (draggable order) ── */}
-      <div className="w-[300px] flex-shrink-0 flex flex-col gap-3 p-3 overflow-hidden border-l border-white/20">
+      <div className="w-[300px] flex-shrink-0 flex flex-col gap-3 p-3 border-l border-white/20">
         {rightOrder.map((key) => {
           const flexSize = key === "__week__" ? 2 : 1;
           return (
@@ -947,8 +947,8 @@ const overdueItems = allClientTasks
                 setPanelDragKey(null);
               }}
               onDragEnd={() => setPanelDragKey(null)}
-              style={{ flex: panelCollapsed[key] ? "0 0 auto" : flexSize, minHeight: 0, opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
-              className="flex flex-col overflow-hidden"
+              style={{ opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
+              className="flex flex-col"
             >
               {key === "__overdue__" ? (
                 <NotePanel

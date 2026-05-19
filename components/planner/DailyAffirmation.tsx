@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 const CACHE_VERSION = "v2";
 
 function todayKey() {
-  const d = new Date();
-  return `affirmation-${CACHE_VERSION}-${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  // toLocaleDateString uses the browser's local timezone, so the key resets at local midnight
+  return `affirmation-${CACHE_VERSION}-${new Date().toLocaleDateString("en-CA")}`;
 }
 
 interface AffirmationData {
