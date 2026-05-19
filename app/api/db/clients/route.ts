@@ -11,16 +11,12 @@ async function getEmail(req: NextRequest): Promise<string | null> {
 }
 
 export async function GET(req: NextRequest) {
-  try {
-    const email = await getEmail(req);
-    if (!email) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    const supabase = createServerClient();
-    const { data, error } = await supabase.from("clients").select("*").eq("user_email", email);
-    if (error) return Response.json({ error: error.message }, { status: 500 });
-    return Response.json(data);
-  } catch (err) {
-    return Response.json({ error: String(err), stack: err instanceof Error ? err.stack?.split("\n").slice(0, 5).join(" | ") : undefined }, { status: 500 });
-  }
+  const email = await getEmail(req);
+  if (!email) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const supabase = createServerClient();
+  const { data, error } = await supabase.from("clients").select("*").eq("user_email", email);
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json(data);
 }
 
 export async function POST(req: NextRequest) {
