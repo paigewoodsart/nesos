@@ -2,46 +2,48 @@ import { supabase } from "@/lib/supabase";
 import type { Task } from "@/types";
 
 export async function sbGetTasksByWeek(userEmail: string, weekId: string): Promise<Task[]> {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("user_email", userEmail)
-    .eq("week_id", weekId);
-  if (error) { console.error("[sb] getTasksByWeek:", error); throw error; }
-  return (data ?? []).map(rowToTask);
+  try {
+    const res = await fetch(`/api/db/tasks?weekId=${encodeURIComponent(weekId)}`);
+    if (!res.ok) throw new Error(await res.text());
+    return (await res.json()).map(rowToTask);
+  } catch {
+    const { data } = await supabase.from("tasks").select("*").eq("user_email", userEmail).eq("week_id", weekId);
+    return (data ?? []).map(rowToTask);
+  }
 }
 
 export async function sbGetRecurringTasks(userEmail: string): Promise<Task[]> {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("user_email", userEmail)
-    .eq("recurring", true);
-  if (error) { console.error("[sb] getRecurringTasks:", error); throw error; }
-  return (data ?? []).map(rowToTask);
+  try {
+    const res = await fetch("/api/db/tasks?recurring=true");
+    if (!res.ok) throw new Error(await res.text());
+    return (await res.json()).map(rowToTask);
+  } catch {
+    const { data } = await supabase.from("tasks").select("*").eq("user_email", userEmail).eq("recurring", true);
+    return (data ?? []).map(rowToTask);
+  }
 }
 
 export async function sbSaveTask(userEmail: string, task: Task): Promise<void> {
-  const { error } = await supabase.from("tasks").upsert({
-    id: task.id,
-    user_email: userEmail,
-    week_id: task.weekId,
-    day_index: task.dayIndex,
-    text: task.text,
-    completed: task.completed,
-    sort_order: task.sortOrder,
-    start_minute: task.startMinute,
-    end_minute: task.endMinute,
-    recurring: task.recurring,
-    recurring_pattern: task.recurringPattern,
-    created_at: task.createdAt,
-  });
-  if (error) console.error("[sb] saveTask:", error);
+  try {
+    const res = await fetch("/api/db/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(task) });
+    if (!res.ok) throw new Error(await res.text());
+  } catch {
+    await supabase.from("tasks").upsert({
+      id: task.id, user_email: userEmail, week_id: task.weekId, day_index: task.dayIndex,
+      text: task.text, completed: task.completed, sort_order: task.sortOrder,
+      start_minute: task.startMinute, end_minute: task.endMinute,
+      recurring: task.recurring, recurring_pattern: task.recurringPattern, created_at: task.createdAt,
+    });
+  }
 }
 
 export async function sbDeleteTask(id: string): Promise<void> {
-  const { error } = await supabase.from("tasks").delete().eq("id", id);
-  if (error) console.error("[sb] deleteTask:", error);
+  try {
+    const res = await fetch(`/api/db/tasks?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(await res.text());
+  } catch {
+    await supabase.from("tasks").delete().eq("id", id);
+  }
 }
 
 function rowToTask(r: Record<string, unknown>): Task {
