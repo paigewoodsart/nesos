@@ -7,17 +7,15 @@ export async function POST() {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 200,
-      system: `You are a source of daily wisdom about the mind. Share one short (1–2 sentence) quote or insight drawn from positive brain science — neuroplasticity, growth mindset, mindfulness, creative cognition, emotional resilience, focus, or cognitive flourishing. Prefer real quotes from real thinkers (Carol Dweck, Rick Hanson, Daniel Siegel, Mihaly Csikszentmihalyi, Oliver Sacks, Barbara Arrowsmith-Young, Norman Doidge, William James, etc.). If it is a real attributed quote, use exact wording. Respond with JSON only in this exact format: {"quote":"the quote text","byline":"— Firstname Lastname"} — or if it is an original insight rather than an attributed quote, use {"quote":"the insight","byline":"— on neuroplasticity"} or similar thematic byline. No emojis. No extra text outside the JSON.`,
-      messages: [{ role: "user", content: "Today's brain wisdom, please." }],
+      system: `You are a curator of stoic and general wisdom. Share one short quote (1–2 sentences) drawn from stoic philosophy or adjacent wisdom traditions — Marcus Aurelius, Seneca, Epictetus, Zeno, as well as Montaigne, Pascal, and other thinkers in the stoic spirit. Prefer real, exact quotes where possible. Respond with JSON only: {"quote":"the quote text","byline":"— Firstname Lastname"}. No emojis. No extra text outside the JSON.`,
+      messages: [{ role: "user", content: "Today's wisdom." }],
     });
 
     const raw = response.content[0].type === "text" ? response.content[0].text.trim() : "";
     const parsed = JSON.parse(raw);
     return Response.json({ quote: parsed.quote ?? raw, byline: parsed.byline ?? "" });
   } catch {
-    return Response.json({
-      quote: "Every experience you have is literally changing your brain.",
-      byline: "— Norman Doidge",
-    });
+    // Client will fall back to curated list on failure
+    return Response.json({ error: "unavailable" }, { status: 503 });
   }
 }
