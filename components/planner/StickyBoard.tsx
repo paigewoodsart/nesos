@@ -778,13 +778,13 @@ function NotePanel({
           {onColorChange && colorOptions && (
             <ColorSwatches swatches={colorOptions} value={color} onChange={onColorChange} />
           )}
-          {(onDelete || onArchive) && (
+          <div className="flex items-center justify-between gap-2">
             <div className="flex gap-2">
               {onArchive && (
                 <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => { onArchive(); setEditing(false); }}
-                  className="flex-1 py-1.5 text-xs uppercase tracking-[0.15em] text-paper-ink-light hover:bg-paper-line/20 transition-colors border border-paper-line/40"
+                  className="py-1.5 px-3 text-xs uppercase tracking-[0.15em] text-paper-ink-light hover:bg-paper-line/20 transition-colors border border-paper-line/40"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
                   Archive
@@ -794,14 +794,22 @@ function NotePanel({
                 <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => { if (confirm("Remove this project?")) { onDelete(); setEditing(false); } }}
-                  className="flex-1 py-1.5 text-xs uppercase tracking-[0.15em] text-paper-ink-light hover:text-white hover:bg-paper-ink transition-colors border border-paper-line/40"
+                  className="py-1.5 px-3 text-xs uppercase tracking-[0.15em] text-paper-ink-light hover:text-white hover:bg-paper-ink transition-colors border border-paper-line/40"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
                   Remove
                 </button>
               )}
             </div>
-          )}
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setEditing(false)}
+              className="py-1.5 px-3 text-xs uppercase tracking-[0.15em] text-paper-ink hover:bg-black/10 transition-colors border border-paper-line/40"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              Done
+            </button>
+          </div>
         </div>
       )}
 

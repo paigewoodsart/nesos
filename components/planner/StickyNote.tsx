@@ -254,16 +254,26 @@ export function StickyNote({
             </div>
           )}
 
-          {onDelete && (
+          <div className="flex items-center justify-between">
+            {onDelete ? (
+              <button
+                type="button"
+                onClick={() => { if (confirm("Remove this project?")) { onDelete(); setEditing(false); } }}
+                className="py-1.5 px-3 text-xs uppercase tracking-[0.15em] text-paper-ink-light hover:text-white hover:bg-paper-ink transition-colors border border-paper-line"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
+                Remove
+              </button>
+            ) : <span />}
             <button
               type="button"
-              onClick={() => { if (confirm("Remove this project?")) { onDelete(); setEditing(false); } }}
-              className="w-full py-1.5 text-xs uppercase tracking-[0.15em] text-paper-ink-light hover:text-white hover:bg-paper-ink transition-colors border border-paper-line"
+              onClick={closeEditor}
+              className="py-1.5 px-3 text-xs uppercase tracking-[0.15em] text-paper-ink hover:bg-black/10 transition-colors border border-paper-line"
               style={{ fontFamily: "var(--font-body)" }}
             >
-              Remove project
+              Done
             </button>
-          )}
+          </div>
         </div>
       )}
 
