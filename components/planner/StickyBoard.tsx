@@ -770,7 +770,7 @@ function NotePanel({
               autoFocus value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") commitTitle(); if (e.key === "Escape") { setTitleDraft(title); setEditing(false); } }}
-              onBlur={commitTitle}
+              onBlur={() => { const t = titleDraft.trim(); if (t && t !== title) onTitleChange?.(t); else setTitleDraft(title); }}
               className="w-full text-sm font-semibold bg-white/60 border-b-2 border-paper-ink-light/30 outline-none px-2 py-1 text-paper-ink"
               style={{ fontFamily: "var(--font-body)" }}
             />
