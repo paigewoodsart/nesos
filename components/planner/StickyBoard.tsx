@@ -483,42 +483,61 @@ function FileRow({
       : `${Math.round(file.fileSize / 1024)} KB`
     : "";
 
-  return (
-    <div className="group">
-      {isImage && previewUrl && (
-        <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="block mb-1">
-          <img
-            src={previewUrl}
-            alt={file.fileName}
-            className="w-full max-h-40 object-cover rounded"
-            style={{ border: "1px solid rgba(26,26,26,0.08)" }}
-          />
-        </a>
-      )}
-      <div className="flex items-center gap-2 py-0.5">
-        {!isImage && (
-          <span className="flex-shrink-0 text-sm">{fileIcon(file.mimeType)}</span>
-        )}
-        <a
-          href={previewUrl ?? "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 text-xs truncate hover:underline underline-offset-2"
-          style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
-        >
-          {file.fileName}
-        </a>
-        {sizeLabel && (
-          <span className="text-[10px] flex-shrink-0" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>
-            {sizeLabel}
-          </span>
-        )}
-        <button
-          onClick={onDelete}
-          className="flex-shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 text-paper-ink-light hover:text-paper-rust transition-opacity text-base leading-none"
-          title="Remove file"
-        >×</button>
+  if (isImage && previewUrl) {
+    return (
+      <div className="group relative aspect-square rounded overflow-hidden" style={{ border: "1px solid rgba(26,26,26,0.08)" }}>
+        <img src={previewUrl} alt={file.fileName} className="w-full h-full object-cover" />
+        {/* Hover overlay */}
+        <div className="absolute inset-0 flex flex-col justify-between p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ background: "linear-gradient(to top, rgba(26,26,26,0.6) 40%, transparent 100%)" }}>
+          <div className="flex justify-end gap-1">
+            <a
+              href={previewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-6 h-6 rounded text-white hover:bg-white/20 transition-colors"
+              title="Open full size"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M7 1h4v4M11 1L6.5 5.5M5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </a>
+            <button
+              onClick={onDelete}
+              className="flex items-center justify-center w-6 h-6 rounded text-white hover:bg-paper-rust/80 transition-colors"
+              title="Delete file"
+            >×</button>
+          </div>
+          <p className="text-[10px] text-white/90 truncate leading-tight" style={{ fontFamily: "var(--font-body)" }}>
+            {file.fileName}{sizeLabel ? ` · ${sizeLabel}` : ""}
+          </p>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="group flex items-center gap-2 py-0.5">
+      <span className="flex-shrink-0 text-sm">{fileIcon(file.mimeType)}</span>
+      <a
+        href={previewUrl ?? "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 text-xs truncate hover:underline underline-offset-2"
+        style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
+      >
+        {file.fileName}
+      </a>
+      {sizeLabel && (
+        <span className="text-[10px] flex-shrink-0" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>
+          {sizeLabel}
+        </span>
+      )}
+      <button
+        onClick={onDelete}
+        className="flex-shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 text-paper-ink-light hover:text-paper-rust transition-opacity text-base leading-none"
+        title="Delete file"
+      >×</button>
     </div>
   );
 }
@@ -580,7 +599,16 @@ function FilesSection({
       {!uploading && files.length === 0 && !uploadError && (
         <p className="text-[10px] italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>No files attached.</p>
       )}
-      {files.map((f) => (
+      {/* Image grid */}
+      {files.filter((f) => f.mimeType?.startsWith("image/") && f.signedUrl).length > 0 && (
+        <div className="grid grid-cols-3 gap-1.5 mb-1.5">
+          {files.filter((f) => f.mimeType?.startsWith("image/") && f.signedUrl).map((f) => (
+            <FileRow key={f.id} file={f} onDelete={() => onDelete(f.id)} />
+          ))}
+        </div>
+      )}
+      {/* Non-image files */}
+      {files.filter((f) => !f.mimeType?.startsWith("image/")).map((f) => (
         <FileRow key={f.id} file={f} onDelete={() => onDelete(f.id)} />
       ))}
     </div>
