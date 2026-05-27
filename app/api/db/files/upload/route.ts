@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServerClient();
   const { error: uploadError } = await supabase.storage
-    .from("client-files")
+    .from("Client files")
     .upload(path, buffer, { contentType: file.type || "application/octet-stream", upsert: false });
 
   if (uploadError) return Response.json({ error: uploadError.message }, { status: 500 });
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   });
   if (dbError) return Response.json({ error: dbError.message }, { status: 500 });
 
-  const { data: urlData } = await supabase.storage.from("client-files").createSignedUrl(path, 3600);
+  const { data: urlData } = await supabase.storage.from("Client files").createSignedUrl(path, 3600);
 
   return Response.json({
     id,

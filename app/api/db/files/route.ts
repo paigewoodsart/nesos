@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const files = await Promise.all(
     (data ?? []).map(async (row) => {
       const { data: urlData } = await supabase.storage
-        .from("client-files")
+        .from("Client files")
         .createSignedUrl(row.file_path, 3600);
       return {
         id: row.id,
@@ -87,7 +87,7 @@ export async function DELETE(req: NextRequest) {
   if (fetchErr || !row) return Response.json({ error: "Not found" }, { status: 404 });
 
   // Delete from storage
-  await supabase.storage.from("client-files").remove([row.file_path]);
+  await supabase.storage.from("Client files").remove([row.file_path]);
 
   // Delete metadata
   const { error } = await supabase

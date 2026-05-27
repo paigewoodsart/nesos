@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServerClient();
   const { data, error } = await supabase.storage
-    .from("client-files")
+    .from("Client files")
     .createSignedUploadUrl(path);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
