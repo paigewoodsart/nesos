@@ -389,23 +389,23 @@ const COLS: ColKey[] = ["col1", "col2", "col3", "col4"];
 
 function defaultLayout(): Record<ColKey, TileKey[]> {
   return {
-    col1: ["__projects__"],
-    col2: ["__overdue__", "__today__", "__week__"],
+    col1: ["__add_project__", "__braindump__", "__goals__"],
+    col2: ["__projects__"],
     col3: [],
-    col4: ["__add_project__", "__braindump__", "__goals__"],
+    col4: ["__overdue__", "__today__", "__week__"],
   };
 }
 
 function loadLayout(): Record<ColKey, TileKey[]> {
   try {
-    const saved = localStorage.getItem("board-layout-v3");
+    const saved = localStorage.getItem("board-layout-v4");
     if (saved) return JSON.parse(saved);
     return defaultLayout();
   } catch { return defaultLayout(); }
 }
 
 function saveLayout(l: Record<ColKey, TileKey[]>) {
-  localStorage.setItem("board-layout-v3", JSON.stringify(l));
+  localStorage.setItem("board-layout-v4", JSON.stringify(l));
 }
 
 // ── File attachment helpers ──────────────────────────────────────
@@ -1230,20 +1230,20 @@ export function StickyBoard({
         <div
           draggable
           onDragStart={(e) => {
-            if (dragId || (colKey !== "col2" && colKey !== "col4")) return;
+            if (dragId || (colKey !== "col1" && colKey !== "col4")) return;
             setPanelDragKey(key);
             setPanelDragSourceCol(colKey);
             e.dataTransfer.effectAllowed = "move";
           }}
           onDragOver={(e) => {
-            if (dragId || (colKey !== "col2" && colKey !== "col4")) return;
+            if (dragId || (colKey !== "col1" && colKey !== "col4")) return;
             e.preventDefault();
             e.stopPropagation();
             setDragOverCol(colKey);
             setPanelDropTarget({ col: colKey, index: tileIdx });
           }}
           onDrop={(e) => {
-            if (dragId || (colKey !== "col2" && colKey !== "col4")) { clearPanelDrag(); return; }
+            if (dragId || (colKey !== "col1" && colKey !== "col4")) { clearPanelDrag(); return; }
             e.preventDefault();
             e.stopPropagation();
             if (!panelDragKey || panelDragKey === key || !panelDragSourceCol) { clearPanelDrag(); return; }
@@ -1251,7 +1251,7 @@ export function StickyBoard({
             clearPanelDrag();
           }}
           onDragEnd={clearPanelDrag}
-          style={{ opacity: isDragging ? 0.4 : 1, cursor: (colKey === "col2" || colKey === "col4") ? "grab" : "default" }}
+          style={{ opacity: isDragging ? 0.4 : 1, cursor: (colKey === "col1" || colKey === "col4") ? "grab" : "default" }}
           className="flex flex-col"
         >
           {renderTileContent(key)}
@@ -1349,21 +1349,21 @@ export function StickyBoard({
         const isWorkspace = colIdx === workspaceColIdx;
         if (!tiles.length && !isWorkspace) return null;
 
-        const isDragTarget = dragOverCol === col && !!panelDragKey && !dragId && (col === "col2" || col === "col4");
+        const isDragTarget = dragOverCol === col && !!panelDragKey && !dragId && (col === "col1" || col === "col4");
         const colClass = isWorkspace
-          ? "flex-1 min-w-0 flex flex-col gap-3 p-3 overflow-y-auto border-l border-white/20"
+          ? "flex-1 min-w-0 flex flex-col gap-3 p-3 pb-10 overflow-y-auto border-l border-white/20"
           : col === "col4"
-            ? "w-[300px] flex-shrink-0 flex flex-col gap-3 p-3 overflow-y-auto border-l border-white/20"
-            : "w-[300px] flex-shrink-0 flex flex-col gap-3 p-3 overflow-y-auto border-r border-white/20";
+            ? "w-[300px] flex-shrink-0 flex flex-col gap-3 p-3 pb-10 overflow-y-auto border-l border-white/20"
+            : "w-[300px] flex-shrink-0 flex flex-col gap-3 p-3 pb-10 overflow-y-auto border-r border-white/20";
 
         return (
           <div
             key={col}
             className={colClass}
             style={{ outline: isDragTarget ? "1px dashed rgba(26,26,26,0.15)" : "none", outlineOffset: -3 }}
-            onDragOver={(e) => { if (!dragId && (col === "col2" || col === "col4")) { e.preventDefault(); setDragOverCol(col); } }}
+            onDragOver={(e) => { if (!dragId && (col === "col1" || col === "col4")) { e.preventDefault(); setDragOverCol(col); } }}
             onDrop={(e) => {
-              if (dragId || !panelDragKey || !panelDragSourceCol || (col !== "col2" && col !== "col4")) { clearPanelDrag(); return; }
+              if (dragId || !panelDragKey || !panelDragSourceCol || (col !== "col1" && col !== "col4")) { clearPanelDrag(); return; }
               e.preventDefault();
               moveTile(panelDragKey, panelDragSourceCol, col, layout[col].length);
               clearPanelDrag();
