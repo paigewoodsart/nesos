@@ -108,7 +108,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const weekTasks = store.tasks.filter((t) => t.dayIndex === -1);
 
   return (
-    <div className="flex flex-col min-h-screen board-breathe board-grid">
+    <div className="flex flex-col h-screen overflow-hidden board-breathe board-grid">
       {/* Beta bar — desktop only, pinned to bottom */}
       <div
         className="fixed bottom-0 left-0 right-0 z-20 py-1.5 px-4 text-center text-[11px] tracking-wide border-t border-paper-line/30"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { parseDueDate, dueDateUrgency, isWithinNextDays, isEventToday, formatEventTime, isoToMinutes } from "@/lib/dates";
 import { noteTextColor } from "@/lib/colors";
 import { DueBadge } from "@/components/shared/DueBadge";
@@ -9,23 +9,29 @@ import { AddTaskInput } from "@/components/shared/AddTaskInput";
 import { AddGoalInline } from "@/components/shared/AddGoalInline";
 import { MiniCalendar } from "./MiniCalendar";
 import { DailyAffirmation } from "./DailyAffirmation";
-import type { Client, ClientTask, Task, Goal, CalendarEvent } from "@/types";
+import type { Client, ClientTask, ClientFile, Task, Goal, CalendarEvent } from "@/types";
 
 // ── Client task row ─────────────────────────────────────────────
 
 function ClientTaskRow({
   task, color, onToggle, onRemove, onSetDue, onArchive, onRename,
+  taskFiles, onUploadTaskFiles, onDeleteTaskFile,
 }: {
   task: ClientTask; color: string;
   onToggle: () => void; onRemove: () => void;
   onSetDue: (due: string | null) => void;
   onArchive: () => void; onRename: (text: string) => void;
+  taskFiles?: ClientFile[];
+  onUploadTaskFiles?: (files: FileList) => void;
+  onDeleteTaskFile?: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [showFiles, setShowFiles] = useState(false);
   const [textDraft, setTextDraft] = useState(task.text);
   const editDueRef = useRef(task.dueDate ?? "");
   const tappingDate = useRef(false);
   const committed = useRef(false);
+  const fileCount = taskFiles?.length ?? 0;
 
   const commit = () => {
     if (committed.current) return;
@@ -43,9 +49,9 @@ function ClientTaskRow({
   };
 
   return (
-    <div className="group grid items-center gap-x-2 py-1" style={{ gridTemplateColumns: "72px 1fr 24px 20px" }}>
+    <div className="group grid items-center gap-x-2 py-1" style={{ gridTemplateColumns: "72px 1fr 24px 20px 20px" }}>
       {editing ? (
-        <div className="col-span-4 flex items-center gap-2 py-0.5">
+        <div className="col-span-5 flex items-center gap-2 py-0.5">
           <input
             autoFocus
             value={textDraft}
@@ -109,7 +115,31 @@ function ClientTaskRow({
               <path d="M5 7h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
             </svg>
           </button>
+          <button
+            onClick={() => setShowFiles((v) => !v)}
+            className="flex-shrink-0 relative opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-paper-ink-light hover:text-paper-ink flex items-center justify-center"
+            title="Attach files"
+          >
+            <svg width="11" height="13" viewBox="0 0 12 14" fill="none">
+              <path d="M10.5 6.5L5.5 11.5C4.4 12.6 2.6 12.6 1.5 11.5C0.4 10.4 0.4 8.6 1.5 7.5L6.5 2.5C7.2 1.8 8.3 1.8 9 2.5C9.7 3.2 9.7 4.3 9 5L4.5 9.5C4.2 9.8 3.8 9.8 3.5 9.5C3.2 9.2 3.2 8.8 3.5 8.5L7.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+            {fileCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-[8px] flex items-center justify-center text-white font-bold" style={{ backgroundColor: color, opacity: 1 }}>
+                {fileCount}
+              </span>
+            )}
+          </button>
         </>
+      )}
+      {showFiles && onUploadTaskFiles && onDeleteTaskFile && (
+        <div className="col-span-5">
+          <FilesSection
+            files={taskFiles ?? []}
+            onUpload={onUploadTaskFiles}
+            onDelete={onDeleteTaskFile}
+            label="TASK FILES"
+          />
+        </div>
       )}
     </div>
   );
@@ -202,7 +232,7 @@ function MeetingRow({ event }: { event: CalendarEvent }) {
 
 function TaskColumnHeaders() {
   return (
-    <div className="grid gap-x-2 mb-1 pb-1 border-b" style={{ gridTemplateColumns: "72px 1fr 24px 20px", borderColor: "rgba(26,26,26,0.08)" }}>
+    <div className="grid gap-x-2 mb-1 pb-1 border-b" style={{ gridTemplateColumns: "72px 1fr 24px 20px 20px", borderColor: "rgba(26,26,26,0.08)" }}>
       <span className="text-[9px] uppercase tracking-widest text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Due</span>
       <span className="text-[9px] uppercase tracking-widest text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Task</span>
       <span className="text-[9px] uppercase tracking-widest text-paper-ink-light text-center" style={{ fontFamily: "var(--font-body)" }}>✓</span>
@@ -349,6 +379,200 @@ function loadClientOrder(): string[] {
 }
 function saveClientOrder(order: string[]) {
   localStorage.setItem("client-order", JSON.stringify(order));
+}
+
+// ── Board layout (tile-based) ────────────────────────────────────
+
+type TileKey = "__goals__" | "__braindump__" | "__overdue__" | "__today__" | "__week__" | "__projects__" | "__add_project__";
+type ColKey = "col1" | "col2" | "col3" | "col4";
+const COLS: ColKey[] = ["col1", "col2", "col3", "col4"];
+
+function defaultLayout(): Record<ColKey, TileKey[]> {
+  return {
+    col1: ["__projects__"],
+    col2: ["__overdue__", "__today__", "__week__"],
+    col3: [],
+    col4: ["__add_project__", "__braindump__", "__goals__"],
+  };
+}
+
+function loadLayout(): Record<ColKey, TileKey[]> {
+  try {
+    const saved = localStorage.getItem("board-layout-v3");
+    if (saved) return JSON.parse(saved);
+    return defaultLayout();
+  } catch { return defaultLayout(); }
+}
+
+function saveLayout(l: Record<ColKey, TileKey[]>) {
+  localStorage.setItem("board-layout-v3", JSON.stringify(l));
+}
+
+// ── File attachment helpers ──────────────────────────────────────
+
+async function uploadFile(
+  file: File,
+  clientId: string,
+  taskId?: string | null
+): Promise<ClientFile> {
+  // Get signed upload URL
+  const urlRes = await fetch("/api/db/files/upload-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientId, taskId: taskId ?? null, fileName: file.name, mimeType: file.type }),
+  });
+  if (!urlRes.ok) throw new Error("Failed to get upload URL");
+  const { signedUrl, path } = await urlRes.json();
+
+  // Upload directly to Supabase Storage
+  const uploadRes = await fetch(signedUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body: file,
+  });
+  if (!uploadRes.ok) throw new Error("Upload failed");
+
+  // Record metadata
+  const id = crypto.randomUUID();
+  const meta: ClientFile = {
+    id,
+    clientId,
+    taskId: taskId ?? null,
+    fileName: file.name,
+    filePath: path,
+    fileSize: file.size,
+    mimeType: file.type || undefined,
+    createdAt: new Date().toISOString(),
+  };
+  await fetch("/api/db/files", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(meta),
+  });
+  return meta;
+}
+
+function FileRow({
+  file, onDelete,
+}: {
+  file: ClientFile & { signedUrl?: string };
+  onDelete: () => void;
+}) {
+  const isImage = file.mimeType?.startsWith("image/");
+  const isPdf = file.mimeType === "application/pdf";
+  const sizeLabel = file.fileSize
+    ? file.fileSize > 1_000_000
+      ? `${(file.fileSize / 1_000_000).toFixed(1)} MB`
+      : `${Math.round(file.fileSize / 1024)} KB`
+    : "";
+
+  return (
+    <div className="group flex items-center gap-2 py-1">
+      {isImage && file.signedUrl ? (
+        <a href={file.signedUrl} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
+          <img src={file.signedUrl} alt={file.fileName} className="w-8 h-8 object-cover rounded" />
+        </a>
+      ) : (
+        <span className="flex-shrink-0 text-base">
+          {isPdf ? "📄" : "📎"}
+        </span>
+      )}
+      <a
+        href={file.signedUrl ?? "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 text-xs truncate hover:underline underline-offset-2"
+        style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
+      >
+        {file.fileName}
+      </a>
+      {sizeLabel && (
+        <span className="text-[10px] text-paper-ink-light flex-shrink-0" style={{ fontFamily: "var(--font-body)" }}>
+          {sizeLabel}
+        </span>
+      )}
+      <button
+        onClick={onDelete}
+        className="flex-shrink-0 opacity-0 group-hover:opacity-70 hover:!opacity-100 text-paper-ink-light hover:text-paper-rust transition-opacity text-base leading-none"
+        title="Remove file"
+      >×</button>
+    </div>
+  );
+}
+
+function FilesSection({
+  files,
+  onUpload,
+  onDelete,
+  label = "FILES",
+}: {
+  files: ClientFile[];
+  onUpload: (files: FileList) => void;
+  onDelete: (id: string) => void;
+  label?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="mt-3 pt-2 border-t" style={{ borderColor: "rgba(26,26,26,0.07)" }}>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[9px] uppercase tracking-widest" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.45 }}>{label}</span>
+        <button
+          onClick={() => inputRef.current?.click()}
+          className="flex items-center gap-1 text-[10px] text-paper-ink-light hover:text-paper-ink transition-colors"
+          style={{ fontFamily: "var(--font-body)" }}
+          title="Attach file"
+        >
+          <svg width="11" height="13" viewBox="0 0 12 14" fill="none">
+            <path d="M10.5 6.5L5.5 11.5C4.4 12.6 2.6 12.6 1.5 11.5C0.4 10.4 0.4 8.6 1.5 7.5L6.5 2.5C7.2 1.8 8.3 1.8 9 2.5C9.7 3.2 9.7 4.3 9 5L4.5 9.5C4.2 9.8 3.8 9.8 3.5 9.5C3.2 9.2 3.2 8.8 3.5 8.5L7.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+          attach
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => { if (e.target.files?.length) { onUpload(e.target.files); e.target.value = ""; } }}
+        />
+      </div>
+      {files.length === 0 && (
+        <p className="text-[10px] italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>No files attached.</p>
+      )}
+      {files.map((f) => (
+        <FileRow key={f.id} file={f} onDelete={() => onDelete(f.id)} />
+      ))}
+    </div>
+  );
+}
+
+// ── ProjectsList (overflow-aware fade) ──────────────────────────
+
+function ProjectsList({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [overflows, setOverflows] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setOverflows(el.scrollHeight > el.clientHeight + 2);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="flex flex-col gap-2 overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-paper-ink/20"
+      style={overflows ? {
+        maskImage: "linear-gradient(to bottom, black calc(100% - 44px), transparent 100%)",
+        WebkitMaskImage: "linear-gradient(to bottom, black calc(100% - 44px), transparent 100%)",
+      } : undefined}
+    >
+      {children}
+    </div>
+  );
 }
 
 // ── NotePanel ───────────────────────────────────────────────────
@@ -628,23 +852,18 @@ export function StickyBoard({
   const [clientOrder, setClientOrder] = useState<string[]>(() => loadClientOrder());
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
-  const [leftOrder, setLeftOrder] = useState<["__goals__", "__braindump__"] | ["__braindump__", "__goals__"]>(() => {
-    try { return JSON.parse(localStorage.getItem("left-panel-order") ?? "null") ?? ["__goals__", "__braindump__"]; } catch { return ["__goals__", "__braindump__"]; }
-  });
-  const [rightOrder, setRightOrder] = useState<string[]>(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("right-panel-order") ?? "null");
-      if (Array.isArray(saved) && saved.includes("__overdue__")) return saved;
-      return ["__overdue__", "__today__", "__week__"];
-    } catch { return ["__overdue__", "__today__", "__week__"]; }
-  });
-  const [panelDragKey, setPanelDragKey] = useState<string | null>(null);
+  const [layout, setLayout] = useState<Record<ColKey, TileKey[]>>(() => loadLayout());
+  const [panelDragKey, setPanelDragKey] = useState<TileKey | null>(null);
+  const [panelDragSourceCol, setPanelDragSourceCol] = useState<ColKey | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<ColKey | null>(null);
+  const [panelDropTarget, setPanelDropTarget] = useState<{ col: ColKey; index: number } | null>(null);
   const [panelCollapsed, setPanelCollapsed] = useState<Record<string, boolean>>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("panel-collapsed") ?? "{}");
-      return { ...saved, __goals__: false }; // affirmation tile always starts open
+      return { ...saved, __goals__: false };
     } catch { return {}; }
   });
+
   const togglePanelCollapse = (key: string) => {
     setPanelCollapsed((prev) => {
       const next = { ...prev, [key]: !prev[key] };
@@ -659,6 +878,60 @@ export function StickyBoard({
       saveSystemConfig(next);
       return next;
     });
+  }, []);
+
+  const moveTile = useCallback((tileKey: TileKey, srcCol: ColKey, dstCol: ColKey, dstIdx: number) => {
+    setLayout((prev) => {
+      const next = { ...prev };
+      next[srcCol] = prev[srcCol].filter((k) => k !== tileKey);
+      const dst = prev[dstCol].filter((k) => k !== tileKey);
+      dst.splice(dstIdx, 0, tileKey);
+      next[dstCol] = dst;
+      saveLayout(next);
+      return next;
+    });
+  }, []);
+
+  const [filesByClient, setFilesByClient] = useState<Record<string, ClientFile[]>>({});
+
+  // Load files when active project changes
+  useEffect(() => {
+    if (!activeClientId) return;
+    fetch(`/api/db/files?clientId=${activeClientId}`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((files) => setFilesByClient((prev) => ({ ...prev, [activeClientId]: files })))
+      .catch(() => {});
+  }, [activeClientId]);
+
+  const handleUploadFiles = useCallback(async (clientId: string, taskId: string | null, fileList: FileList) => {
+    const uploads = Array.from(fileList).map((f) => uploadFile(f, clientId, taskId));
+    const results = await Promise.allSettled(uploads);
+    const succeeded = results
+      .filter((r): r is PromiseFulfilledResult<ClientFile> => r.status === "fulfilled")
+      .map((r) => r.value);
+    if (succeeded.length) {
+      // Refresh file list from server to get signed URLs
+      const res = await fetch(`/api/db/files?clientId=${clientId}`);
+      if (res.ok) {
+        const files = await res.json();
+        setFilesByClient((prev) => ({ ...prev, [clientId]: files }));
+      }
+    }
+  }, []);
+
+  const handleDeleteFile = useCallback(async (clientId: string, fileId: string) => {
+    await fetch(`/api/db/files?id=${fileId}`, { method: "DELETE" });
+    setFilesByClient((prev) => ({
+      ...prev,
+      [clientId]: (prev[clientId] ?? []).filter((f) => f.id !== fileId),
+    }));
+  }, []);
+
+  const clearPanelDrag = useCallback(() => {
+    setPanelDragKey(null);
+    setPanelDragSourceCol(null);
+    setDragOverCol(null);
+    setPanelDropTarget(null);
   }, []);
 
   // ── Aggregated data ─────────────────────────────────────────────
@@ -688,135 +961,226 @@ export function StickyBoard({
   const manualDone = weekTasks.filter((t) => t.completed);
   const weekColor = systemConfig["__week__"].color;
 
-const overdueItems = allClientTasks
+  const overdueItems = allClientTasks
     .filter((t) => !t.done && dueDateUrgency(t.dueDate) === "overdue")
     .sort((a, b) => parseDueDate(a.dueDate)!.getTime() - parseDueDate(b.dueDate)!.getTime());
 
   const activeClient = activeClientId ? clients.find((c) => c.id === activeClientId) ?? null : null;
 
-  return (
-    <div className="flex-1 flex board-breathe">
+  // Workspace renders in the column immediately after projects
+  const projectsColIdx = COLS.findIndex((c) => layout[c].includes("__projects__"));
+  const workspaceColIdx = projectsColIdx < 3 ? projectsColIdx + 1 : projectsColIdx;
 
-      {/* ── Col 1: Goals + Brain Dump + Add Project (draggable order) ── */}
-      <div className="w-[280px] flex-shrink-0 flex flex-col gap-3 p-3 border-r border-white/20">
-        {leftOrder.map((key) => {
-          const isGoals = key === "__goals__";
-          return (
-            <div
-              key={key}
-              draggable
-              onDragStart={() => setPanelDragKey(key)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => {
-                if (panelDragKey && panelDragKey !== key) {
-                  const next: typeof leftOrder = [key, leftOrder.find(k => k !== key)!] as typeof leftOrder;
-                  setLeftOrder(next);
-                  localStorage.setItem("left-panel-order", JSON.stringify(next));
-                }
-                setPanelDragKey(null);
-              }}
-              onDragEnd={() => setPanelDragKey(null)}
-              style={{ opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
-              className="flex flex-col"
-            >
-              {isGoals ? (
-                <NotePanel
-                  title={new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                  color={systemConfig["__goals__"].color}
-                  colorOptions={WARM_COLORS}
-                  onTitleChange={(title) => updateSystemConfig("__goals__", { title })}
-                  onColorChange={(color) => updateSystemConfig("__goals__", { color })}
-                  collapsed={!!panelCollapsed["__goals__"]}
-                  onToggleCollapse={() => togglePanelCollapse("__goals__")}
-                  className="flex-1"
-                  lined={false}
-                >
-                  <DailyAffirmation color={systemConfig["__goals__"].color} />
-                </NotePanel>
-              ) : (
-                <NotePanel
-                  title="Calendar"
-                  color={systemConfig["__braindump__"].color}
-                  colorOptions={WARM_COLORS}
-                  onTitleChange={(title) => updateSystemConfig("__braindump__", { title })}
-                  onColorChange={(color) => updateSystemConfig("__braindump__", { color })}
-                  collapsed={!!panelCollapsed["__braindump__"]}
-                  onToggleCollapse={() => togglePanelCollapse("__braindump__")}
-                  className="flex-1"
-                  lined={false}
-                >
-                  <MiniCalendar />
-                </NotePanel>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Col 2: Project list ── */}
-      <div className="w-[300px] flex-shrink-0 flex flex-col gap-2 p-3 border-r border-white/20">
-        {(() => {
-          const orderMap = new Map(clientOrder.map((id, i) => [id, i]));
-          const allOrdered = [...clients].sort((a, b) => {
-            const ai = orderMap.has(a.id) ? orderMap.get(a.id)! : clients.length;
-            const bi = orderMap.has(b.id) ? orderMap.get(b.id)! : clients.length;
-            return ai - bi;
-          });
-          const ordered = allOrdered.filter((c) => !c.archived);
-          const archivedClients = allOrdered.filter((c) => c.archived);
-          return (<>
+  // ── Tile content renderer ────────────────────────────────────────
+  const renderTileContent = (key: TileKey) => {
+    if (key === "__goals__") {
+      return (
+        <NotePanel
+          title={new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+          color={systemConfig["__goals__"].color}
+          colorOptions={WARM_COLORS}
+          onTitleChange={(title) => updateSystemConfig("__goals__", { title })}
+          onColorChange={(color) => updateSystemConfig("__goals__", { color })}
+          collapsed={!!panelCollapsed["__goals__"]}
+          onToggleCollapse={() => togglePanelCollapse("__goals__")}
+          lined={false}
+        >
+          <DailyAffirmation color={systemConfig["__goals__"].color} />
+        </NotePanel>
+      );
+    }
+    if (key === "__braindump__") {
+      return (
+        <NotePanel
+          title="Calendar"
+          color={systemConfig["__braindump__"].color}
+          colorOptions={WARM_COLORS}
+          onTitleChange={(title) => updateSystemConfig("__braindump__", { title })}
+          onColorChange={(color) => updateSystemConfig("__braindump__", { color })}
+          collapsed={!!panelCollapsed["__braindump__"]}
+          onToggleCollapse={() => togglePanelCollapse("__braindump__")}
+          lined={false}
+        >
+          <MiniCalendar />
+        </NotePanel>
+      );
+    }
+    if (key === "__overdue__") {
+      return (
+        <NotePanel
+          title={systemConfig["__overdue__"].title}
+          color={systemConfig["__overdue__"].color}
+          colorOptions={WARM_COLORS}
+          onTitleChange={(title) => updateSystemConfig("__overdue__", { title })}
+          onColorChange={(color) => updateSystemConfig("__overdue__", { color })}
+          collapsed={!!panelCollapsed["__overdue__"]}
+          onToggleCollapse={() => togglePanelCollapse("__overdue__")}
+        >
+          {overdueItems.length === 0 ? (
+            <p className="text-xs italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Nothing overdue.</p>
+          ) : (
+            overdueItems.map((t) => (
+              <AggregatedTaskRow key={t.id} task={t} clientColor={t.clientColor}
+                onToggle={() => onToggleClientTask(t.clientId, t.id)}
+                onOpenProject={() => setActiveClientId(t.clientId)}
+              />
+            ))
+          )}
+        </NotePanel>
+      );
+    }
+    if (key === "__today__") {
+      return (
+        <NotePanel
+          title={systemConfig["__today__"].title}
+          color={systemConfig["__today__"].color}
+          colorOptions={WARM_COLORS}
+          onTitleChange={(title) => updateSystemConfig("__today__", { title })}
+          onColorChange={(color) => updateSystemConfig("__today__", { color })}
+          collapsed={!!panelCollapsed["__today__"]}
+          onToggleCollapse={() => togglePanelCollapse("__today__")}
+        >
+          {todayMeetings.length === 0 && todayTasks.length === 0 && (
+            <p className="text-xs italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Nothing due today.</p>
+          )}
+          {todayMeetings.length > 0 && (
+            <>
+              <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Meetings</p>
+              {todayMeetings.map((e) => <MeetingRow key={e.id} event={e} />)}
+            </>
+          )}
+          {todayTasks.length > 0 && (
+            <>
+              {todayMeetings.length > 0 && <div className="my-2 border-t" style={{ borderColor: "rgba(26,26,26,0.07)" }} />}
+              <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Due Today</p>
+              {todayTasks.map((t) => (
+                <AggregatedTaskRow key={t.id} task={t} clientColor={t.clientColor} onToggle={() => onToggleClientTask(t.clientId, t.id)} onOpenProject={() => setActiveClientId(t.clientId)} />
+              ))}
+            </>
+          )}
+        </NotePanel>
+      );
+    }
+    if (key === "__week__") {
+      return (
+        <NotePanel
+          title={systemConfig["__week__"].title}
+          color={weekColor}
+          colorOptions={WARM_COLORS}
+          onTitleChange={(title) => updateSystemConfig("__week__", { title })}
+          onColorChange={(color) => updateSystemConfig("__week__", { color })}
+          collapsed={!!panelCollapsed["__week__"]}
+          onToggleCollapse={() => togglePanelCollapse("__week__")}
+        >
+          {weekMeetings.length > 0 && (
+            <>
+              <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Meetings</p>
+              {weekMeetings.map((e) => <MeetingRow key={e.id} event={e} />)}
+              <div className="my-2 border-t" style={{ borderColor: "rgba(26,26,26,0.07)" }} />
+            </>
+          )}
+          {weekTasks7.length > 0 && (
+            <>
+              <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Due This Week</p>
+              {weekTasks7.map((t) => (
+                <AggregatedTaskRow key={t.id} task={t} clientColor={t.clientColor} onToggle={() => onToggleClientTask(t.clientId, t.id)} onOpenProject={() => setActiveClientId(t.clientId)} />
+              ))}
+              <div className="my-2 border-t" style={{ borderColor: "rgba(26,26,26,0.07)" }} />
+            </>
+          )}
+          <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>On My Plate</p>
+          {manualPending.length === 0 && weekTasks7.length === 0 && weekMeetings.length === 0 && (
+            <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>Nothing yet.</p>
+          )}
+          {manualPending.map((t) => (
+            <WeekTaskRow key={t.id} task={t} color={weekColor}
+              onToggle={() => onToggleWeekTask(t.id)}
+              onRemove={() => onRemoveWeekTask(t.id)}
+              onRename={(text) => onRenameWeekTask(t.id, text)}
+            />
+          ))}
+          {manualDone.length > 0 && (
+            <details className="mt-1">
+              <summary className="text-[10px] italic cursor-pointer list-none flex items-center gap-1 pb-1 select-none" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>▸ {manualDone.length} done</summary>
+              {manualDone.map((t) => (
+                <WeekTaskRow key={t.id} task={t} color={weekColor}
+                  onToggle={() => onToggleWeekTask(t.id)}
+                  onRemove={() => onRemoveWeekTask(t.id)}
+                  onRename={(text) => onRenameWeekTask(t.id, text)}
+                />
+              ))}
+            </details>
+          )}
+          <div className="mt-2 pt-2 border-t" style={{ borderColor: `${weekColor}25` }}>
+            <AddWeekTaskInline onAdd={onAddWeekTask} color={weekColor} />
+          </div>
+        </NotePanel>
+      );
+    }
+    if (key === "__projects__") {
+      const orderMap = new Map(clientOrder.map((id, i) => [id, i]));
+      const allOrdered = [...clients].sort((a, b) => {
+        const ai = orderMap.has(a.id) ? orderMap.get(a.id)! : clients.length;
+        const bi = orderMap.has(b.id) ? orderMap.get(b.id)! : clients.length;
+        return ai - bi;
+      });
+      const ordered = allOrdered.filter((c) => !c.archived);
+      const archivedClients = allOrdered.filter((c) => c.archived);
+      return (
+        <ProjectsList>
           {ordered.map((c, i) => {
-          const active = activeClientId === c.id;
-          const tc = noteTextColor(c.color);
-          const isDragging = dragId === c.id;
-          return (
-            <div key={c.id} className="relative">
-              {dropIndex === i && dragId !== c.id && (
-                <div className="absolute -top-1 left-0 right-0 h-0.5 rounded-full z-10" style={{ backgroundColor: c.color }} />
-              )}
-              <button
-                draggable
-                onClick={() => setActiveClientId(active ? null : c.id)}
-                onDragStart={(e) => { setDragId(c.id); e.dataTransfer.effectAllowed = "move"; }}
-                onDragOver={(e) => { e.preventDefault(); setDropIndex(i); }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (!dragId || dragId === c.id) return;
-                  const fromIdx = ordered.findIndex(x => x.id === dragId);
-                  const newOrder = ordered.map(x => x.id);
-                  newOrder.splice(fromIdx, 1);
-                  newOrder.splice(i, 0, dragId);
-                  setClientOrder(newOrder);
-                  saveClientOrder(newOrder);
-                  setDragId(null); setDropIndex(null);
-                }}
-                onDragEnd={() => { setDragId(null); setDropIndex(null); }}
-                className="w-full flex items-center gap-2 px-3 py-3 text-left transition-all group/bar"
-                style={{
-                  backgroundColor: c.color,
-                  opacity: isDragging ? 0.4 : active ? 1 : 0.82,
-                  boxShadow: active ? "3px 5px 18px rgba(26,26,26,0.18), 0 0 0 2px rgba(26,26,26,0.18)" : "2px 3px 8px rgba(26,26,26,0.10)",
-                  cursor: "grab",
-                }}
-              >
-                <svg width="10" height="14" viewBox="0 0 10 14" fill="none"
-                  className="flex-shrink-0 opacity-0 group-hover/bar:opacity-40 transition-opacity"
-                  style={{ color: tc }}>
-                  <circle cx="3" cy="2" r="1.2" fill="currentColor"/>
-                  <circle cx="7" cy="2" r="1.2" fill="currentColor"/>
-                  <circle cx="3" cy="7" r="1.2" fill="currentColor"/>
-                  <circle cx="7" cy="7" r="1.2" fill="currentColor"/>
-                  <circle cx="3" cy="12" r="1.2" fill="currentColor"/>
-                  <circle cx="7" cy="12" r="1.2" fill="currentColor"/>
-                </svg>
-              <span className="flex-1 text-xs font-semibold uppercase tracking-[0.2em] truncate"
-                style={{ fontFamily: "var(--font-body)", color: tc, opacity: tc === "#FFFFFF" ? 0.9 : 0.72 }}>
-                {c.name}
-              </span>
-              <span style={{ color: tc, opacity: 0.45, fontSize: 14 }}>›</span>
-              </button>
-            </div>
-          );
+            const active = activeClientId === c.id;
+            const tc = noteTextColor(c.color);
+            const isDragging = dragId === c.id;
+            return (
+              <div key={c.id} className="relative">
+                {dropIndex === i && dragId !== c.id && (
+                  <div className="absolute -top-1 left-0 right-0 h-0.5 rounded-full z-10" style={{ backgroundColor: c.color }} />
+                )}
+                <button
+                  draggable
+                  onClick={() => setActiveClientId(active ? null : c.id)}
+                  onDragStart={(e) => { e.stopPropagation(); setDragId(c.id); e.dataTransfer.effectAllowed = "move"; }}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropIndex(i); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!dragId || dragId === c.id) return;
+                    const fromIdx = ordered.findIndex((x) => x.id === dragId);
+                    const newOrder = ordered.map((x) => x.id);
+                    newOrder.splice(fromIdx, 1);
+                    newOrder.splice(i, 0, dragId);
+                    setClientOrder(newOrder);
+                    saveClientOrder(newOrder);
+                    setDragId(null); setDropIndex(null);
+                  }}
+                  onDragEnd={(e) => { e.stopPropagation(); setDragId(null); setDropIndex(null); }}
+                  className="w-full flex items-center gap-2 px-3 py-3 text-left transition-all group/bar"
+                  style={{
+                    backgroundColor: c.color,
+                    opacity: isDragging ? 0.4 : active ? 1 : 0.82,
+                    boxShadow: active ? "3px 5px 18px rgba(26,26,26,0.18), 0 0 0 2px rgba(26,26,26,0.18)" : "2px 3px 8px rgba(26,26,26,0.10)",
+                    cursor: "grab",
+                  }}
+                >
+                  <svg width="10" height="14" viewBox="0 0 10 14" fill="none"
+                    className="flex-shrink-0 opacity-0 group-hover/bar:opacity-40 transition-opacity"
+                    style={{ color: tc }}>
+                    <circle cx="3" cy="2" r="1.2" fill="currentColor"/>
+                    <circle cx="7" cy="2" r="1.2" fill="currentColor"/>
+                    <circle cx="3" cy="7" r="1.2" fill="currentColor"/>
+                    <circle cx="7" cy="7" r="1.2" fill="currentColor"/>
+                    <circle cx="3" cy="12" r="1.2" fill="currentColor"/>
+                    <circle cx="7" cy="12" r="1.2" fill="currentColor"/>
+                  </svg>
+                  <span className="flex-1 text-xs font-semibold uppercase tracking-[0.2em] truncate"
+                    style={{ fontFamily: "var(--font-body)", color: tc, opacity: tc === "#FFFFFF" ? 0.9 : 0.72 }}>
+                    {c.name}
+                  </span>
+                  <span style={{ color: tc, opacity: 0.45, fontSize: 14 }}>›</span>
+                </button>
+              </div>
+            );
           })}
           {archivedClients.length > 0 && (
             <details className="mt-2">
@@ -841,226 +1205,176 @@ const overdueItems = allClientTasks
               </div>
             </details>
           )}
-          </>);
-        })()}
+        </ProjectsList>
+      );
+    }
+    if (key === "__add_project__") {
+      return (
         <AddProjectInline onAdd={async (name, color) => {
           const client = await onAddClient(name, color);
           setActiveClientId(client.id);
         }} />
-      </div>
+      );
+    }
+    return null;
+  };
 
-      {/* ── Col 3: Project workspace ── */}
-      <div className="flex-1 p-3 min-w-0">
-        {activeClient ? (() => {
-          const allTasks = tasksByClient[activeClient.id] ?? [];
-          const active = allTasks.filter((t) => !t.archived);
-          const archived = allTasks.filter((t) => t.archived);
-          const doneCount = active.filter((t) => t.done).length;
-          const sortedActive = [...active].sort((a, b) => {
-            const da = parseDueDate(a.dueDate), db = parseDueDate(b.dueDate);
-            if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
-            return da.getTime() - db.getTime();
-          });
-          return (
-            <NotePanel
-              title={activeClient.name}
-              color={activeClient.color}
-              className=""
-              colorOptions={CLIENT_COLORS_PALETTE}
-              onTitleChange={(name) => onUpdateClient({ ...activeClient, name })}
-              onColorChange={(color) => onUpdateClient({ ...activeClient, color })}
-              onArchive={() => { onArchiveClient(activeClient.id); setActiveClientId(null); }}
-              onDelete={() => { onRemoveClient(activeClient.id); setActiveClientId(null); }}
-              footer={<ProgressBar done={doneCount} total={active.length} color={activeClient.color} />}
-            >
-              {/* Project notes */}
-              <textarea
-                key={activeClient.id}
-                defaultValue={activeClient.notes ?? ""}
-                onBlur={(e) => {
-                  const val = e.target.value;
-                  if (val !== (activeClient.notes ?? "")) onUpdateClient({ ...activeClient, notes: val });
-                }}
-                placeholder="project notes..."
-                rows={2}
-                className="w-full text-sm bg-transparent border-b border-paper-line/30 outline-none resize-none text-paper-ink leading-relaxed pb-1 mb-3"
-                style={{ fontFamily: "var(--font-body)" }}
-              />
-
-              {sortedActive.length === 0 && archived.length === 0 && (
-                <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>No tasks yet.</p>
-              )}
-              {sortedActive.length > 0 && (
-                <>
-                  <TaskColumnHeaders />
-                  {sortedActive.map((t) => (
-                    <ClientTaskRow key={t.id} task={t} color={activeClient.color}
-                      onToggle={() => onToggleClientTask(activeClient.id, t.id)}
-                      onRemove={() => onRemoveClientTask(activeClient.id, t.id)}
-                      onSetDue={(due) => onUpdateClientTask(activeClient.id, { ...t, dueDate: due })}
-                      onArchive={() => onArchiveClientTask(activeClient.id, t.id)}
-                      onRename={(text) => onUpdateClientTask(activeClient.id, { ...t, text })}
-                    />
-                  ))}
-                </>
-              )}
-              {archived.length > 0 && (
-                <details className="mt-2">
-                  <summary className="text-[10px] italic cursor-pointer list-none flex items-center gap-1 pb-1 select-none" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.45 }}>
-                    ▸ {archived.length} archived
-                  </summary>
-                  <div className="mt-1 space-y-0.5">
-                    {archived.map((t) => <ArchivedTaskRow key={t.id} task={t} />)}
-                  </div>
-                </details>
-              )}
-              <AddTaskInput color={activeClient.color} onAdd={(text, due) => onAddClientTask(activeClient.id, text, due)} />
-            </NotePanel>
-          );
-        })() : (
-          <div className="h-full flex items-center justify-center">
-            <p className="text-sm italic text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>← select a project</p>
-          </div>
+  // ── Draggable tile wrapper ────────────────────────────────────────
+  const renderTile = (key: TileKey, colKey: ColKey, tileIdx: number) => {
+    const isDragging = panelDragKey === key;
+    const showDrop = panelDropTarget?.col === colKey && panelDropTarget?.index === tileIdx && panelDragKey !== key;
+    return (
+      <div key={key} className="relative flex flex-col">
+        {showDrop && (
+          <div className="absolute -top-1.5 left-0 right-0 h-0.5 bg-paper-ink/30 rounded-full z-10 pointer-events-none" />
         )}
+        <div
+          draggable
+          onDragStart={(e) => {
+            if (dragId || (colKey !== "col2" && colKey !== "col4")) return;
+            setPanelDragKey(key);
+            setPanelDragSourceCol(colKey);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onDragOver={(e) => {
+            if (dragId || (colKey !== "col2" && colKey !== "col4")) return;
+            e.preventDefault();
+            e.stopPropagation();
+            setDragOverCol(colKey);
+            setPanelDropTarget({ col: colKey, index: tileIdx });
+          }}
+          onDrop={(e) => {
+            if (dragId || (colKey !== "col2" && colKey !== "col4")) { clearPanelDrag(); return; }
+            e.preventDefault();
+            e.stopPropagation();
+            if (!panelDragKey || panelDragKey === key || !panelDragSourceCol) { clearPanelDrag(); return; }
+            moveTile(panelDragKey, panelDragSourceCol, colKey, tileIdx);
+            clearPanelDrag();
+          }}
+          onDragEnd={clearPanelDrag}
+          style={{ opacity: isDragging ? 0.4 : 1, cursor: (colKey === "col2" || colKey === "col4") ? "grab" : "default" }}
+          className="flex flex-col"
+        >
+          {renderTileContent(key)}
+        </div>
       </div>
+    );
+  };
 
-      {/* ── Col 4: Today + This Week (draggable order) ── */}
-      <div className="w-[300px] flex-shrink-0 flex flex-col gap-3 p-3 border-l border-white/20">
-        {rightOrder.map((key) => {
-          const flexSize = key === "__week__" ? 2 : 1;
-          return (
-            <div
-              key={key}
-              draggable
-              onDragStart={() => setPanelDragKey(key)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => {
-                if (panelDragKey && panelDragKey !== key) {
-                  const from = rightOrder.indexOf(panelDragKey);
-                  const to = rightOrder.indexOf(key);
-                  const next = [...rightOrder];
-                  next.splice(from, 1);
-                  next.splice(to, 0, panelDragKey);
-                  setRightOrder(next);
-                  localStorage.setItem("right-panel-order", JSON.stringify(next));
-                }
-                setPanelDragKey(null);
-              }}
-              onDragEnd={() => setPanelDragKey(null)}
-              style={{ opacity: panelDragKey === key ? 0.4 : 1, cursor: "grab" }}
-              className="flex flex-col"
-            >
-              {key === "__overdue__" ? (
-                <NotePanel
-                  title={systemConfig["__overdue__"].title}
-                  color={systemConfig["__overdue__"].color}
-                  colorOptions={WARM_COLORS}
-                  onTitleChange={(title) => updateSystemConfig("__overdue__", { title })}
-                  onColorChange={(color) => updateSystemConfig("__overdue__", { color })}
-                  collapsed={!!panelCollapsed["__overdue__"]}
-                  onToggleCollapse={() => togglePanelCollapse("__overdue__")}
-                  className="flex-1"
-                >
-                  {overdueItems.length === 0 ? (
-                    <p className="text-xs italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Nothing overdue.</p>
-                  ) : (
-                    overdueItems.map((t) => (
-                      <AggregatedTaskRow key={t.id} task={t} clientColor={t.clientColor}
-                        onToggle={() => onToggleClientTask(t.clientId, t.id)}
-                        onOpenProject={() => setActiveClientId(t.clientId)}
-                      />
-                    ))
-                  )}
-                </NotePanel>
-              ) : key === "__today__" ? (
-                <NotePanel
-                  title={systemConfig["__today__"].title}
-                  color={systemConfig["__today__"].color}
-                  colorOptions={WARM_COLORS}
-                  onTitleChange={(title) => updateSystemConfig("__today__", { title })}
-                  onColorChange={(color) => updateSystemConfig("__today__", { color })}
-                  collapsed={!!panelCollapsed["__today__"]}
-                  onToggleCollapse={() => togglePanelCollapse("__today__")}
-                  className="flex-1"
-                >
-                  {todayMeetings.length === 0 && todayTasks.length === 0 && (
-                    <p className="text-xs italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Nothing due today.</p>
-                  )}
-                  {todayMeetings.length > 0 && (
-                    <>
-                      <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Meetings</p>
-                      {todayMeetings.map((e) => <MeetingRow key={e.id} event={e} />)}
-                    </>
-                  )}
-                  {todayTasks.length > 0 && (
-                    <>
-                      {todayMeetings.length > 0 && <div className="my-2 border-t" style={{ borderColor: "rgba(26,26,26,0.07)" }} />}
-                      <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Due Today</p>
-                      {todayTasks.map((t) => (
-                        <AggregatedTaskRow key={t.id} task={t} clientColor={t.clientColor} onToggle={() => onToggleClientTask(t.clientId, t.id)} onOpenProject={() => setActiveClientId(t.clientId)} />
-                      ))}
-                    </>
-                  )}
-                </NotePanel>
-              ) : key === "__week__" ? (
-                <NotePanel
-                  title={systemConfig["__week__"].title}
-                  color={weekColor}
-                  colorOptions={WARM_COLORS}
-                  onTitleChange={(title) => updateSystemConfig("__week__", { title })}
-                  onColorChange={(color) => updateSystemConfig("__week__", { color })}
-                  collapsed={!!panelCollapsed["__week__"]}
-                  onToggleCollapse={() => togglePanelCollapse("__week__")}
-                  className="flex-1"
-                >
-                  {weekMeetings.length > 0 && (
-                    <>
-                      <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Meetings</p>
-                      {weekMeetings.map((e) => <MeetingRow key={e.id} event={e} />)}
-                      <div className="my-2 border-t" style={{ borderColor: "rgba(26,26,26,0.07)" }} />
-                    </>
-                  )}
-                  {weekTasks7.length > 0 && (
-                    <>
-                      <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Due This Week</p>
-                      {weekTasks7.map((t) => (
-                        <AggregatedTaskRow key={t.id} task={t} clientColor={t.clientColor} onToggle={() => onToggleClientTask(t.clientId, t.id)} onOpenProject={() => setActiveClientId(t.clientId)} />
-                      ))}
-                      <div className="my-2 border-t" style={{ borderColor: "rgba(26,26,26,0.07)" }} />
-                    </>
-                  )}
-                  <p className="text-[9px] uppercase tracking-widest mb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>On My Plate</p>
-                  {manualPending.length === 0 && weekTasks7.length === 0 && weekMeetings.length === 0 && (
-                    <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>Nothing yet.</p>
-                  )}
-                  {manualPending.map((t) => (
-                    <WeekTaskRow key={t.id} task={t} color={weekColor}
-                      onToggle={() => onToggleWeekTask(t.id)}
-                      onRemove={() => onRemoveWeekTask(t.id)}
-                      onRename={(text) => onRenameWeekTask(t.id, text)}
-                    />
-                  ))}
-                  {manualDone.length > 0 && (
-                    <details className="mt-1">
-                      <summary className="text-[10px] italic cursor-pointer list-none flex items-center gap-1 pb-1 select-none" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>▸ {manualDone.length} done</summary>
-                      {manualDone.map((t) => (
-                        <WeekTaskRow key={t.id} task={t} color={weekColor}
-                          onToggle={() => onToggleWeekTask(t.id)}
-                          onRemove={() => onRemoveWeekTask(t.id)}
-                          onRename={(text) => onRenameWeekTask(t.id, text)}
-                        />
-                      ))}
-                    </details>
-                  )}
-                  <div className="mt-2 pt-2 border-t" style={{ borderColor: `${weekColor}25` }}>
-                    <AddWeekTaskInline onAdd={onAddWeekTask} color={weekColor} />
-                  </div>
-                </NotePanel>
-              ) : null}
+  // ── Workspace content ────────────────────────────────────────────
+  const renderWorkspace = () => {
+    if (!activeClient) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-sm italic text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>← select a project</p>
+        </div>
+      );
+    }
+    const allTasks = tasksByClient[activeClient.id] ?? [];
+    const active = allTasks.filter((t) => !t.archived);
+    const archived = allTasks.filter((t) => t.archived);
+    const doneCount = active.filter((t) => t.done).length;
+    const sortedActive = [...active].sort((a, b) => {
+      const da = parseDueDate(a.dueDate), db = parseDueDate(b.dueDate);
+      if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
+      return da.getTime() - db.getTime();
+    });
+    return (
+      <NotePanel
+        title={activeClient.name}
+        color={activeClient.color}
+        className="flex-1"
+        colorOptions={CLIENT_COLORS_PALETTE}
+        onTitleChange={(name) => onUpdateClient({ ...activeClient, name })}
+        onColorChange={(color) => onUpdateClient({ ...activeClient, color })}
+        onArchive={() => { onArchiveClient(activeClient.id); setActiveClientId(null); }}
+        onDelete={() => { onRemoveClient(activeClient.id); setActiveClientId(null); }}
+        footer={<ProgressBar done={doneCount} total={active.length} color={activeClient.color} />}
+      >
+        <textarea
+          key={activeClient.id}
+          defaultValue={activeClient.notes ?? ""}
+          onBlur={(e) => {
+            const val = e.target.value;
+            if (val !== (activeClient.notes ?? "")) onUpdateClient({ ...activeClient, notes: val });
+          }}
+          placeholder="project notes..."
+          rows={2}
+          className="w-full text-sm bg-transparent border-b border-paper-line/30 outline-none resize-none text-paper-ink leading-relaxed pb-1 mb-3"
+          style={{ fontFamily: "var(--font-body)" }}
+        />
+        {sortedActive.length === 0 && archived.length === 0 && (
+          <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>No tasks yet.</p>
+        )}
+        {sortedActive.length > 0 && (
+          <>
+            <TaskColumnHeaders />
+            {sortedActive.map((t) => (
+              <ClientTaskRow key={t.id} task={t} color={activeClient.color}
+                onToggle={() => onToggleClientTask(activeClient.id, t.id)}
+                onRemove={() => onRemoveClientTask(activeClient.id, t.id)}
+                onSetDue={(due) => onUpdateClientTask(activeClient.id, { ...t, dueDate: due })}
+                onArchive={() => onArchiveClientTask(activeClient.id, t.id)}
+                onRename={(text) => onUpdateClientTask(activeClient.id, { ...t, text })}
+                taskFiles={(filesByClient[activeClient.id] ?? []).filter((f) => f.taskId === t.id)}
+                onUploadTaskFiles={(fl) => handleUploadFiles(activeClient.id, t.id, fl)}
+                onDeleteTaskFile={(id) => handleDeleteFile(activeClient.id, id)}
+              />
+            ))}
+          </>
+        )}
+        {archived.length > 0 && (
+          <details className="mt-2">
+            <summary className="text-[10px] italic cursor-pointer list-none flex items-center gap-1 pb-1 select-none" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.45 }}>
+              ▸ {archived.length} archived
+            </summary>
+            <div className="mt-1 space-y-0.5">
+              {archived.map((t) => <ArchivedTaskRow key={t.id} task={t} />)}
             </div>
-          );
-        })}
-      </div>
+          </details>
+        )}
+        <AddTaskInput color={activeClient.color} onAdd={(text, due) => onAddClientTask(activeClient.id, text, due)} />
+        <FilesSection
+          files={(filesByClient[activeClient.id] ?? []).filter((f) => !f.taskId)}
+          onUpload={(fl) => handleUploadFiles(activeClient.id, null, fl)}
+          onDelete={(id) => handleDeleteFile(activeClient.id, id)}
+        />
+      </NotePanel>
+    );
+  };
+
+  return (
+    <div className="flex-1 flex board-breathe">
+      {COLS.map((col, colIdx) => {
+        const tiles = layout[col];
+        const isWorkspace = colIdx === workspaceColIdx;
+        if (!tiles.length && !isWorkspace) return null;
+
+        const isDragTarget = dragOverCol === col && !!panelDragKey && !dragId && (col === "col2" || col === "col4");
+        const colClass = isWorkspace
+          ? "flex-1 min-w-0 flex flex-col gap-3 p-3 overflow-y-auto border-l border-white/20"
+          : col === "col4"
+            ? "w-[300px] flex-shrink-0 flex flex-col gap-3 p-3 overflow-y-auto border-l border-white/20"
+            : "w-[300px] flex-shrink-0 flex flex-col gap-3 p-3 overflow-y-auto border-r border-white/20";
+
+        return (
+          <div
+            key={col}
+            className={colClass}
+            style={{ outline: isDragTarget ? "1px dashed rgba(26,26,26,0.15)" : "none", outlineOffset: -3 }}
+            onDragOver={(e) => { if (!dragId && (col === "col2" || col === "col4")) { e.preventDefault(); setDragOverCol(col); } }}
+            onDrop={(e) => {
+              if (dragId || !panelDragKey || !panelDragSourceCol || (col !== "col2" && col !== "col4")) { clearPanelDrag(); return; }
+              e.preventDefault();
+              moveTile(panelDragKey, panelDragSourceCol, col, layout[col].length);
+              clearPanelDrag();
+            }}
+          >
+            {tiles.map((key, i) => renderTile(key, col, i))}
+            {isWorkspace && renderWorkspace()}
+          </div>
+        );
+      })}
     </div>
   );
 }

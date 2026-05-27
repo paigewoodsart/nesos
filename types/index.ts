@@ -92,6 +92,18 @@ export interface ClientTask {
   createdAt: number;
 }
 
+export interface ClientFile {
+  id: string;
+  clientId: string;
+  taskId?: string | null;
+  fileName: string;
+  filePath: string;
+  fileSize?: number;
+  mimeType?: string;
+  createdAt: string;
+  signedUrl?: string;
+}
+
 export interface ClientSession {
   id: string;
   clientId: string;
