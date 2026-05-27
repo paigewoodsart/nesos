@@ -22,7 +22,7 @@ function ClientTaskRow({
   onSetDue: (due: string | null) => void;
   onArchive: () => void; onRename: (text: string) => void;
   taskFiles?: ClientFile[];
-  onUploadTaskFiles?: (files: File[]) => Promise<void>;
+  onUploadTaskFiles?: (files: File[], onProgress: (pct: number) => void) => Promise<void>;
   onDeleteTaskFile?: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -410,17 +410,35 @@ function saveLayout(l: Record<ColKey, TileKey[]>) {
 
 // ── File attachment helpers ──────────────────────────────────────
 
+function putWithProgress(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`Storage upload failed (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(file);
+  });
+}
+
 // Uploads directly to Supabase Storage via signed URL — no Vercel body size limit.
 async function uploadFile(
   file: File,
   clientId: string,
-  taskId?: string | null
+  taskId: string | null,
+  onProgress: (pct: number) => void,
 ): Promise<ClientFile & { localUrl: string }> {
   // 1. Get a signed upload URL from our server (tiny JSON request)
   const urlRes = await fetch("/api/db/files/upload-url", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ clientId, taskId: taskId ?? null, fileName: file.name }),
+    body: JSON.stringify({ clientId, taskId, fileName: file.name }),
   });
   if (!urlRes.ok) {
     const body = await urlRes.json().catch(() => ({}));
@@ -428,18 +446,13 @@ async function uploadFile(
   }
   const { signedUrl, path } = await urlRes.json();
 
-  // 2. PUT file directly to Supabase — bypasses Vercel, no size cap
-  const putRes = await fetch(signedUrl, {
-    method: "PUT",
-    headers: { "Content-Type": file.type || "application/octet-stream" },
-    body: file,
-  });
-  if (!putRes.ok) throw new Error(`Storage upload failed (${putRes.status})`);
+  // 2. PUT file directly to Supabase with real progress events
+  await putWithProgress(signedUrl, file, onProgress);
 
   // 3. Save metadata to our DB
   const id = crypto.randomUUID();
   const meta: ClientFile = {
-    id, clientId, taskId: taskId ?? null,
+    id, clientId, taskId,
     fileName: file.name, filePath: path,
     fileSize: file.size, mimeType: file.type || undefined,
     createdAt: new Date().toISOString(),
@@ -549,26 +562,29 @@ function FilesSection({
   label = "FILES",
 }: {
   files: ClientFile[];
-  onUpload: (files: File[]) => Promise<void>;
+  onUpload: (files: File[], onProgress: (pct: number) => void) => Promise<void>;
   onDelete: (id: string) => void;
   label?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
-    const files = Array.from(e.target.files); // snapshot before clearing
+    const picked = Array.from(e.target.files);
     e.target.value = "";
     setUploadError(null);
+    setProgress(0);
     setUploading(true);
     try {
-      await onUpload(files);
+      await onUpload(picked, setProgress);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
+      setProgress(0);
     }
   };
 
@@ -586,7 +602,7 @@ function FilesSection({
           <svg width="11" height="13" viewBox="0 0 12 14" fill="none">
             <path d="M10.5 6.5L5.5 11.5C4.4 12.6 2.6 12.6 1.5 11.5C0.4 10.4 0.4 8.6 1.5 7.5L6.5 2.5C7.2 1.8 8.3 1.8 9 2.5C9.7 3.2 9.7 4.3 9 5L4.5 9.5C4.2 9.8 3.8 9.8 3.5 9.5C3.2 9.2 3.2 8.8 3.5 8.5L7.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
           </svg>
-          {uploading ? "uploading…" : "attach"}
+          {uploading ? `${progress}%` : "attach"}
         </button>
         <input ref={inputRef} type="file" multiple className="hidden" onChange={handleChange} />
       </div>
@@ -594,7 +610,17 @@ function FilesSection({
         <p className="text-[10px] text-paper-rust mb-1" style={{ fontFamily: "var(--font-body)" }}>{uploadError}</p>
       )}
       {uploading && (
-        <p className="text-[10px] italic opacity-50 mb-1" style={{ fontFamily: "var(--font-body)" }}>Uploading…</p>
+        <div className="mb-2">
+          <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: "rgba(26,26,26,0.08)" }}>
+            <div
+              className="h-full rounded-full transition-all duration-200"
+              style={{ width: `${progress}%`, background: "var(--color-paper-rust, #8B4A3A)" }}
+            />
+          </div>
+          <p className="text-[9px] mt-0.5 opacity-40" style={{ fontFamily: "var(--font-body)" }}>
+            jpeg, png, pdf and most file types supported · up to 50 MB
+          </p>
+        </div>
       )}
       {!uploading && files.length === 0 && !uploadError && (
         <p className="text-[10px] italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>No files attached.</p>
@@ -973,18 +999,28 @@ export function StickyBoard({
       .catch(() => {});
   }, [activeClientId]);
 
-  const handleUploadFiles = useCallback(async (clientId: string, taskId: string | null, fileList: File[]) => {
-    const results = await Promise.allSettled(
-      fileList.map((f) => uploadFile(f, clientId, taskId))
-    );
+  const handleUploadFiles = useCallback(async (
+    clientId: string,
+    taskId: string | null,
+    fileList: File[],
+    onProgress: (pct: number) => void,
+  ) => {
+    const progresses = new Array(fileList.length).fill(0);
+    const updateProgress = (idx: number, pct: number) => {
+      progresses[idx] = pct;
+      onProgress(Math.round(progresses.reduce((a, b) => a + b, 0) / progresses.length));
+    };
+
     type UploadResult = ClientFile & { localUrl: string };
+    const results = await Promise.allSettled(
+      fileList.map((f, i) => uploadFile(f, clientId, taskId, (pct) => updateProgress(i, pct)))
+    );
     const succeeded = results
       .filter((r): r is PromiseFulfilledResult<UploadResult> => r.status === "fulfilled")
       .map((r) => r.value);
     const errors = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
 
     if (succeeded.length > 0) {
-      // Show immediately with local object URLs so images appear without waiting
       setFilesByClient((prev) => ({
         ...prev,
         [clientId]: [
@@ -992,7 +1028,6 @@ export function StickyBoard({
           ...succeeded.map(({ localUrl, ...f }) => ({ ...f, signedUrl: localUrl })),
         ],
       }));
-      // Fetch real signed URLs from server and replace
       const res = await fetch(`/api/db/files?clientId=${clientId}`);
       if (res.ok) {
         const serverFiles = await res.json();
@@ -1001,9 +1036,7 @@ export function StickyBoard({
       }
     }
 
-    if (errors.length > 0) {
-      throw new Error(errors[0].reason?.message ?? "Upload failed");
-    }
+    if (errors.length > 0) throw new Error(errors[0].reason?.message ?? "Upload failed");
   }, []);
 
   const handleDeleteFile = useCallback(async (clientId: string, fileId: string) => {
@@ -1403,7 +1436,7 @@ export function StickyBoard({
                 onArchive={() => onArchiveClientTask(activeClient.id, t.id)}
                 onRename={(text) => onUpdateClientTask(activeClient.id, { ...t, text })}
                 taskFiles={(filesByClient[activeClient.id] ?? []).filter((f) => f.taskId === t.id)}
-                onUploadTaskFiles={(fl) => handleUploadFiles(activeClient.id, t.id, fl)}
+                onUploadTaskFiles={(fl, onProgress) => handleUploadFiles(activeClient.id, t.id, fl, onProgress)}
                 onDeleteTaskFile={(id) => handleDeleteFile(activeClient.id, id)}
               />
             ))}
@@ -1422,7 +1455,7 @@ export function StickyBoard({
         <AddTaskInput color={activeClient.color} onAdd={(text, due) => onAddClientTask(activeClient.id, text, due)} />
         <FilesSection
           files={(filesByClient[activeClient.id] ?? []).filter((f) => !f.taskId)}
-          onUpload={(fl) => handleUploadFiles(activeClient.id, null, fl)}
+          onUpload={(fl, onProgress) => handleUploadFiles(activeClient.id, null, fl, onProgress)}
           onDelete={(id) => handleDeleteFile(activeClient.id, id)}
         />
       </NotePanel>
