@@ -309,22 +309,23 @@ function SpectrumPopup({
       </div>
 
       {/* Done */}
-      <button
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => onClose()}
-        style={{
-          marginTop: 12, width: "100%",
-          fontFamily: "var(--font-body)", fontSize: 10,
-          textTransform: "uppercase", letterSpacing: "0.14em",
-          color: "#1A1A1A", background: "rgba(26,26,26,0.07)",
-          border: "none", borderRadius: 8, padding: "7px 0",
-          cursor: "pointer",
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(26,26,26,0.13)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(26,26,26,0.07)")}
-      >
-        Done
-      </button>
+      <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+        <button
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => onClose()}
+          style={{
+            fontFamily: "var(--font-body)", fontSize: 10,
+            textTransform: "uppercase", letterSpacing: "0.14em",
+            color: "#1A1A1A", background: "rgba(26,26,26,0.07)",
+            border: "1px solid rgba(26,26,26,0.1)", borderRadius: 6,
+            padding: "5px 14px", cursor: "pointer", display: "block",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(26,26,26,0.13)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(26,26,26,0.07)")}
+        >
+          Done
+        </button>
+      </div>
     </div>,
     document.body
   );
