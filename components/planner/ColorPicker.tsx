@@ -126,20 +126,7 @@ function SpectrumPopup({
     setHexInput(value);
   }, [value]);
 
-  // Close on outside mousedown
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        popupRef.current && !popupRef.current.contains(target) &&
-        anchorRef.current && !anchorRef.current.contains(target)
-      ) {
-        onClose();
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [onClose, anchorRef]);
+  // Closing is handled by the backdrop overlay below
 
   // Global mousemove/mouseup for drag
   useEffect(() => {
@@ -198,6 +185,7 @@ function SpectrumPopup({
     <div
       ref={popupRef}
       onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
         top: popupStyle.top,
@@ -293,6 +281,24 @@ function SpectrumPopup({
           spellCheck={false}
         />
       </div>
+
+      {/* Confirm button */}
+      <button
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => onClose()}
+        style={{
+          marginTop: 12, width: "100%",
+          fontFamily: "var(--font-body)", fontSize: 10,
+          textTransform: "uppercase", letterSpacing: "0.14em",
+          color: "#1A1A1A", background: "rgba(26,26,26,0.07)",
+          border: "none", borderRadius: 8, padding: "7px 0",
+          cursor: "pointer",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(26,26,26,0.13)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(26,26,26,0.07)")}
+      >
+        Done
+      </button>
     </div>,
     document.body
   );
