@@ -363,7 +363,7 @@ export function ColorSwatches({ swatches, value, onChange }: ColorSwatchesProps)
         ref={dropperRef}
         type="button"
         onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(true)}
         className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
         style={{
           background: open ? "rgba(26,26,26,0.12)" : "rgba(26,26,26,0.07)",
