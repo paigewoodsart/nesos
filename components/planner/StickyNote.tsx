@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { ColorSwatches } from "./ColorPicker";
 import { noteTextColor } from "@/lib/colors";
 
 function noteRotation(id: string): number {
@@ -249,22 +250,7 @@ export function StickyNote({
           {onColorChange && colorOptions && (
             <div>
               <p className="text-[10px] uppercase tracking-[0.18em] text-paper-ink-light mb-2" style={{ fontFamily: "var(--font-body)" }}>Color</p>
-              <div className="flex flex-wrap gap-2">
-                {colorOptions.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => onColorChange(c)}
-                    className="w-7 h-7 transition-transform hover:scale-110 active:scale-95"
-                    style={{
-                      backgroundColor: c,
-                      outline: c === color ? "3px solid rgba(26,26,26,0.6)" : "2px solid rgba(26,26,26,0.1)",
-                      outlineOffset: c === color ? 3 : 1,
-                    }}
-                  />
-                ))}
-              </div>
+              <ColorSwatches swatches={colorOptions} value={color} onChange={onColorChange} />
             </div>
           )}
 

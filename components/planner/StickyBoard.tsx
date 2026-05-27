@@ -9,6 +9,7 @@ import { AddTaskInput } from "@/components/shared/AddTaskInput";
 import { AddGoalInline } from "@/components/shared/AddGoalInline";
 import { MiniCalendar } from "./MiniCalendar";
 import { DailyAffirmation } from "./DailyAffirmation";
+import { ColorSwatches } from "./ColorPicker";
 import type { Client, ClientTask, ClientFile, Task, Goal, CalendarEvent } from "@/types";
 
 // ── Client task row ─────────────────────────────────────────────
@@ -775,16 +776,7 @@ function NotePanel({
             />
           )}
           {onColorChange && colorOptions && (
-            <div className="flex flex-wrap gap-1.5">
-              {colorOptions.map((c) => (
-                <button key={c}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => onColorChange(c)}
-                  className="w-6 h-6 rounded-full transition-transform hover:scale-110"
-                  style={{ backgroundColor: c, outline: c === color ? "2px solid rgba(26,26,26,0.5)" : "none", outlineOffset: 2 }}
-                />
-              ))}
-            </div>
+            <ColorSwatches swatches={colorOptions} value={color} onChange={onColorChange} />
           )}
           {(onDelete || onArchive) && (
             <div className="flex gap-2">
@@ -878,14 +870,7 @@ function AddProjectInline({ onAdd }: { onAdd: (name: string, color: string) => P
             className="w-full text-sm border-b-2 border-paper-ink-light/40 bg-transparent outline-none pb-1 font-medium placeholder:text-paper-ink-light"
             style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
           />
-          <div className="flex gap-1.5 flex-wrap">
-            {CLIENT_COLORS_PALETTE.map((c) => (
-              <button key={c} onClick={() => setColor(c)}
-                className="w-6 h-6 rounded-full transition-transform hover:scale-110"
-                style={{ backgroundColor: c, outline: color === c ? `2px solid ${c}` : "none", outlineOffset: 2 }}
-              />
-            ))}
-          </div>
+          <ColorSwatches swatches={CLIENT_COLORS_PALETTE} value={color} onChange={setColor} />
           <div className="flex gap-2">
             <button onClick={commit} disabled={!name.trim()}
               className="flex-1 py-1.5 text-sm font-medium text-white disabled:opacity-40"
