@@ -22,7 +22,7 @@ function ClientTaskRow({
   onSetDue: (due: string | null) => void;
   onArchive: () => void; onRename: (text: string) => void;
   taskFiles?: ClientFile[];
-  onUploadTaskFiles?: (files: FileList) => void;
+  onUploadTaskFiles?: (files: FileList) => Promise<void>;
   onDeleteTaskFile?: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -415,41 +415,17 @@ async function uploadFile(
   clientId: string,
   taskId?: string | null
 ): Promise<ClientFile> {
-  // Get signed upload URL
-  const urlRes = await fetch("/api/db/files/upload-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ clientId, taskId: taskId ?? null, fileName: file.name, mimeType: file.type }),
-  });
-  if (!urlRes.ok) throw new Error("Failed to get upload URL");
-  const { signedUrl, path } = await urlRes.json();
+  const form = new FormData();
+  form.append("file", file);
+  form.append("clientId", clientId);
+  if (taskId) form.append("taskId", taskId);
 
-  // Upload directly to Supabase Storage
-  const uploadRes = await fetch(signedUrl, {
-    method: "PUT",
-    headers: { "Content-Type": file.type || "application/octet-stream" },
-    body: file,
-  });
-  if (!uploadRes.ok) throw new Error("Upload failed");
-
-  // Record metadata
-  const id = crypto.randomUUID();
-  const meta: ClientFile = {
-    id,
-    clientId,
-    taskId: taskId ?? null,
-    fileName: file.name,
-    filePath: path,
-    fileSize: file.size,
-    mimeType: file.type || undefined,
-    createdAt: new Date().toISOString(),
-  };
-  await fetch("/api/db/files", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(meta),
-  });
-  return meta;
+  const res = await fetch("/api/db/files/upload", { method: "POST", body: form });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Upload failed (${res.status})`);
+  }
+  return res.json();
 }
 
 function FileRow({
@@ -507,35 +483,54 @@ function FilesSection({
   label = "FILES",
 }: {
   files: ClientFile[];
-  onUpload: (files: FileList) => void;
+  onUpload: (files: FileList) => Promise<void>;
   onDelete: (id: string) => void;
   label?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    const fl = e.target.files;
+    e.target.value = "";
+    setUploadError(null);
+    setUploading(true);
+    try {
+      await onUpload(fl);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="mt-3 pt-2 border-t" style={{ borderColor: "rgba(26,26,26,0.07)" }}>
       <div className="flex items-center justify-between mb-1">
         <span className="text-[9px] uppercase tracking-widest" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.45 }}>{label}</span>
         <button
           onClick={() => inputRef.current?.click()}
-          className="flex items-center gap-1 text-[10px] text-paper-ink-light hover:text-paper-ink transition-colors"
+          disabled={uploading}
+          className="flex items-center gap-1 text-[10px] text-paper-ink-light hover:text-paper-ink transition-colors disabled:opacity-40"
           style={{ fontFamily: "var(--font-body)" }}
           title="Attach file"
         >
           <svg width="11" height="13" viewBox="0 0 12 14" fill="none">
             <path d="M10.5 6.5L5.5 11.5C4.4 12.6 2.6 12.6 1.5 11.5C0.4 10.4 0.4 8.6 1.5 7.5L6.5 2.5C7.2 1.8 8.3 1.8 9 2.5C9.7 3.2 9.7 4.3 9 5L4.5 9.5C4.2 9.8 3.8 9.8 3.5 9.5C3.2 9.2 3.2 8.8 3.5 8.5L7.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
           </svg>
-          attach
+          {uploading ? "uploading…" : "attach"}
         </button>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={(e) => { if (e.target.files?.length) { onUpload(e.target.files); e.target.value = ""; } }}
-        />
+        <input ref={inputRef} type="file" multiple className="hidden" onChange={handleChange} />
       </div>
-      {files.length === 0 && (
+      {uploadError && (
+        <p className="text-[10px] text-paper-rust mb-1" style={{ fontFamily: "var(--font-body)" }}>{uploadError}</p>
+      )}
+      {uploading && (
+        <p className="text-[10px] italic opacity-50 mb-1" style={{ fontFamily: "var(--font-body)" }}>Uploading…</p>
+      )}
+      {!uploading && files.length === 0 && !uploadError && (
         <p className="text-[10px] italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>No files attached.</p>
       )}
       {files.map((f) => (
@@ -904,18 +899,20 @@ export function StickyBoard({
   }, [activeClientId]);
 
   const handleUploadFiles = useCallback(async (clientId: string, taskId: string | null, fileList: FileList) => {
-    const uploads = Array.from(fileList).map((f) => uploadFile(f, clientId, taskId));
-    const results = await Promise.allSettled(uploads);
-    const succeeded = results
-      .filter((r): r is PromiseFulfilledResult<ClientFile> => r.status === "fulfilled")
-      .map((r) => r.value);
-    if (succeeded.length) {
-      // Refresh file list from server to get signed URLs
+    const results = await Promise.allSettled(
+      Array.from(fileList).map((f) => uploadFile(f, clientId, taskId))
+    );
+    const errors = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    if (succeeded > 0) {
       const res = await fetch(`/api/db/files?clientId=${clientId}`);
       if (res.ok) {
         const files = await res.json();
         setFilesByClient((prev) => ({ ...prev, [clientId]: files }));
       }
+    }
+    if (errors.length > 0) {
+      throw new Error(errors[0].reason?.message ?? "Upload failed");
     }
   }, []);
 
