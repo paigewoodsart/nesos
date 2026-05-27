@@ -22,7 +22,7 @@ function ClientTaskRow({
   onSetDue: (due: string | null) => void;
   onArchive: () => void; onRename: (text: string) => void;
   taskFiles?: ClientFile[];
-  onUploadTaskFiles?: (files: FileList) => Promise<void>;
+  onUploadTaskFiles?: (files: File[]) => Promise<void>;
   onDeleteTaskFile?: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -410,22 +410,63 @@ function saveLayout(l: Record<ColKey, TileKey[]>) {
 
 // ── File attachment helpers ──────────────────────────────────────
 
+// Uploads directly to Supabase Storage via signed URL — no Vercel body size limit.
 async function uploadFile(
   file: File,
   clientId: string,
   taskId?: string | null
-): Promise<ClientFile> {
-  const form = new FormData();
-  form.append("file", file);
-  form.append("clientId", clientId);
-  if (taskId) form.append("taskId", taskId);
-
-  const res = await fetch("/api/db/files/upload", { method: "POST", body: form });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? `Upload failed (${res.status})`);
+): Promise<ClientFile & { localUrl: string }> {
+  // 1. Get a signed upload URL from our server (tiny JSON request)
+  const urlRes = await fetch("/api/db/files/upload-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientId, taskId: taskId ?? null, fileName: file.name }),
+  });
+  if (!urlRes.ok) {
+    const body = await urlRes.json().catch(() => ({}));
+    throw new Error(body.error ?? `Auth failed (${urlRes.status})`);
   }
-  return res.json();
+  const { signedUrl, path } = await urlRes.json();
+
+  // 2. PUT file directly to Supabase — bypasses Vercel, no size cap
+  const putRes = await fetch(signedUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body: file,
+  });
+  if (!putRes.ok) throw new Error(`Storage upload failed (${putRes.status})`);
+
+  // 3. Save metadata to our DB
+  const id = crypto.randomUUID();
+  const meta: ClientFile = {
+    id, clientId, taskId: taskId ?? null,
+    fileName: file.name, filePath: path,
+    fileSize: file.size, mimeType: file.type || undefined,
+    createdAt: new Date().toISOString(),
+  };
+  const metaRes = await fetch("/api/db/files", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(meta),
+  });
+  if (!metaRes.ok) {
+    const body = await metaRes.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to save metadata");
+  }
+
+  return { ...meta, localUrl: URL.createObjectURL(file) };
+}
+
+function fileIcon(mimeType?: string): string {
+  if (!mimeType) return "📎";
+  if (mimeType.startsWith("image/")) return "🖼";
+  if (mimeType === "application/pdf") return "📄";
+  if (mimeType.startsWith("video/")) return "🎬";
+  if (mimeType.startsWith("audio/")) return "🎵";
+  if (mimeType.includes("spreadsheet") || mimeType.includes("excel") || mimeType === "text/csv") return "📊";
+  if (mimeType.includes("word") || mimeType.includes("document")) return "📝";
+  if (mimeType.includes("zip") || mimeType.includes("compressed")) return "🗜";
+  return "📎";
 }
 
 function FileRow({
@@ -435,7 +476,7 @@ function FileRow({
   onDelete: () => void;
 }) {
   const isImage = file.mimeType?.startsWith("image/");
-  const isPdf = file.mimeType === "application/pdf";
+  const previewUrl = file.signedUrl ?? null;
   const sizeLabel = file.fileSize
     ? file.fileSize > 1_000_000
       ? `${(file.fileSize / 1_000_000).toFixed(1)} MB`
@@ -443,35 +484,41 @@ function FileRow({
     : "";
 
   return (
-    <div className="group flex items-center gap-2 py-1">
-      {isImage && file.signedUrl ? (
-        <a href={file.signedUrl} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
-          <img src={file.signedUrl} alt={file.fileName} className="w-8 h-8 object-cover rounded" />
+    <div className="group">
+      {isImage && previewUrl && (
+        <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="block mb-1">
+          <img
+            src={previewUrl}
+            alt={file.fileName}
+            className="w-full max-h-40 object-cover rounded"
+            style={{ border: "1px solid rgba(26,26,26,0.08)" }}
+          />
         </a>
-      ) : (
-        <span className="flex-shrink-0 text-base">
-          {isPdf ? "📄" : "📎"}
-        </span>
       )}
-      <a
-        href={file.signedUrl ?? "#"}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex-1 text-xs truncate hover:underline underline-offset-2"
-        style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
-      >
-        {file.fileName}
-      </a>
-      {sizeLabel && (
-        <span className="text-[10px] text-paper-ink-light flex-shrink-0" style={{ fontFamily: "var(--font-body)" }}>
-          {sizeLabel}
-        </span>
-      )}
-      <button
-        onClick={onDelete}
-        className="flex-shrink-0 opacity-0 group-hover:opacity-70 hover:!opacity-100 text-paper-ink-light hover:text-paper-rust transition-opacity text-base leading-none"
-        title="Remove file"
-      >×</button>
+      <div className="flex items-center gap-2 py-0.5">
+        {!isImage && (
+          <span className="flex-shrink-0 text-sm">{fileIcon(file.mimeType)}</span>
+        )}
+        <a
+          href={previewUrl ?? "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 text-xs truncate hover:underline underline-offset-2"
+          style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
+        >
+          {file.fileName}
+        </a>
+        {sizeLabel && (
+          <span className="text-[10px] flex-shrink-0" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.4 }}>
+            {sizeLabel}
+          </span>
+        )}
+        <button
+          onClick={onDelete}
+          className="flex-shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 text-paper-ink-light hover:text-paper-rust transition-opacity text-base leading-none"
+          title="Remove file"
+        >×</button>
+      </div>
     </div>
   );
 }
@@ -483,7 +530,7 @@ function FilesSection({
   label = "FILES",
 }: {
   files: ClientFile[];
-  onUpload: (files: FileList) => Promise<void>;
+  onUpload: (files: File[]) => Promise<void>;
   onDelete: (id: string) => void;
   label?: string;
 }) {
@@ -493,12 +540,12 @@ function FilesSection({
 
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
-    const fl = e.target.files;
+    const files = Array.from(e.target.files); // snapshot before clearing
     e.target.value = "";
     setUploadError(null);
     setUploading(true);
     try {
-      await onUpload(fl);
+      await onUpload(files);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -898,19 +945,34 @@ export function StickyBoard({
       .catch(() => {});
   }, [activeClientId]);
 
-  const handleUploadFiles = useCallback(async (clientId: string, taskId: string | null, fileList: FileList) => {
+  const handleUploadFiles = useCallback(async (clientId: string, taskId: string | null, fileList: File[]) => {
     const results = await Promise.allSettled(
-      Array.from(fileList).map((f) => uploadFile(f, clientId, taskId))
+      fileList.map((f) => uploadFile(f, clientId, taskId))
     );
+    type UploadResult = ClientFile & { localUrl: string };
+    const succeeded = results
+      .filter((r): r is PromiseFulfilledResult<UploadResult> => r.status === "fulfilled")
+      .map((r) => r.value);
     const errors = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
-    const succeeded = results.filter((r) => r.status === "fulfilled").length;
-    if (succeeded > 0) {
+
+    if (succeeded.length > 0) {
+      // Show immediately with local object URLs so images appear without waiting
+      setFilesByClient((prev) => ({
+        ...prev,
+        [clientId]: [
+          ...(prev[clientId] ?? []),
+          ...succeeded.map(({ localUrl, ...f }) => ({ ...f, signedUrl: localUrl })),
+        ],
+      }));
+      // Fetch real signed URLs from server and replace
       const res = await fetch(`/api/db/files?clientId=${clientId}`);
       if (res.ok) {
-        const files = await res.json();
-        setFilesByClient((prev) => ({ ...prev, [clientId]: files }));
+        const serverFiles = await res.json();
+        succeeded.forEach(({ localUrl }) => URL.revokeObjectURL(localUrl));
+        setFilesByClient((prev) => ({ ...prev, [clientId]: serverFiles }));
       }
     }
+
     if (errors.length > 0) {
       throw new Error(errors[0].reason?.message ?? "Upload failed");
     }
