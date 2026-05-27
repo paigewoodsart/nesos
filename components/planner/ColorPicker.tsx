@@ -49,26 +49,40 @@ function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
   return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
 }
 
-// ── Canvas spectrum ───────────────────────────────────────────────
+// ── Canvas drawing ────────────────────────────────────────────────
 
-const SPECTRUM_W = 188;
-const SPECTRUM_H = 130;
+const SQ = 168;
+const HUE_W = 16;
+const HUE_H = 168;
 
-function drawSpectrum(canvas: HTMLCanvasElement) {
+function drawSquare(canvas: HTMLCanvasElement, hue: number) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  const img = ctx.createImageData(SPECTRUM_W, SPECTRUM_H);
-  const { data } = img;
-  for (let py = 0; py < SPECTRUM_H; py++) {
-    for (let px = 0; px < SPECTRUM_W; px++) {
-      const h = (px / SPECTRUM_W) * 360;
-      const v = 1 - py / SPECTRUM_H;
-      const [rr, gg, bb] = hsvToRgb(h, 1, v);
-      const i = (py * SPECTRUM_W + px) * 4;
-      data[i] = rr; data[i + 1] = gg; data[i + 2] = bb; data[i + 3] = 255;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
+  const [r, g, b] = hsvToRgb(hue, 1, 1);
+  ctx.fillStyle = `rgb(${r},${g},${b})`;
+  ctx.fillRect(0, 0, SQ, SQ);
+  const wGrad = ctx.createLinearGradient(0, 0, SQ, 0);
+  wGrad.addColorStop(0, "rgba(255,255,255,1)");
+  wGrad.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = wGrad;
+  ctx.fillRect(0, 0, SQ, SQ);
+  const bGrad = ctx.createLinearGradient(0, 0, 0, SQ);
+  bGrad.addColorStop(0, "rgba(0,0,0,0)");
+  bGrad.addColorStop(1, "rgba(0,0,0,1)");
+  ctx.fillStyle = bGrad;
+  ctx.fillRect(0, 0, SQ, SQ);
+}
+
+function drawHueBar(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const grad = ctx.createLinearGradient(0, 0, 0, HUE_H);
+  [0, 60, 120, 180, 240, 300, 360].forEach((h) => {
+    const [r, g, b] = hsvToRgb(h, 1, 1);
+    grad.addColorStop(h / 360, `rgb(${r},${g},${b})`);
+  });
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, HUE_W, HUE_H);
 }
 
 // ── Spectrum popup (portalled) ─────────────────────────────────────
@@ -84,46 +98,53 @@ function SpectrumPopup({
   onClose: () => void;
   anchorRef: React.RefObject<HTMLButtonElement | null>;
 }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dragging = useRef(false);
+  const sqRef = useRef<HTMLCanvasElement>(null);
+  const hueRef = useRef<HTMLCanvasElement>(null);
+  const draggingSq = useRef(false);
+  const draggingHue = useRef(false);
 
-  const [hh, , hv] = rgbToHsv(...hexToRgb(value));
-  const [hsv, setHsv] = useState<[number, number, number]>([hh, 1, hv]);
+  const init = rgbToHsv(...hexToRgb(value));
+  const [hsv, setHsv] = useState<[number, number, number]>(init);
   const [hexInput, setHexInput] = useState(value);
+  const [hh, hs, hv] = hsv;
 
-  const [ch, , cv] = hsv;
-
-  // Compute popup position from anchor inline
+  // Popup position
   const getRect = useCallback(() => {
     const anchor = anchorRef.current;
     if (!anchor) return { top: 100, left: 100 };
     const rect = anchor.getBoundingClientRect();
-    const popupH = 290, popupW = 216;
+    const popupH = 310, popupW = 220;
     const spaceBelow = window.innerHeight - rect.bottom;
     const top = spaceBelow > popupH + 8 ? rect.bottom + 8 : rect.top - popupH - 8;
     const left = Math.min(Math.max(rect.left - 8, 8), window.innerWidth - popupW - 8);
     return { top, left };
   }, [anchorRef]);
 
-  const popupStyle = getRect();
+  const pos = getRect();
 
-  // Draw spectrum once on mount (it never changes)
+  // Draw canvases
   useLayoutEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) drawSpectrum(canvas);
+    if (sqRef.current) drawSquare(sqRef.current, hh);
+  }, [hh]);
+
+  useLayoutEffect(() => {
+    if (hueRef.current) drawHueBar(hueRef.current);
   }, []);
 
-  // Sync when value changes externally
+  // Sync on external value change
   useEffect(() => {
-    const [h, , v] = rgbToHsv(...hexToRgb(value));
-    setHsv([h, 1, v]);
+    const newHsv = rgbToHsv(...hexToRgb(value));
+    setHsv(newHsv);
     setHexInput(value);
   }, [value]);
 
-  // Global mousemove/mouseup for drag
+  // Global drag listeners
   useEffect(() => {
-    const onMove = (e: MouseEvent) => { if (dragging.current) pickFromSpectrum(e.clientX, e.clientY); };
-    const onUp = () => { dragging.current = false; };
+    const onMove = (e: MouseEvent) => {
+      if (draggingSq.current) pickSq(e.clientX, e.clientY);
+      if (draggingHue.current) pickHue(e.clientY);
+    };
+    const onUp = () => { draggingSq.current = false; draggingHue.current = false; };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
     return () => {
@@ -131,32 +152,36 @@ function SpectrumPopup({
       document.removeEventListener("mouseup", onUp);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ch, cv]);
+  }, [hh, hs, hv]);
 
-  const pickFromSpectrum = useCallback((clientX: number, clientY: number) => {
-    const canvas = canvasRef.current;
+  const pickSq = useCallback((clientX: number, clientY: number) => {
+    const canvas = sqRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-    const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
-    const newH = (x / rect.width) * 360;
-    const newV = 1 - y / rect.height;
-    setHsv([newH, 1, newV]);
-    const hex = rgbToHex(...hsvToRgb(newH, 1, newV));
+    const s = Math.max(0, Math.min((clientX - rect.left) / rect.width, 1));
+    const v = Math.max(0, Math.min(1 - (clientY - rect.top) / rect.height, 1));
+    setHsv((prev) => [prev[0], s, v]);
+    const hex = rgbToHex(...hsvToRgb(hh, s, v));
     setHexInput(hex);
     onChange(hex);
-  }, [onChange]);
+  }, [hh, onChange]);
 
-  // Cursor position on the square
-  const cursorX = (ch / 360) * SPECTRUM_W;
-  const cursorY = (1 - cv) * SPECTRUM_H;
+  const pickHue = useCallback((clientY: number) => {
+    const canvas = hueRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const h = Math.max(0, Math.min((clientY - rect.top) / rect.height, 1)) * 360;
+    setHsv([h, hs, hv]);
+    const hex = rgbToHex(...hsvToRgb(h, hs, hv));
+    setHexInput(hex);
+    onChange(hex);
+  }, [hs, hv, onChange]);
 
   const applyHex = (raw: string) => {
     const clean = raw.trim().replace(/^#/, "");
     if (/^[0-9a-fA-F]{6}$/.test(clean)) {
       const hex = `#${clean}`;
-      const [h, , v] = rgbToHsv(...hexToRgb(hex));
-      setHsv([h, 1, v]);
+      setHsv(rgbToHsv(...hexToRgb(hex)));
       setHexInput(hex);
       onChange(hex);
     } else {
@@ -164,15 +189,20 @@ function SpectrumPopup({
     }
   };
 
+  // Cursor positions
+  const sqCursorX = hs * SQ;
+  const sqCursorY = (1 - hv) * SQ;
+  const hueCursorY = (hh / 360) * HUE_H;
+
   return createPortal(
     <div
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
-        top: popupStyle.top,
-        left: popupStyle.left,
-        width: 216,
+        top: pos.top,
+        left: pos.left,
+        width: 220,
         zIndex: 99999,
         background: "rgba(249,248,246,0.98)",
         backdropFilter: "blur(16px)",
@@ -183,33 +213,61 @@ function SpectrumPopup({
         border: "1px solid rgba(26,26,26,0.08)",
       }}
     >
-      {/* Spectrum square */}
-      <div className="relative" style={{ width: SPECTRUM_W, height: SPECTRUM_H }}>
-        <canvas
-          ref={canvasRef}
-          width={SPECTRUM_W}
-          height={SPECTRUM_H}
-          style={{ display: "block", borderRadius: 8, cursor: "crosshair" }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            dragging.current = true;
-            pickFromSpectrum(e.clientX, e.clientY);
-          }}
-        />
-        <div
-          style={{
+      {/* Square + hue bar */}
+      <div className="flex gap-2">
+        {/* SV square */}
+        <div className="relative flex-shrink-0" style={{ width: SQ, height: SQ }}>
+          <canvas
+            ref={sqRef}
+            width={SQ}
+            height={SQ}
+            style={{ display: "block", borderRadius: 6, cursor: "crosshair" }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              draggingSq.current = true;
+              pickSq(e.clientX, e.clientY);
+            }}
+          />
+          {/* Cursor */}
+          <div style={{
             position: "absolute",
             width: 12, height: 12,
             borderRadius: "50%",
-            background: rgbToHex(...hsvToRgb(ch, 1, cv)),
             border: "2px solid white",
-            boxShadow: "0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.25)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.2)",
             transform: "translate(-50%, -50%)",
             pointerEvents: "none",
-            left: cursorX,
-            top: cursorY,
-          }}
-        />
+            left: sqCursorX,
+            top: sqCursorY,
+          }} />
+        </div>
+
+        {/* Hue bar */}
+        <div className="relative flex-shrink-0" style={{ width: HUE_W, height: HUE_H }}>
+          <canvas
+            ref={hueRef}
+            width={HUE_W}
+            height={HUE_H}
+            style={{ display: "block", borderRadius: 6, cursor: "ns-resize" }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              draggingHue.current = true;
+              pickHue(e.clientY);
+            }}
+          />
+          {/* Hue cursor */}
+          <div style={{
+            position: "absolute",
+            left: -2, right: -2,
+            height: 3,
+            borderRadius: 2,
+            background: "white",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.35)",
+            transform: "translateY(-50%)",
+            pointerEvents: "none",
+            top: hueCursorY,
+          }} />
+        </div>
       </div>
 
       {/* B&W row */}
@@ -250,7 +308,7 @@ function SpectrumPopup({
         />
       </div>
 
-      {/* Confirm */}
+      {/* Done */}
       <button
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => onClose()}
