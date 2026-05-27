@@ -967,9 +967,8 @@ export function StickyBoard({
 
   const activeClient = activeClientId ? clients.find((c) => c.id === activeClientId) ?? null : null;
 
-  // Workspace renders in the column immediately after projects
-  const projectsColIdx = COLS.findIndex((c) => layout[c].includes("__projects__"));
-  const workspaceColIdx = projectsColIdx < 3 ? projectsColIdx + 1 : projectsColIdx;
+  // Workspace always in col3 (index 2) — projects fixed in col1
+  const workspaceColIdx = 2;
 
   // ── Tile content renderer ────────────────────────────────────────
   const renderTileContent = (key: TileKey) => {
