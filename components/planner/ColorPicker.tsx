@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 
 // ── Color math ────────────────────────────────────────────────────
 
 function hexToRgb(hex: string): [number, number, number] {
   const clean = hex.replace("#", "").padEnd(6, "0");
-  const n = parseInt(clean, 16);
+  const n = parseInt(clean.slice(0, 6), 16);
   return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
 }
 
@@ -14,19 +15,14 @@ function rgbToHex(r: number, g: number, b: number): string {
   return (
     "#" +
     [r, g, b]
-      .map((x) =>
-        Math.round(Math.max(0, Math.min(255, x)))
-          .toString(16)
-          .padStart(2, "0")
-      )
+      .map((x) => Math.round(Math.max(0, Math.min(255, x))).toString(16).padStart(2, "0"))
       .join("")
   );
 }
 
 function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
   r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
   const v = max;
   const s = max === 0 ? 0 : (max - min) / max;
   let h = 0;
@@ -50,14 +46,10 @@ function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
   else if (h < 240) { g = x; b = c; }
   else if (h < 300) { r = x; b = c; }
   else              { r = c; b = x; }
-  return [
-    Math.round((r + m) * 255),
-    Math.round((g + m) * 255),
-    Math.round((b + m) * 255),
-  ];
+  return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
 }
 
-// ── Wheel canvas ──────────────────────────────────────────────────
+// ── Canvas wheel ──────────────────────────────────────────────────
 
 const WHEEL_SIZE = 180;
 
@@ -65,16 +57,12 @@ function drawWheel(canvas: HTMLCanvasElement, brightness: number) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   const size = WHEEL_SIZE;
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = size / 2 - 1;
+  const cx = size / 2, cy = size / 2, r = size / 2 - 1;
   const img = ctx.createImageData(size, size);
   const { data } = img;
-
   for (let py = 0; py < size; py++) {
     for (let px = 0; px < size; px++) {
-      const dx = px - cx;
-      const dy = py - cy;
+      const dx = px - cx, dy = py - cy;
       const dist = Math.sqrt(dx * dx + dy * dy);
       const i = (py * size + px) * 4;
       if (dist <= r) {
@@ -88,7 +76,7 @@ function drawWheel(canvas: HTMLCanvasElement, brightness: number) {
   ctx.putImageData(img, 0, 0);
 }
 
-// ── Spectrum popup ────────────────────────────────────────────────
+// ── Spectrum popup (portalled) ─────────────────────────────────────
 
 function SpectrumPopup({
   value,
@@ -105,53 +93,46 @@ function SpectrumPopup({
   const popupRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
-  const [rgb] = [hexToRgb(value)];
-  const [initH, initS, initV] = rgbToHsv(...hexToRgb(value));
-  const [hsv, setHsv] = useState<[number, number, number]>([initH, initS, initV]);
+  const [h, s, v] = rgbToHsv(...hexToRgb(value));
+  const [hsv, setHsv] = useState<[number, number, number]>([h, s, v]);
   const [hexInput, setHexInput] = useState(value);
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
 
-  const [h, s, v] = hsv;
+  const [hh, hs, hv] = hsv;
 
-  // Compute popup position relative to anchor
-  useEffect(() => {
+  // Compute popup rect from anchor — inline, no state delay
+  const getRect = useCallback(() => {
     const anchor = anchorRef.current;
-    if (!anchor) return;
+    if (!anchor) return { top: 100, left: 100 };
     const rect = anchor.getBoundingClientRect();
-    const popupHeight = 340;
-    const popupWidth = 212;
+    const popupH = 350, popupW = 216;
     const spaceBelow = window.innerHeight - rect.bottom;
-    const top = spaceBelow > popupHeight + 8
-      ? rect.bottom + 8
-      : rect.top - popupHeight - 8;
-    const left = Math.min(
-      Math.max(rect.left, 8),
-      window.innerWidth - popupWidth - 8
-    );
-    setPosition({ top, left });
+    const top = spaceBelow > popupH + 8 ? rect.bottom + 8 : rect.top - popupH - 8;
+    const left = Math.min(Math.max(rect.left - 8, 8), window.innerWidth - popupW - 8);
+    return { top, left };
   }, [anchorRef]);
 
-  // Draw wheel when brightness changes
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) drawWheel(canvas, v);
-  }, [v]);
+  const popupStyle = getRect();
 
-  // Sync hex input when value changes externally
+  // Draw wheel whenever brightness changes — also runs on mount since canvas is always present
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) drawWheel(canvas, hv);
+  }, [hv]);
+
+  // Sync when value changes externally
   useEffect(() => {
+    const newHsv = rgbToHsv(...hexToRgb(value));
+    setHsv(newHsv);
     setHexInput(value);
-    const [nh, ns, nv] = rgbToHsv(...hexToRgb(value));
-    setHsv([nh, ns, nv]);
   }, [value]);
 
-  // Close on outside click
+  // Close on outside mousedown
   useEffect(() => {
     const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
       if (
-        popupRef.current &&
-        !popupRef.current.contains(e.target as Node) &&
-        anchorRef.current &&
-        !anchorRef.current.contains(e.target as Node)
+        popupRef.current && !popupRef.current.contains(target) &&
+        anchorRef.current && !anchorRef.current.contains(target)
       ) {
         onClose();
       }
@@ -160,54 +141,77 @@ function SpectrumPopup({
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose, anchorRef]);
 
-  const pickFromWheel = useCallback(
-    (clientX: number, clientY: number) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
-      const dx = clientX - rect.left - cx;
-      const dy = clientY - rect.top - cy;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const radius = rect.width / 2;
-      const newH = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
-      const newS = Math.min(dist / radius, 1);
-      const newHsv: [number, number, number] = [newH, newS, v];
-      setHsv(newHsv);
-      const hex = rgbToHex(...hsvToRgb(newH, newS, v));
+  // Global mousemove/mouseup for drag
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => { if (dragging.current) pickFromWheel(e.clientX, e.clientY); };
+    const onUp = () => { dragging.current = false; };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hh, hs, hv]);
+
+  const pickFromWheel = useCallback((clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = rect.width / 2, cy = rect.height / 2;
+    const dx = clientX - rect.left - cx;
+    const dy = clientY - rect.top - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const radius = rect.width / 2;
+    const newH = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
+    const newS = Math.min(dist / radius, 1);
+    setHsv([newH, newS, hv]);
+    const hex = rgbToHex(...hsvToRgb(newH, newS, hv));
+    setHexInput(hex);
+    onChange(hex);
+  }, [hv, onChange]);
+
+  const cursorX = WHEEL_SIZE / 2 + hs * (WHEEL_SIZE / 2 - 1) * Math.cos((hh * Math.PI) / 180);
+  const cursorY = WHEEL_SIZE / 2 + hs * (WHEEL_SIZE / 2 - 1) * Math.sin((hh * Math.PI) / 180);
+  const brightnessColor = rgbToHex(...hsvToRgb(hh, hs, 1));
+
+  const applyBrightness = (newV: number) => {
+    setHsv([hh, hs, newV]);
+    const hex = rgbToHex(...hsvToRgb(hh, hs, newV));
+    setHexInput(hex);
+    onChange(hex);
+  };
+
+  const applyHex = (raw: string) => {
+    const clean = raw.trim().replace(/^#/, "");
+    if (/^[0-9a-fA-F]{6}$/.test(clean)) {
+      const hex = `#${clean}`;
+      setHsv(rgbToHsv(...hexToRgb(hex)));
       setHexInput(hex);
       onChange(hex);
-    },
-    [v, onChange]
-  );
+    } else {
+      setHexInput(value);
+    }
+  };
 
-  const cursorX = WHEEL_SIZE / 2 + s * (WHEEL_SIZE / 2 - 1) * Math.cos((h * Math.PI) / 180);
-  const cursorY = WHEEL_SIZE / 2 + s * (WHEEL_SIZE / 2 - 1) * Math.sin((h * Math.PI) / 180);
-
-  const brightnessColor = rgbToHex(...hsvToRgb(h, s, 1));
-
-  if (!position) return null;
-
-  return (
+  return createPortal(
     <div
       ref={popupRef}
+      onMouseDown={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
-        top: position.top,
-        left: position.left,
-        width: 212,
-        zIndex: 9999,
-        background: "rgba(249,248,246,0.97)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        top: popupStyle.top,
+        left: popupStyle.left,
+        width: 216,
+        zIndex: 99999,
+        background: "rgba(249,248,246,0.98)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         borderRadius: 16,
-        boxShadow: "0 8px 32px rgba(26,26,26,0.18), 0 1px 4px rgba(26,26,26,0.08)",
+        boxShadow: "0 8px 40px rgba(26,26,26,0.2), 0 1px 4px rgba(26,26,26,0.08)",
         padding: "14px 14px 12px",
-        border: "1px solid rgba(26,26,26,0.07)",
+        border: "1px solid rgba(26,26,26,0.08)",
       }}
-      onMouseMove={(e) => { if (dragging.current) pickFromWheel(e.clientX, e.clientY); }}
-      onMouseUp={() => { dragging.current = false; }}
     >
       {/* Wheel */}
       <div className="relative mx-auto" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}>
@@ -217,24 +221,23 @@ function SpectrumPopup({
           height={WHEEL_SIZE}
           style={{ borderRadius: "50%", display: "block", cursor: "crosshair" }}
           onMouseDown={(e) => {
+            e.preventDefault();
             dragging.current = true;
             pickFromWheel(e.clientX, e.clientY);
           }}
         />
-        {/* Cursor dot */}
         <div
           style={{
             position: "absolute",
-            width: 10,
-            height: 10,
+            width: 12, height: 12,
             borderRadius: "50%",
-            background: "white",
-            border: "1.5px solid rgba(26,26,26,0.7)",
+            background: rgbToHex(...hsvToRgb(hh, hs, hv)),
+            border: "2px solid white",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.25)",
             transform: "translate(-50%, -50%)",
             pointerEvents: "none",
             left: cursorX,
             top: cursorY,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
           }}
         />
       </div>
@@ -242,26 +245,12 @@ function SpectrumPopup({
       {/* Brightness slider */}
       <div className="mt-3">
         <input
-          type="range"
-          min={0}
-          max={100}
-          value={Math.round(v * 100)}
-          onChange={(e) => {
-            const newV = parseInt(e.target.value) / 100;
-            const newHsv: [number, number, number] = [h, s, newV];
-            setHsv(newHsv);
-            const hex = rgbToHex(...hsvToRgb(h, s, newV));
-            setHexInput(hex);
-            onChange(hex);
-          }}
+          type="range" min={0} max={100}
+          value={Math.round(hv * 100)}
+          onChange={(e) => applyBrightness(parseInt(e.target.value) / 100)}
           style={{
-            width: "100%",
-            appearance: "none",
-            WebkitAppearance: "none",
-            height: 10,
-            borderRadius: 5,
-            outline: "none",
-            cursor: "pointer",
+            width: "100%", appearance: "none", WebkitAppearance: "none",
+            height: 10, borderRadius: 5, outline: "none", cursor: "pointer",
             background: `linear-gradient(to right, #000, ${brightnessColor})`,
           }}
         />
@@ -269,29 +258,18 @@ function SpectrumPopup({
 
       {/* B&W row */}
       <div className="flex items-center gap-2 mt-3">
-        <span
-          className="text-[9px] uppercase tracking-widest"
-          style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.45 }}
-        >
-          B&W
-        </span>
+        <span style={{ fontFamily: "var(--font-body)", fontSize: 9, color: "#1A1A1A", opacity: 0.45, textTransform: "uppercase", letterSpacing: "0.12em" }}>B&W</span>
         {(["#000000", "#ffffff"] as const).map((bw) => (
           <button
             key={bw}
-            onClick={() => {
-              setHsv(rgbToHsv(...hexToRgb(bw)));
-              setHexInput(bw);
-              onChange(bw);
-            }}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { setHsv(rgbToHsv(...hexToRgb(bw))); setHexInput(bw); onChange(bw); }}
             style={{
-              width: 22,
-              height: 22,
-              borderRadius: "50%",
+              width: 22, height: 22, borderRadius: "50%",
               backgroundColor: bw,
               border: "1.5px solid rgba(26,26,26,0.2)",
-              flexShrink: 0,
               outline: value === bw ? "2px solid rgba(26,26,26,0.5)" : "none",
-              outlineOffset: 2,
+              outlineOffset: 2, flexShrink: 0,
             }}
           />
         ))}
@@ -299,49 +277,24 @@ function SpectrumPopup({
 
       {/* Hex input */}
       <div className="flex items-center gap-2 mt-3">
-        <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 4,
-            backgroundColor: value,
-            border: "1px solid rgba(26,26,26,0.15)",
-            flexShrink: 0,
-          }}
-        />
+        <div style={{ width: 22, height: 22, borderRadius: 4, backgroundColor: value, border: "1px solid rgba(26,26,26,0.15)", flexShrink: 0 }} />
         <input
           type="text"
           value={hexInput}
           onChange={(e) => setHexInput(e.target.value)}
-          onBlur={() => {
-            const clean = hexInput.trim();
-            if (/^#?[0-9a-fA-F]{6}$/.test(clean)) {
-              const hex = clean.startsWith("#") ? clean : `#${clean}`;
-              setHsv(rgbToHsv(...hexToRgb(hex)));
-              setHexInput(hex);
-              onChange(hex);
-            } else {
-              setHexInput(value);
-            }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-          }}
+          onBlur={(e) => applyHex(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
           style={{
-            fontFamily: "var(--font-body)",
-            fontSize: 12,
-            color: "#1A1A1A",
-            background: "transparent",
-            border: "none",
+            fontFamily: "var(--font-body)", fontSize: 12, color: "#1A1A1A",
+            background: "transparent", border: "none",
             borderBottom: "1px solid rgba(26,26,26,0.2)",
-            outline: "none",
-            width: "100%",
-            paddingBottom: 2,
+            outline: "none", width: "100%", paddingBottom: 2,
           }}
           spellCheck={false}
         />
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -374,7 +327,6 @@ export function ColorSwatches({ swatches, value, onChange }: ColorSwatchesProps)
         />
       ))}
 
-      {/* Dropper button */}
       <button
         ref={dropperRef}
         type="button"
@@ -389,14 +341,7 @@ export function ColorSwatches({ swatches, value, onChange }: ColorSwatchesProps)
         title="Custom color"
       >
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-          <path
-            d="M9.5 1.5L12.5 4.5L5.5 11.5L2 12L2.5 8.5L9.5 1.5Z"
-            stroke="#1A1A1A"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            opacity="0.65"
-          />
+          <path d="M9.5 1.5L12.5 4.5L5.5 11.5L2 12L2.5 8.5L9.5 1.5Z" stroke="#1A1A1A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.65" />
           <circle cx="2.5" cy="12" r="1" fill="#1A1A1A" opacity="0.4" />
         </svg>
       </button>
@@ -404,7 +349,7 @@ export function ColorSwatches({ swatches, value, onChange }: ColorSwatchesProps)
       {open && (
         <SpectrumPopup
           value={value}
-          onChange={(hex) => { onChange(hex); }}
+          onChange={onChange}
           onClose={() => setOpen(false)}
           anchorRef={dropperRef}
         />
