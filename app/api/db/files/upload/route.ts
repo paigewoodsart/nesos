@@ -1,3 +1,5 @@
+export const maxDuration = 30;
+
 import { getToken } from "next-auth/jwt";
 import { createServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
@@ -10,13 +12,17 @@ async function getEmail(req: NextRequest): Promise<string | null> {
   return (token?.email as string) ?? null;
 }
 
-export const config = { api: { bodyParser: false } };
-
 export async function POST(req: NextRequest) {
   const email = await getEmail(req);
   if (!email) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const form = await req.formData();
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch (e) {
+    return Response.json({ error: "Failed to parse form data" }, { status: 400 });
+  }
+
   const file = form.get("file") as File | null;
   const clientId = form.get("clientId") as string | null;
   const taskId = form.get("taskId") as string | null;
@@ -26,10 +32,14 @@ export async function POST(req: NextRequest) {
   const safeName = file.name.replace(/[^a-zA-Z0-9._\-]/g, "_");
   const path = `${email}/${clientId}${taskId ? `/${taskId}` : ""}/${Date.now()}-${safeName}`;
 
+  // Convert to Buffer for reliable server-side upload
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
   const supabase = createServerClient();
   const { error: uploadError } = await supabase.storage
     .from("client-files")
-    .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+    .upload(path, buffer, { contentType: file.type || "application/octet-stream", upsert: false });
 
   if (uploadError) return Response.json({ error: uploadError.message }, { status: 500 });
 
@@ -47,7 +57,6 @@ export async function POST(req: NextRequest) {
   });
   if (dbError) return Response.json({ error: dbError.message }, { status: 500 });
 
-  // Return with a short-lived signed read URL so the UI can display immediately
   const { data: urlData } = await supabase.storage.from("client-files").createSignedUrl(path, 3600);
 
   return Response.json({
