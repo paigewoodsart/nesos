@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
+import type { Theme } from "@/lib/theme";
+import { THEME_LABELS, THEME_SWATCH_COLOR } from "@/lib/theme";
+
+const THEMES: Theme[] = ["original", "neutral"];
 
 type MobileScreen = string;
 
@@ -11,11 +15,13 @@ interface MobileDrawerProps {
   screen: MobileScreen;
   onNavigate: (s: MobileScreen) => void;
   onOpenHandbook?: () => void;
+  theme?: Theme;
+  onThemeChange?: (t: Theme) => void;
 }
 
 const NAVY = "#1e6091";
 
-export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook }: MobileDrawerProps) {
+export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook, theme = "original", onThemeChange }: MobileDrawerProps) {
   const { data: session } = useSession();
 
   const go = (s: MobileScreen) => { onNavigate(s); };
@@ -89,6 +95,31 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook
           {navItem("Goals", "goals")}
           {navItem("Projects", "projects")}
           {navItem("Archive", "archive")}
+
+          {/* Theme swatches */}
+          {onThemeChange && (
+            <div className="w-full flex items-center gap-3 px-8 py-3.5 mt-1 border-t border-paper-line/20">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Theme</span>
+              <div className="flex items-center gap-2">
+                {THEMES.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => onThemeChange(t)}
+                    title={THEME_LABELS[t]}
+                    aria-label={`Switch to ${THEME_LABELS[t]} theme`}
+                    className="w-5 h-5 rounded-full transition-all"
+                    style={{
+                      backgroundColor: THEME_SWATCH_COLOR[t],
+                      boxShadow: theme === t
+                        ? "0 0 0 2px rgba(26,26,26,0.5)"
+                        : "0 0 0 1px rgba(26,26,26,0.15)",
+                      transform: theme === t ? "scale(1.2)" : "scale(1)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* How to use Nesos */}
           {onOpenHandbook && (

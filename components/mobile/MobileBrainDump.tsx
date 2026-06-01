@@ -30,7 +30,7 @@ export function MobileBrainDump({ weekId: _weekId, brainDump, onBrainDumpChange,
   };
 
   return (
-    <div className="flex flex-col h-dvh board-breathe board-grid">
+    <div className="flex flex-col h-dvh">
       <MobileScreenHeader title="Notes" onOpenDrawer={onOpenDrawer} accent={RASPBERRY} />
 
       <MobileFooter />

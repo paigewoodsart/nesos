@@ -16,6 +16,9 @@ import { ClientPanel } from "@/components/clients/ClientPanel";
 import { MobileView } from "@/components/mobile/MobileView";
 import { MobileHome } from "@/components/mobile/MobileHome";
 import { HandbookModal, HANDBOOK_VERSION, HANDBOOK_KEY } from "@/components/shared/HandbookModal";
+import { ThemePickerModal } from "@/components/shared/ThemePickerModal";
+import { useTheme } from "@/hooks/useTheme";
+import { THEME_BOARD_CLASS, NEUTRAL_SYSTEM_DEFAULTS, NEUTRAL_CLIENT_COLORS_PALETTE } from "@/lib/theme";
 import type { View } from "./ViewToggle";
 import type { Client, ClientSession } from "@/types";
 
@@ -33,7 +36,17 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
 
   const store = useWeekStore(activeWeekId, userEmail ?? null);
   const clientStore = useClientStore(activeWeekId, userEmail ?? null);
+  const { theme, setTheme } = useTheme();
   const { events } = useCalendarEvents(activeWeekId);
+  const [colorResetKey, setColorResetKey] = useState(0);
+
+  const applyNeutralColors = useCallback(() => {
+    localStorage.setItem("sticky-system-config-neutral", JSON.stringify(NEUTRAL_SYSTEM_DEFAULTS));
+    setColorResetKey((k) => k + 1);
+    clientStore.clients.forEach((client, i) => {
+      clientStore.updateClient({ ...client, color: NEUTRAL_CLIENT_COLORS_PALETTE[i % NEUTRAL_CLIENT_COLORS_PALETTE.length] });
+    });
+  }, [clientStore]);
   const isMobile = useIsMobile();
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -41,6 +54,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const [bypassLanding, setBypassLanding] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [showHandbook, setShowHandbook] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
 
   useEffect(() => {
     if (authStatus === "loading" || !store.loaded || !clientStore.loaded) return;
@@ -57,8 +71,10 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   }, []);
 
   const handleCloseHandbook = useCallback(() => {
+    const isFirstTime = localStorage.getItem(HANDBOOK_KEY) !== HANDBOOK_VERSION;
     setShowHandbook(false);
     try { localStorage.setItem(HANDBOOK_KEY, HANDBOOK_VERSION); } catch {}
+    if (isFirstTime) setShowThemePicker(true);
   }, []);
 
   const handleSelectSession = useCallback((session: ClientSession) => {
@@ -115,8 +131,12 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
           activeDate={activeDate}
           onDayChange={handleDayChange}
           onOpenHandbook={() => setShowHandbook(true)}
+          theme={theme}
+          onThemeChange={setTheme}
+          onApplyNeutralColors={applyNeutralColors}
         />
         <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
+        <ThemePickerModal open={showThemePicker} selected={theme} onSelect={setTheme} onClose={() => setShowThemePicker(false)} />
       </>
     );
   }
@@ -128,7 +148,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const weekTasks = store.tasks.filter((t) => t.dayIndex === -1);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden board-breathe board-grid">
+    <div className={`flex flex-col h-screen overflow-hidden ${THEME_BOARD_CLASS[theme]} board-grid`}>
       {/* Beta bar — desktop only, pinned to bottom */}
       <div
         className="fixed bottom-0 left-0 right-0 z-20 py-1.5 px-4 text-center text-[11px] tracking-wide border-t border-paper-line/30"
@@ -146,6 +166,9 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         onDayChange={handleDayChange}
         onToggleArchive={() => setShowArchive((v) => !v)}
         onOpenHandbook={() => setShowHandbook(true)}
+        theme={theme}
+        onThemeChange={setTheme}
+        onApplyNeutralColors={applyNeutralColors}
       />
 
       <div className="flex flex-1 min-h-0">
@@ -179,6 +202,8 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
             onAddGoal={store.addGoal}
             brainDump={store.brainDump}
             onBrainDumpChange={store.updateBrainDump}
+            theme={theme}
+            colorResetKey={colorResetKey}
           />
         )}
 
@@ -230,6 +255,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
       )}
 
       <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
+      <ThemePickerModal open={showThemePicker} selected={theme} onSelect={setTheme} onClose={() => setShowThemePicker(false)} />
 
       {openSession && openSessionClient && (
         <>

@@ -47,7 +47,7 @@ export function MobileWeekCalendar({ activeDate, tasks, events, onBack, onOpenDr
     });
 
   return (
-    <div className="flex flex-col h-screen board-breathe board-grid">
+    <div className="flex flex-col h-screen">
       <MobileScreenHeader title="Week" onOpenDrawer={onOpenDrawer} accent={CREAMSICLE} />
 
       {/* Day strip */}

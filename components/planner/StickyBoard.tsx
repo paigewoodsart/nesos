@@ -2,7 +2,9 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { parseDueDate, dueDateUrgency, isWithinNextDays, isEventToday, formatEventTime, isoToMinutes } from "@/lib/dates";
-import { noteTextColor } from "@/lib/colors";
+import { noteTextColor, noteTextColorWarm } from "@/lib/colors";
+import { NEUTRAL_SYSTEM_DEFAULTS, NEUTRAL_PROJECT_DEFAULT_COLOR, NEUTRAL_WARM_COLORS, NEUTRAL_CLIENT_COLORS_PALETTE } from "@/lib/theme";
+import type { Theme } from "@/lib/theme";
 import { DueBadge } from "@/components/shared/DueBadge";
 import { AddTaskInput } from "@/components/shared/AddTaskInput";
 import { AddGoalInline } from "@/components/shared/AddGoalInline";
@@ -311,38 +313,31 @@ const SYSTEM_COLORS = [
 ];
 
 const WARM_COLORS = [
-  // Blush / light pink
-  "#ffdde1", "#ffb3c1", "#ff8fa3",
-  // Raspberry / rose
-  "#D4909E", "#c06b7a", "#a84d5e",
-  // Coral
-  "#ff7f7f", "#ff6b6b", "#e05252",
-  // Peach / salmon
-  "#ffcba4", "#ffb085", "#F4956A",
-  // Amber / warm orange
-  "#ffd19a", "#ffab5e", "#f08030",
-  // Warm yellow / gold
-  "#fff3b0", "#ffe066", "#f5c842",
-  // Mauve / warm lavender
-  "#d4a5c9", "#c490b8", "#9a6ab5",
+  // Lavender / soft purple
+  "#fce4ff", "#e4b8f8", "#c080ec",
+  // Periwinkle / blue-purple
+  "#dfe8ff", "#b8ccf8", "#8aacee",
+  // Sky blue
+  "#b8d8f8", "#7ab8f0", "#4298e0",
+  // Cyan / ice
+  "#d4f5f5", "#88dce0", "#38b8cc",
+  // Teal / ocean
+  "#a0e8e0", "#50c8b8", "#18a898",
+  // Seafoam
+  "#d8fae5", "#9ce8c0", "#50c890",
+  // Green
+  "#b0f0c8", "#68d898", "#28b860",
 ];
 
+
 const CLIENT_COLORS_PALETTE = [
-  // Lime / yellow-green
   "#d9ed92", "#b5e48c",
-  // Mid green
   "#99d98c", "#76c893", "#52b69a", "#40b07a",
-  // Teal
   "#34a0a4", "#2d8f8f",
-  // Sky / light blue
   "#00b4d8", "#5fa8d3",
-  // Medium blue
   "#168aad", "#1a759f", "#0077b6",
-  // Deep blue
   "#1e6091", "#184e77", "#023e8a",
-  // Navy
   "#0d3b6e", "#03045e",
-  // Slate blue-green
   "#457b9d", "#264653",
 ];
 
@@ -350,28 +345,39 @@ interface SystemConfig { color: string; title: string; }
 type SystemKey = "__today__" | "__week__" | "__goals__" | "__braindump__" | "__overdue__";
 
 const SYSTEM_DEFAULTS: Record<SystemKey, SystemConfig> = {
-  "__overdue__":   { color: "#e05252", title: "Overdue" },
-  "__today__":     { color: "#D4909E", title: "Today" },
-  "__week__":      { color: "#F4956A", title: "This Week" },
-  "__goals__":     { color: "#F4956A", title: "Goals" },
-  "__braindump__": { color: "#F4956A", title: "Notes" },
+  "__overdue__":   { color: "#5a9cd4", title: "Overdue" },
+  "__today__":     { color: "#38b8cc", title: "Today" },
+  "__week__":      { color: "#50c890", title: "This Week" },
+  "__goals__":     { color: "#8aacee", title: "Goals" },
+  "__braindump__": { color: "#c080ec", title: "Notes" },
 };
 
-function loadSystemConfig(): Record<SystemKey, SystemConfig> {
+const SYSTEM_CONFIG_KEYS: Record<string, string> = {
+  original: "sticky-system-config",
+  neutral:  "sticky-system-config-neutral",
+};
+
+function loadSystemConfig(theme?: string | null): Record<SystemKey, SystemConfig> {
   try {
-    const saved = JSON.parse(localStorage.getItem("sticky-system-config") ?? "{}");
+    const t = theme ?? localStorage.getItem("nesos-theme");
+    const key = SYSTEM_CONFIG_KEYS[t ?? "original"] ?? SYSTEM_CONFIG_KEYS.original;
+    const raw = localStorage.getItem(key);
+    const saved = JSON.parse(raw ?? "{}");
+    const isNew = raw === null;
+    const defaults = (isNew && t === "neutral") ? NEUTRAL_SYSTEM_DEFAULTS : SYSTEM_DEFAULTS;
     return {
-      "__overdue__":   { ...SYSTEM_DEFAULTS["__overdue__"],   ...saved["__overdue__"] },
-      "__today__":     { ...SYSTEM_DEFAULTS["__today__"],     ...saved["__today__"] },
-      "__week__":      { ...SYSTEM_DEFAULTS["__week__"],      ...saved["__week__"] },
-      "__goals__":     { ...SYSTEM_DEFAULTS["__goals__"],     ...saved["__goals__"] },
-      "__braindump__": { ...SYSTEM_DEFAULTS["__braindump__"], ...saved["__braindump__"] },
+      "__overdue__":   { ...defaults["__overdue__"],   ...saved["__overdue__"] },
+      "__today__":     { ...defaults["__today__"],     ...saved["__today__"] },
+      "__week__":      { ...defaults["__week__"],      ...saved["__week__"] },
+      "__goals__":     { ...defaults["__goals__"],     ...saved["__goals__"] },
+      "__braindump__": { ...defaults["__braindump__"], ...saved["__braindump__"] },
     };
   } catch { return { ...SYSTEM_DEFAULTS }; }
 }
 
-function saveSystemConfig(cfg: Record<SystemKey, SystemConfig>) {
-  localStorage.setItem("sticky-system-config", JSON.stringify(cfg));
+function saveSystemConfig(cfg: Record<SystemKey, SystemConfig>, theme?: string) {
+  const key = SYSTEM_CONFIG_KEYS[theme ?? "original"] ?? SYSTEM_CONFIG_KEYS.original;
+  localStorage.setItem(key, JSON.stringify(cfg));
 }
 
 function loadClientOrder(): string[] {
@@ -682,7 +688,7 @@ const LINED_BODY: React.CSSProperties = {
 function NotePanel({
   title, color, children, footer, className = "", style: styleProp,
   onTitleChange, onColorChange, colorOptions, onDelete, onArchive,
-  collapsed = false, onToggleCollapse, lined = true,
+  collapsed = false, onToggleCollapse, lined = true, theme,
 }: {
   title: string; color: string;
   children: React.ReactNode;
@@ -697,10 +703,11 @@ function NotePanel({
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   lined?: boolean;
+  theme?: Theme;
 }) {
   const [editing, setEditing] = useState(false);
   const [titleDraft, setTitleDraft] = useState(title);
-  const textColor = noteTextColor(color);
+  const textColor = theme === "neutral" ? noteTextColorWarm(color) : noteTextColor(color);
   const isEditable = !!(onTitleChange || onColorChange || onDelete);
 
   const commitTitle = () => {
@@ -839,15 +846,23 @@ function NotePanel({
 
 // ── Add Project inline ──────────────────────────────────────────
 
-function AddProjectInline({ onAdd }: { onAdd: (name: string, color: string) => Promise<void> }) {
+function defaultProjectColor(): string {
+  try {
+    return localStorage.getItem("nesos-theme") === "neutral"
+      ? NEUTRAL_PROJECT_DEFAULT_COLOR
+      : CLIENT_COLORS_PALETTE[0];
+  } catch { return CLIENT_COLORS_PALETTE[0]; }
+}
+
+function AddProjectInline({ onAdd, colorOptions }: { onAdd: (name: string, color: string) => Promise<void>; colorOptions?: string[] }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [color, setColor] = useState(CLIENT_COLORS_PALETTE[0]);
+  const [color, setColor] = useState(() => defaultProjectColor());
 
   const commit = () => {
     if (!name.trim()) return;
     onAdd(name.trim(), color);
-    setName(""); setColor(CLIENT_COLORS_PALETTE[0]); setOpen(false);
+    setName(""); setColor(defaultProjectColor()); setOpen(false);
   };
 
   return (
@@ -855,7 +870,7 @@ function AddProjectInline({ onAdd }: { onAdd: (name: string, color: string) => P
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors hover:opacity-90"
-        style={{ backgroundColor: "#9b72cf" }}>
+        style={{ backgroundColor: (() => { try { return localStorage.getItem("nesos-theme") === "neutral" ? "#988878" : "#9b72cf"; } catch { return "#9b72cf"; } })() }}>
         <span className="text-xs font-semibold uppercase tracking-[0.2em] flex-1" style={{ fontFamily: "var(--font-body)", color: "#FFFFFF", opacity: 0.9 }}>
           + Add Project
         </span>
@@ -877,7 +892,7 @@ function AddProjectInline({ onAdd }: { onAdd: (name: string, color: string) => P
             className="w-full text-sm border-b-2 border-paper-ink-light/40 bg-transparent outline-none pb-1 font-medium placeholder:text-paper-ink-light"
             style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
           />
-          <ColorSwatches swatches={CLIENT_COLORS_PALETTE} value={color} onChange={setColor} />
+          <ColorSwatches swatches={colorOptions ?? CLIENT_COLORS_PALETTE} value={color} onChange={setColor} />
           <div className="flex gap-2">
             <button onClick={commit} disabled={!name.trim()}
               className="flex-1 py-1.5 text-sm font-medium text-white disabled:opacity-40"
@@ -925,6 +940,8 @@ interface StickyBoardProps {
   onAddGoal: (text: string, type: "weekly" | "longterm") => void;
   brainDump: string;
   onBrainDumpChange: (text: string) => void;
+  theme?: Theme;
+  colorResetKey?: number;
 }
 
 export function StickyBoard({
@@ -933,7 +950,7 @@ export function StickyBoard({
   onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
   weekTasks, onAddWeekTask, onToggleWeekTask, onRemoveWeekTask, onRenameWeekTask,
   weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal,
-  brainDump, onBrainDumpChange,
+  brainDump, onBrainDumpChange, theme = "original", colorResetKey = 0,
 }: StickyBoardProps) {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [systemConfig, setSystemConfig] = useState<Record<SystemKey, SystemConfig>>(() => loadSystemConfig());
@@ -952,6 +969,17 @@ export function StickyBoard({
     } catch { return {}; }
   });
 
+  useEffect(() => {
+    setSystemConfig(loadSystemConfig(theme));
+  }, [theme]);
+
+  useEffect(() => {
+    if (colorResetKey > 0) setSystemConfig(loadSystemConfig(theme));
+  }, [colorResetKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const systemColorOptions = theme === "neutral" ? NEUTRAL_WARM_COLORS : WARM_COLORS;
+  const clientColorOptions = theme === "neutral" ? NEUTRAL_CLIENT_COLORS_PALETTE : CLIENT_COLORS_PALETTE;
+
   const togglePanelCollapse = (key: string) => {
     setPanelCollapsed((prev) => {
       const next = { ...prev, [key]: !prev[key] };
@@ -963,10 +991,10 @@ export function StickyBoard({
   const updateSystemConfig = useCallback((key: SystemKey, patch: Partial<SystemConfig>) => {
     setSystemConfig((prev) => {
       const next = { ...prev, [key]: { ...prev[key], ...patch } };
-      saveSystemConfig(next);
+      saveSystemConfig(next, theme);
       return next;
     });
-  }, []);
+  }, [theme]);
 
   const moveTile = useCallback((tileKey: TileKey, srcCol: ColKey, dstCol: ColKey, dstIdx: number) => {
     setLayout((prev) => {
@@ -1089,12 +1117,13 @@ export function StickyBoard({
         <NotePanel
           title={new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
           color={systemConfig["__goals__"].color}
-          colorOptions={WARM_COLORS}
+          colorOptions={systemColorOptions}
           onTitleChange={(title) => updateSystemConfig("__goals__", { title })}
           onColorChange={(color) => updateSystemConfig("__goals__", { color })}
           collapsed={!!panelCollapsed["__goals__"]}
           onToggleCollapse={() => togglePanelCollapse("__goals__")}
           lined={false}
+          theme={theme}
         >
           <DailyAffirmation color={systemConfig["__goals__"].color} />
         </NotePanel>
@@ -1105,12 +1134,13 @@ export function StickyBoard({
         <NotePanel
           title="Calendar"
           color={systemConfig["__braindump__"].color}
-          colorOptions={WARM_COLORS}
+          colorOptions={systemColorOptions}
           onTitleChange={(title) => updateSystemConfig("__braindump__", { title })}
           onColorChange={(color) => updateSystemConfig("__braindump__", { color })}
           collapsed={!!panelCollapsed["__braindump__"]}
           onToggleCollapse={() => togglePanelCollapse("__braindump__")}
           lined={false}
+          theme={theme}
         >
           <MiniCalendar />
         </NotePanel>
@@ -1121,11 +1151,12 @@ export function StickyBoard({
         <NotePanel
           title={systemConfig["__overdue__"].title}
           color={systemConfig["__overdue__"].color}
-          colorOptions={WARM_COLORS}
+          colorOptions={systemColorOptions}
           onTitleChange={(title) => updateSystemConfig("__overdue__", { title })}
           onColorChange={(color) => updateSystemConfig("__overdue__", { color })}
           collapsed={!!panelCollapsed["__overdue__"]}
           onToggleCollapse={() => togglePanelCollapse("__overdue__")}
+          theme={theme}
         >
           {overdueItems.length === 0 ? (
             <p className="text-xs italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Nothing overdue.</p>
@@ -1145,11 +1176,12 @@ export function StickyBoard({
         <NotePanel
           title={systemConfig["__today__"].title}
           color={systemConfig["__today__"].color}
-          colorOptions={WARM_COLORS}
+          colorOptions={systemColorOptions}
           onTitleChange={(title) => updateSystemConfig("__today__", { title })}
           onColorChange={(color) => updateSystemConfig("__today__", { color })}
           collapsed={!!panelCollapsed["__today__"]}
           onToggleCollapse={() => togglePanelCollapse("__today__")}
+          theme={theme}
         >
           {todayMeetings.length === 0 && todayTasks.length === 0 && (
             <p className="text-xs italic" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>Nothing due today.</p>
@@ -1177,11 +1209,12 @@ export function StickyBoard({
         <NotePanel
           title={systemConfig["__week__"].title}
           color={weekColor}
-          colorOptions={WARM_COLORS}
+          colorOptions={systemColorOptions}
           onTitleChange={(title) => updateSystemConfig("__week__", { title })}
           onColorChange={(color) => updateSystemConfig("__week__", { color })}
           collapsed={!!panelCollapsed["__week__"]}
           onToggleCollapse={() => togglePanelCollapse("__week__")}
+          theme={theme}
         >
           {weekMeetings.length > 0 && (
             <>
@@ -1241,7 +1274,7 @@ export function StickyBoard({
         <ProjectsList>
           {ordered.map((c, i) => {
             const active = activeClientId === c.id;
-            const tc = noteTextColor(c.color);
+            const tc = theme === "neutral" ? noteTextColorWarm(c.color) : noteTextColor(c.color);
             const isDragging = dragId === c.id;
             return (
               <div key={c.id} className="relative">
@@ -1321,10 +1354,13 @@ export function StickyBoard({
     }
     if (key === "__add_project__") {
       return (
-        <AddProjectInline onAdd={async (name, color) => {
-          const client = await onAddClient(name, color);
-          setActiveClientId(client.id);
-        }} />
+        <AddProjectInline
+          colorOptions={clientColorOptions}
+          onAdd={async (name, color) => {
+            const client = await onAddClient(name, color);
+            setActiveClientId(client.id);
+          }}
+        />
       );
     }
     return null;
@@ -1394,9 +1430,10 @@ export function StickyBoard({
         title={activeClient.name}
         color={activeClient.color}
         className="flex-1"
-        colorOptions={CLIENT_COLORS_PALETTE}
+        colorOptions={clientColorOptions}
         onTitleChange={(name) => onUpdateClient({ ...activeClient, name })}
         onColorChange={(color) => onUpdateClient({ ...activeClient, color })}
+        theme={theme}
         onArchive={() => { onArchiveClient(activeClient.id); setActiveClientId(null); }}
         onDelete={() => { onRemoveClient(activeClient.id); setActiveClientId(null); }}
       >
@@ -1453,7 +1490,7 @@ export function StickyBoard({
   };
 
   return (
-    <div className="flex-1 flex board-breathe">
+    <div className="flex-1 flex">
       {COLS.map((col, colIdx) => {
         const tiles = layout[col];
         const isWorkspace = colIdx === workspaceColIdx;

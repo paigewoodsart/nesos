@@ -115,7 +115,7 @@ export function MobileToday({
   };
 
   return (
-    <div className="flex flex-col h-dvh board-breathe board-grid">
+    <div className="flex flex-col h-dvh">
       <MobileScreenHeader title="Today" onOpenDrawer={onOpenDrawer} accent={TODAY_COLOR} />
       <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-2 bg-white/10 backdrop-blur-md">
         {pending.map((t) => <TaskRow key={t.id} t={t} />)}

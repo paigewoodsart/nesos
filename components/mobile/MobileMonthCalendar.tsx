@@ -16,7 +16,7 @@ interface MobileMonthCalendarProps {
 
 export function MobileMonthCalendar({ activeDate, tasks, sessions, clients, onSelectDay, onBack, onOpenDrawer }: MobileMonthCalendarProps) {
   return (
-    <div className="flex flex-col h-screen board-breathe board-grid">
+    <div className="flex flex-col h-screen">
       <MobileScreenHeader title="Month" onOpenDrawer={onOpenDrawer} />
       <div className="flex-1 min-h-0 overflow-hidden">
         <MonthView

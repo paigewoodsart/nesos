@@ -6,6 +6,11 @@ import { format, addMonths, subMonths } from "date-fns";
 import { prevWeekId, nextWeekId, getWeekId, formatWeekRange } from "@/lib/dates";
 import { useSession, signIn, signOut } from "next-auth/react";
 import type { View } from "./ViewToggle";
+import type { Theme } from "@/lib/theme";
+import { THEME_LABELS, THEME_SWATCH_COLOR } from "@/lib/theme";
+
+const THEMES: Theme[] = ["original", "neutral"];
+
 interface WeekNavProps {
   weekId: string;
   view: View;
@@ -14,6 +19,9 @@ interface WeekNavProps {
   onDayChange: (d: Date) => void;
   onToggleArchive: () => void;
   onOpenHandbook?: () => void;
+  theme?: Theme;
+  onThemeChange?: (t: Theme) => void;
+  onApplyNeutralColors?: () => void;
 }
 
 function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSession>["data"]> }) {
@@ -146,7 +154,7 @@ function NesosPhonetic() {
   );
 }
 
-export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, onToggleArchive, onOpenHandbook }: WeekNavProps) {
+export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, onToggleArchive, onOpenHandbook, theme = "original", onThemeChange, onApplyNeutralColors }: WeekNavProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const isCurrentWeek = weekId === getWeekId(new Date());
@@ -210,6 +218,40 @@ export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, o
 
       {/* Right: sign in / menu → view toggle → nav arrows */}
       <div className="flex items-center gap-4">
+
+        {/* Theme swatches */}
+        {onThemeChange && (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {THEMES.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => onThemeChange(t)}
+                  title={THEME_LABELS[t]}
+                  aria-label={`Switch to ${THEME_LABELS[t]} theme`}
+                  className="w-4 h-4 rounded-full transition-all"
+                  style={{
+                    backgroundColor: THEME_SWATCH_COLOR[t],
+                    boxShadow: theme === t
+                      ? "0 0 0 2px rgba(26,26,26,0.5)"
+                      : "0 0 0 1px rgba(26,26,26,0.15)",
+                    transform: theme === t ? "scale(1.25)" : "scale(1)",
+                  }}
+                />
+              ))}
+            </div>
+            {theme === "neutral" && onApplyNeutralColors && (
+              <button
+                onClick={onApplyNeutralColors}
+                title="Reset all panel colors to neutral"
+                className="text-[10px] tracking-wide opacity-50 hover:opacity-90 transition-opacity"
+                style={{ fontFamily: "var(--font-body)", color: "var(--color-paper-ink)" }}
+              >
+                apply to panels
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Handbook */}
         {onOpenHandbook && (

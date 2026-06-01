@@ -23,7 +23,7 @@ export function MobileArchive({ clients, tasksByClient, onUnarchiveClient, onOpe
   });
 
   return (
-    <div className="flex flex-col h-dvh board-breathe board-grid">
+    <div className="flex flex-col h-dvh">
       <MobileScreenHeader title="Archive" onOpenDrawer={onOpenDrawer} />
       <div className="flex-1 overflow-y-auto mobile-scroll px-5 py-4 bg-white/10 backdrop-blur-md">
         {clients.length === 0 && (

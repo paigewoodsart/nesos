@@ -62,7 +62,7 @@ export function MobileThisWeek({
   const todayMeetings = weekMeetings.filter((e) => isEventToday(e.start));
 
   return (
-    <div className="flex flex-col h-dvh board-breathe board-grid">
+    <div className="flex flex-col h-dvh">
       <MobileScreenHeader title="This Week" onOpenDrawer={onOpenDrawer} accent={CREAMSICLE} />
 
       {/* Progress */}

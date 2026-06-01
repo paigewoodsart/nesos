@@ -599,7 +599,7 @@ export function MobileProjects({
   );
 
   return (
-    <div className="flex flex-col h-dvh board-breathe board-grid">
+    <div className="flex flex-col h-dvh">
       <MobileScreenHeader title="Projects" onOpenDrawer={onOpenDrawer} />
       <MobileFooter />
       <div className="flex-1 overflow-y-auto bg-white/5 backdrop-blur-sm">

@@ -17,7 +17,7 @@ export function MobileHome({ onOpenDrawer, isLoggedIn }: MobileHomeProps) {
   }, []);
 
   return (
-    <div className="h-dvh flex flex-col items-center justify-center board-breathe board-grid relative overflow-hidden">
+    <div className="h-dvh flex flex-col items-center justify-center relative overflow-hidden">
       <a
         href="/privacy"
         className="absolute bottom-4 left-0 right-0 text-center text-[10px] text-paper-ink-light underline underline-offset-2"

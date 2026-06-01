@@ -144,6 +144,17 @@ body::before {
   animation: board-breathe 40s ease infinite;
 }
 
+/* ── Neutral theme ── */
+.board-breathe-neutral {
+  background-image:
+    linear-gradient(rgba(61,43,31,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(61,43,31,0.04) 1px, transparent 1px),
+    linear-gradient(135deg, #FAF7F2 0%, #F5EDE0 25%, #EDE3D4 50%, #F5EDE0 75%, #FAF7F2 100%);
+  background-size: 28px 28px, 28px 28px, 400% 400%;
+  animation: board-breathe 60s ease infinite;
+}
+
+
 .focus-dimmed {
   opacity: 0.12;
   transition: opacity 0.3s ease;

@@ -114,7 +114,7 @@ export function MobileProject({
   };
 
   return (
-    <div className="flex flex-col h-screen board-breathe">
+    <div className="flex flex-col h-screen">
       <MobileScreenHeader title="" onOpenDrawer={onOpenDrawer} />
 
       {/* Hidden task date input */}

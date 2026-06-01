@@ -146,7 +146,7 @@ export function MobileDue({
   const onToggle  = (t: TaskWithClient) => onToggleClientTask(t.clientId, t.id);
 
   return (
-    <div className="flex flex-col h-dvh board-breathe board-grid">
+    <div className="flex flex-col h-dvh">
       <MobileScreenHeader title="Due" onOpenDrawer={onOpenDrawer} />
       <div className="flex-1 overflow-y-auto bg-white/5 backdrop-blur-sm">
         <Section title="Urgent"    color={URGENT_COLOR} tasks={urgent} defaultOpen={urgent.length > 0} onArchive={onArchive} onDelete={onDelete} onToggle={onToggle} />

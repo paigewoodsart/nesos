@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { THEME_BOARD_CLASS } from "@/lib/theme";
 import { MobileHome } from "./MobileHome";
 import { MobileDrawer } from "./MobileDrawer";
 import { MobileThisWeek } from "./MobileThisWeek";
@@ -62,6 +63,8 @@ interface MobileViewProps {
   activeDate: Date;
   onDayChange: (d: Date) => void;
   onOpenHandbook?: () => void;
+  theme?: import("@/lib/theme").Theme;
+  onThemeChange?: (t: import("@/lib/theme").Theme) => void;
 }
 
 export function MobileView({
@@ -73,7 +76,7 @@ export function MobileView({
   clients, tasksByClient,
   onAddClientTask, onToggleClientTask, onArchiveClientTask, onRemoveClientTask, onUpdateClientTask,
   onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
-  events, activeDate, onDayChange, onOpenHandbook,
+  events, activeDate, onDayChange, onOpenHandbook, theme, onThemeChange,
 }: MobileViewProps) {
   const [screen, setScreen] = useState<MobileScreen>(getInitialScreen);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -98,7 +101,7 @@ export function MobileView({
     onAddTask({ dayIndex: -1, text, completed: false, startMinute: null, endMinute: null, recurring: false, recurringPattern: null });
 
   return (
-    <div className="relative h-dvh overflow-hidden bg-paper-cream">
+    <div className={`relative h-dvh overflow-hidden ${THEME_BOARD_CLASS[theme ?? "original"]} board-grid`}>
       {screen === "home" && (
         <MobileHome onOpenDrawer={openDrawer} isLoggedIn={!!userEmail} />
       )}
@@ -193,6 +196,8 @@ export function MobileView({
         screen={screen}
         onNavigate={navigate}
         onOpenHandbook={onOpenHandbook}
+        theme={theme}
+        onThemeChange={onThemeChange}
       />
     </div>
   );
