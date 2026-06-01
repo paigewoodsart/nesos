@@ -144,7 +144,6 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
           onOpenHandbook={() => setShowHandbook(true)}
           theme={theme}
           onThemeChange={setTheme}
-          onApplyNeutralColors={applyNeutralColors}
         />
         <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
         <ThemePickerModal open={showThemePicker} selected={theme} onSelect={setTheme} onClose={() => setShowThemePicker(false)} />
