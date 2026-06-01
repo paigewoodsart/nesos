@@ -4,7 +4,6 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { parseDueDate, dueDateUrgency, isWithinNextDays, isEventToday, formatEventTime, isoToMinutes } from "@/lib/dates";
 import { noteTextColor } from "@/lib/colors";
 import { DueBadge } from "@/components/shared/DueBadge";
-import { ProgressBar } from "@/components/shared/ProgressBar";
 import { AddTaskInput } from "@/components/shared/AddTaskInput";
 import { AddGoalInline } from "@/components/shared/AddGoalInline";
 import { MiniCalendar } from "./MiniCalendar";
@@ -1385,7 +1384,6 @@ export function StickyBoard({
     const allTasks = tasksByClient[activeClient.id] ?? [];
     const active = allTasks.filter((t) => !t.archived);
     const archived = allTasks.filter((t) => t.archived);
-    const doneCount = active.filter((t) => t.done).length;
     const sortedActive = [...active].sort((a, b) => {
       const da = parseDueDate(a.dueDate), db = parseDueDate(b.dueDate);
       if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
@@ -1401,7 +1399,6 @@ export function StickyBoard({
         onColorChange={(color) => onUpdateClient({ ...activeClient, color })}
         onArchive={() => { onArchiveClient(activeClient.id); setActiveClientId(null); }}
         onDelete={() => { onRemoveClient(activeClient.id); setActiveClientId(null); }}
-        footer={<ProgressBar done={doneCount} total={active.length} color={activeClient.color} />}
       >
         <textarea
           key={activeClient.id}
