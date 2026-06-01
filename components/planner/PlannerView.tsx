@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SessionProvider, useSession } from "next-auth/react";
 import { useWeekStore } from "@/hooks/useWeekStore";
 import { useClientStore } from "@/hooks/useClientStore";
@@ -15,6 +15,7 @@ import { DesktopArchive } from "./DesktopArchive";
 import { ClientPanel } from "@/components/clients/ClientPanel";
 import { MobileView } from "@/components/mobile/MobileView";
 import { MobileHome } from "@/components/mobile/MobileHome";
+import { HandbookModal } from "@/components/shared/HandbookModal";
 import type { View } from "./ViewToggle";
 import type { Client, ClientSession } from "@/types";
 
@@ -39,10 +40,25 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const [openSession, setOpenSession] = useState<ClientSession | null>(null);
   const [bypassLanding, setBypassLanding] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
+  const [showHandbook, setShowHandbook] = useState(false);
+
+  useEffect(() => {
+    if (authStatus === "loading" || !store.loaded || !clientStore.loaded) return;
+    try {
+      if (!localStorage.getItem("nesos-handbook-seen")) {
+        setShowHandbook(true);
+      }
+    } catch {}
+  }, [authStatus, store.loaded, clientStore.loaded]);
 
   const handleDayChange = useCallback((d: Date) => {
     setActiveDate(d);
     setActiveWeekId(getWeekId(d));
+  }, []);
+
+  const handleCloseHandbook = useCallback(() => {
+    setShowHandbook(false);
+    try { localStorage.setItem("nesos-handbook-seen", "1"); } catch {}
   }, []);
 
   const handleSelectSession = useCallback((session: ClientSession) => {
@@ -66,38 +82,42 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
 
   if (isMobile) {
     return (
-      <MobileView
-        weekId={activeWeekId}
-        userEmail={userEmail ?? null}
-        tasks={store.tasks}
-        weekGoals={store.weekGoals}
-        longtermGoals={store.longtermGoals}
-        brainDump={store.brainDump}
-        sessions={clientStore.sessions}
-        onAddTask={store.addTask}
-        onToggleTask={store.toggleTask}
-        onRemoveTask={store.removeTask}
-        onToggleGoal={store.toggleGoal}
-        onRemoveGoal={store.removeGoal}
-        onRenameGoal={store.renameGoal}
-        onAddGoal={store.addGoal}
-        onBrainDumpChange={store.updateBrainDump}
-        clients={clientStore.clients}
-        tasksByClient={clientStore.tasksByClient}
-        onAddClientTask={clientStore.addClientTask}
-        onToggleClientTask={clientStore.toggleClientTask}
-        onArchiveClientTask={clientStore.archiveClientTask}
-        onRemoveClientTask={clientStore.removeClientTask}
-        onUpdateClientTask={clientStore.updateClientTask}
-        onAddClient={clientStore.addClient}
-        onUpdateClient={clientStore.updateClient}
-        onRemoveClient={clientStore.removeClient}
-        onArchiveClient={clientStore.archiveClient}
-        onUnarchiveClient={clientStore.unarchiveClient}
-        events={events}
-        activeDate={activeDate}
-        onDayChange={handleDayChange}
-      />
+      <>
+        <MobileView
+          weekId={activeWeekId}
+          userEmail={userEmail ?? null}
+          tasks={store.tasks}
+          weekGoals={store.weekGoals}
+          longtermGoals={store.longtermGoals}
+          brainDump={store.brainDump}
+          sessions={clientStore.sessions}
+          onAddTask={store.addTask}
+          onToggleTask={store.toggleTask}
+          onRemoveTask={store.removeTask}
+          onToggleGoal={store.toggleGoal}
+          onRemoveGoal={store.removeGoal}
+          onRenameGoal={store.renameGoal}
+          onAddGoal={store.addGoal}
+          onBrainDumpChange={store.updateBrainDump}
+          clients={clientStore.clients}
+          tasksByClient={clientStore.tasksByClient}
+          onAddClientTask={clientStore.addClientTask}
+          onToggleClientTask={clientStore.toggleClientTask}
+          onArchiveClientTask={clientStore.archiveClientTask}
+          onRemoveClientTask={clientStore.removeClientTask}
+          onUpdateClientTask={clientStore.updateClientTask}
+          onAddClient={clientStore.addClient}
+          onUpdateClient={clientStore.updateClient}
+          onRemoveClient={clientStore.removeClient}
+          onArchiveClient={clientStore.archiveClient}
+          onUnarchiveClient={clientStore.unarchiveClient}
+          events={events}
+          activeDate={activeDate}
+          onDayChange={handleDayChange}
+          onOpenHandbook={() => setShowHandbook(true)}
+        />
+        <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
+      </>
     );
   }
 
@@ -120,11 +140,12 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
       </div>
       <WeekNav
         weekId={activeWeekId}
-view={view}
+        view={view}
         onViewChange={setView}
         activeDate={activeDate}
         onDayChange={handleDayChange}
         onToggleArchive={() => setShowArchive((v) => !v)}
+        onOpenHandbook={() => setShowHandbook(true)}
       />
 
       <div className="flex flex-1 min-h-0">
@@ -207,6 +228,8 @@ view={view}
           onClose={() => setShowArchive(false)}
         />
       )}
+
+      <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
 
       {openSession && openSessionClient && (
         <>

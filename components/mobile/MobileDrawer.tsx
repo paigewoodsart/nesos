@@ -10,11 +10,12 @@ interface MobileDrawerProps {
   onClose: () => void;
   screen: MobileScreen;
   onNavigate: (s: MobileScreen) => void;
+  onOpenHandbook?: () => void;
 }
 
 const NAVY = "#1e6091";
 
-export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawerProps) {
+export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook }: MobileDrawerProps) {
   const { data: session } = useSession();
 
   const go = (s: MobileScreen) => { onNavigate(s); };
@@ -88,6 +89,19 @@ export function MobileDrawer({ open, onClose, screen, onNavigate }: MobileDrawer
           {navItem("Goals", "goals")}
           {navItem("Projects", "projects")}
           {navItem("Archive", "archive")}
+
+          {/* How to use Nesos */}
+          {onOpenHandbook && (
+            <button
+              onClick={() => { onOpenHandbook(); onClose(); }}
+              className="w-full flex items-center gap-4 px-8 py-3.5 text-left transition-colors active:bg-paper-warm/40 mt-1 border-t border-paper-line/20"
+            >
+              <span className="w-4 h-4 flex items-center justify-center text-paper-ink-light text-sm flex-shrink-0" style={{ fontFamily: "var(--font-serif)" }}>?</span>
+              <span className="text-xs uppercase tracking-[0.22em] font-bold" style={{ fontFamily: "var(--font-body)", color: "rgba(26,26,26,0.75)" }}>
+                How to use Nesos
+              </span>
+            </button>
+          )}
 
           {/* Brain Music — below main nav */}
           <a

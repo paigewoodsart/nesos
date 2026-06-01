@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getAllClients, saveClient, deleteClient,
   getClientTasks, saveClientTask, deleteClientTask,
@@ -33,6 +33,8 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
   const [sessions, setSessions] = useState<ClientSession[]>([]);
   const [tasksByClient, setTasksByClient] = useState<Record<string, ClientTask[]>>({});
   const [loaded, setLoaded] = useState(false);
+  const tasksByClientRef = useRef(tasksByClient);
+  useEffect(() => { tasksByClientRef.current = tasksByClient; });
 
   const sb = !!userEmail;
 
@@ -151,6 +153,23 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
       return { ...prev, [clientId]: updated };
     });
   }, [wClientTask]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const sweep = () => {
+      const now = Date.now();
+      Object.entries(tasksByClientRef.current).forEach(([clientId, tasks]) => {
+        tasks.forEach((t) => {
+          if (t.done && !t.archived && t.doneAt && now - t.doneAt >= 86_400_000) {
+            archiveClientTask(clientId, t.id);
+          }
+        });
+      });
+    };
+    sweep();
+    const interval = setInterval(sweep, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [loaded, archiveClientTask]);
 
   const removeClientTask = useCallback(async (clientId: string, taskId: string) => {
     if (userEmail) await sbDeleteClientTask(taskId); else await deleteClientTask(taskId);

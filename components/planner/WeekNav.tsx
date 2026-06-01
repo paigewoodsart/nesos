@@ -13,6 +13,7 @@ interface WeekNavProps {
   activeDate: Date;
   onDayChange: (d: Date) => void;
   onToggleArchive: () => void;
+  onOpenHandbook?: () => void;
 }
 
 function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSession>["data"]> }) {
@@ -145,7 +146,7 @@ function NesosPhonetic() {
   );
 }
 
-export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, onToggleArchive }: WeekNavProps) {
+export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, onToggleArchive, onOpenHandbook }: WeekNavProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const isCurrentWeek = weekId === getWeekId(new Date());
@@ -209,6 +210,19 @@ export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, o
 
       {/* Right: sign in / menu → view toggle → nav arrows */}
       <div className="flex items-center gap-4">
+
+        {/* Handbook */}
+        {onOpenHandbook && (
+          <button
+            onClick={onOpenHandbook}
+            title="How to use Nesos"
+            className="flex items-center justify-center w-8 h-8 text-paper-ink-light hover:text-paper-ink transition-colors text-sm font-medium"
+            aria-label="How to use Nesos"
+            style={{ fontFamily: "var(--font-serif)" }}
+          >
+            ?
+          </button>
+        )}
 
         {/* Archive */}
         <button

@@ -61,6 +61,7 @@ interface MobileViewProps {
   events: CalendarEvent[];
   activeDate: Date;
   onDayChange: (d: Date) => void;
+  onOpenHandbook?: () => void;
 }
 
 export function MobileView({
@@ -72,7 +73,7 @@ export function MobileView({
   clients, tasksByClient,
   onAddClientTask, onToggleClientTask, onArchiveClientTask, onRemoveClientTask, onUpdateClientTask,
   onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
-  events, activeDate, onDayChange,
+  events, activeDate, onDayChange, onOpenHandbook,
 }: MobileViewProps) {
   const [screen, setScreen] = useState<MobileScreen>(getInitialScreen);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -191,6 +192,7 @@ export function MobileView({
         onClose={() => setDrawerOpen(false)}
         screen={screen}
         onNavigate={navigate}
+        onOpenHandbook={onOpenHandbook}
       />
     </div>
   );
