@@ -55,20 +55,6 @@ export interface CalendarEvent {
   isAllDay: boolean;
 }
 
-export type BloomState = "bud" | "blooming" | "overgrown";
-
-export interface ParsedTaskAction {
-  action: "create_task" | "create_event" | "create_goal" | "complete_task" | "delete_task" | "move_task";
-  dayIndex: number | null;
-  startMinute: number | null;
-  endMinute: number | null;
-  text: string;
-  recurring: boolean;
-  recurringPattern: "weekly" | "daily" | null;
-  goalType: "weekly" | "longterm" | null;
-  confidence: number;
-}
-
 // ── Client system ──────────────────────────────────────────────
 
 export interface Client {
