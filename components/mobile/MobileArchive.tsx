@@ -102,7 +102,7 @@ export function MobileArchive({ clients, tasksByClient, onUnarchiveClient, onOpe
                       style={{ opacity: 0.6 }}
                     >
                       <span
-                        className="flex-1 text-base line-through text-paper-ink truncate"
+                        className="flex-1 text-base text-paper-ink truncate"
                         style={{ fontFamily: "var(--font-body)" }}
                       >
                         {t.text}

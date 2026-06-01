@@ -61,7 +61,7 @@ function ProjectSection({ c, tasks, onUnarchiveClient }: {
         ) : (
           archivedTasks.map((t) => (
             <div key={t.id} className="flex items-center gap-3 py-2 border-b border-paper-line/20 opacity-55">
-              <span className="flex-1 text-sm line-through text-paper-ink truncate" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
+              <span className="flex-1 text-sm text-paper-ink truncate" style={{ fontFamily: "var(--font-body)" }}>{t.text}</span>
               <DueBadge due={t.dueDate} />
               {t.archivedAt && (
                 <span className="flex-shrink-0 text-[10px] text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>
