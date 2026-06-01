@@ -19,7 +19,7 @@ import { HandbookModal, HANDBOOK_VERSION, HANDBOOK_KEY } from "@/components/shar
 import { ThemePickerModal } from "@/components/shared/ThemePickerModal";
 import { UpdateModal, UPDATE_VERSION, UPDATE_KEY } from "@/components/shared/UpdateModal";
 import { useTheme } from "@/hooks/useTheme";
-import { THEME_BOARD_CLASS, NEUTRAL_SYSTEM_DEFAULTS, NEUTRAL_CLIENT_COLORS_PALETTE } from "@/lib/theme";
+import { THEME_BOARD_CLASS, NEUTRAL_SYSTEM_DEFAULTS, NEUTRAL_CLIENT_COLORS_PALETTE, SYSTEM_DEFAULTS_ORIGINAL, CLIENT_COLORS_PALETTE_ORIGINAL } from "@/lib/theme";
 import type { View } from "./ViewToggle";
 import type { Client, ClientSession } from "@/types";
 
@@ -41,13 +41,17 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const { events } = useCalendarEvents(activeWeekId);
   const [colorResetKey, setColorResetKey] = useState(0);
 
-  const applyNeutralColors = useCallback(() => {
-    localStorage.setItem("sticky-system-config-neutral", JSON.stringify(NEUTRAL_SYSTEM_DEFAULTS));
+  const applyThemeColors = useCallback(() => {
+    const isNeutral = theme === "neutral";
+    const systemDefaults = isNeutral ? NEUTRAL_SYSTEM_DEFAULTS : SYSTEM_DEFAULTS_ORIGINAL;
+    const clientPalette = isNeutral ? NEUTRAL_CLIENT_COLORS_PALETTE : CLIENT_COLORS_PALETTE_ORIGINAL;
+    const storageKey = isNeutral ? "sticky-system-config-neutral" : "sticky-system-config";
+    localStorage.setItem(storageKey, JSON.stringify(systemDefaults));
     setColorResetKey((k) => k + 1);
     clientStore.clients.forEach((client, i) => {
-      clientStore.updateClient({ ...client, color: NEUTRAL_CLIENT_COLORS_PALETTE[i % NEUTRAL_CLIENT_COLORS_PALETTE.length] });
+      clientStore.updateClient({ ...client, color: clientPalette[i % clientPalette.length] });
     });
-  }, [clientStore]);
+  }, [theme, clientStore]);
   const isMobile = useIsMobile();
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -179,7 +183,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         onOpenHandbook={() => setShowHandbook(true)}
         theme={theme}
         onThemeChange={setTheme}
-        onApplyNeutralColors={applyNeutralColors}
+        onApplyNeutralColors={applyThemeColors}
       />
 
       <div className="flex flex-1 min-h-0">

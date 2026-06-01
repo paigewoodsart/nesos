@@ -15,6 +15,22 @@ export const THEME_SWATCH_COLOR: Record<Theme, string> = {
   neutral: "#F0E8DC",
 };
 
+export const SYSTEM_DEFAULTS_ORIGINAL: Record<string, { color: string; title: string }> = {
+  "__overdue__":   { color: "#5a9cd4", title: "Overdue" },
+  "__today__":     { color: "#38b8cc", title: "Today" },
+  "__week__":      { color: "#50c890", title: "This Week" },
+  "__goals__":     { color: "#8aacee", title: "Goals" },
+  "__braindump__": { color: "#c080ec", title: "Notes" },
+};
+
+export const CLIENT_COLORS_PALETTE_ORIGINAL: string[] = [
+  "#d9ed92", "#b5e48c", "#99d98c", "#76c893",
+  "#52b69a", "#40b07a", "#34a0a4", "#2d8f8f",
+  "#00b4d8", "#5fa8d3", "#168aad", "#1a759f",
+  "#0077b6", "#1e6091", "#184e77", "#023e8a",
+  "#0d3b6e", "#03045e", "#457b9d", "#264653",
+];
+
 export const NEUTRAL_SYSTEM_DEFAULTS: Record<string, { color: string; title: string }> = {
   "__overdue__":   { color: "#F5C4B0", title: "Overdue" },
   "__today__":     { color: "#fceef2", title: "Today" },

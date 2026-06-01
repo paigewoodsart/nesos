@@ -106,13 +106,13 @@ function UserMenu({ session, theme, onThemeChange, onApplyNeutralColors }: {
                     </button>
                   ))}
                 </div>
-                {theme === "neutral" && onApplyNeutralColors && (
+                {onApplyNeutralColors && (
                   <button
                     onClick={() => { onApplyNeutralColors(); setOpen(false); }}
                     className="mt-2 text-[10px] tracking-wide text-paper-ink-light hover:text-paper-ink transition-colors"
                     style={{ fontFamily: "var(--font-body)" }}
                   >
-                    apply neutral colors to panels
+                    apply to panels
                   </button>
                 )}
               </div>
