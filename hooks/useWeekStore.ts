@@ -9,7 +9,7 @@ import { sbGetTasksByWeek, sbGetRecurringTasks, sbSaveTask, sbDeleteTask } from 
 import { sbGetNotesByWeek, sbSaveNote } from "@/lib/storage/supabase/notes";
 import { sbGetGoalsByWeek, sbGetLongtermGoals, sbSaveGoal, sbDeleteGoal } from "@/lib/storage/supabase/goals";
 import { sbGetBrainDump, sbSaveBrainDump } from "@/lib/storage/supabase/braindump";
-import type { Task, Note, Goal, BrainDump, BloomState } from "@/types";
+import type { Task, Note, Goal, BrainDump } from "@/types";
 
 export function useWeekStore(weekId: string, userEmail?: string | null) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -183,15 +183,8 @@ export function useWeekStore(weekId: string, userEmail?: string | null) {
     await wBrainDump({ weekId, text, updatedAt: Date.now() });
   }, [weekId, wBrainDump]);
 
-  const bloomState: BloomState = (() => {
-    const total = tasks.filter((t) => !t.completed).length;
-    if (total <= 5) return "bud";
-    if (total <= 12) return "blooming";
-    return "overgrown";
-  })();
-
   // suppress unused warning
   void save;
 
-  return { tasks, notes, weekGoals, longtermGoals, brainDump, bloomState, loaded, addTask, toggleTask, removeTask, renameTask, upsertNote, addNotePhoto, addGoal, toggleGoal, removeGoal, renameGoal, updateBrainDump };
+  return { tasks, notes, weekGoals, longtermGoals, brainDump, loaded, addTask, toggleTask, removeTask, renameTask, upsertNote, addNotePhoto, addGoal, toggleGoal, removeGoal, renameGoal, updateBrainDump };
 }

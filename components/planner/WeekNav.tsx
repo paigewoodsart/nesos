@@ -6,11 +6,8 @@ import { format, addMonths, subMonths } from "date-fns";
 import { prevWeekId, nextWeekId, getWeekId, formatWeekRange } from "@/lib/dates";
 import { useSession, signIn, signOut } from "next-auth/react";
 import type { View } from "./ViewToggle";
-import type { BloomState } from "@/types";
-
 interface WeekNavProps {
   weekId: string;
-  bloomState: BloomState;
   view: View;
   onViewChange: (v: View) => void;
   activeDate: Date;
@@ -148,7 +145,7 @@ function NesosPhonetic() {
   );
 }
 
-export function WeekNav({ weekId, bloomState: _bloomState, view, onViewChange, activeDate, onDayChange, onToggleArchive }: WeekNavProps) {
+export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, onToggleArchive }: WeekNavProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const isCurrentWeek = weekId === getWeekId(new Date());

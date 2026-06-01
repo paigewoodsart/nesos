@@ -120,8 +120,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
       </div>
       <WeekNav
         weekId={activeWeekId}
-        bloomState={store.bloomState}
-        view={view}
+view={view}
         onViewChange={setView}
         activeDate={activeDate}
         onDayChange={handleDayChange}
