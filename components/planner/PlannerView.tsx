@@ -17,6 +17,7 @@ import { MobileView } from "@/components/mobile/MobileView";
 import { MobileHome } from "@/components/mobile/MobileHome";
 import { HandbookModal, HANDBOOK_VERSION, HANDBOOK_KEY } from "@/components/shared/HandbookModal";
 import { ThemePickerModal } from "@/components/shared/ThemePickerModal";
+import { UpdateModal, UPDATE_VERSION, UPDATE_KEY } from "@/components/shared/UpdateModal";
 import { useTheme } from "@/hooks/useTheme";
 import { THEME_BOARD_CLASS, NEUTRAL_SYSTEM_DEFAULTS, NEUTRAL_CLIENT_COLORS_PALETTE } from "@/lib/theme";
 import type { View } from "./ViewToggle";
@@ -55,12 +56,17 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const [showArchive, setShowArchive] = useState(false);
   const [showHandbook, setShowHandbook] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
 
   useEffect(() => {
     if (authStatus === "loading" || !store.loaded || !clientStore.loaded) return;
     try {
-      if (localStorage.getItem(HANDBOOK_KEY) !== HANDBOOK_VERSION) {
+      const seenHandbook = localStorage.getItem(HANDBOOK_KEY) === HANDBOOK_VERSION;
+      const seenUpdate = localStorage.getItem(UPDATE_KEY) === UPDATE_VERSION;
+      if (!seenHandbook) {
         setShowHandbook(true);
+      } else if (!seenUpdate) {
+        setShowUpdate(true);
       }
     } catch {}
   }, [authStatus, store.loaded, clientStore.loaded]);
@@ -75,6 +81,11 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
     setShowHandbook(false);
     try { localStorage.setItem(HANDBOOK_KEY, HANDBOOK_VERSION); } catch {}
     if (isFirstTime) setShowThemePicker(true);
+  }, []);
+
+  const handleCloseUpdate = useCallback(() => {
+    setShowUpdate(false);
+    try { localStorage.setItem(UPDATE_KEY, UPDATE_VERSION); } catch {}
   }, []);
 
   const handleSelectSession = useCallback((session: ClientSession) => {
@@ -137,6 +148,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         />
         <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
         <ThemePickerModal open={showThemePicker} selected={theme} onSelect={setTheme} onClose={() => setShowThemePicker(false)} />
+        <UpdateModal open={showUpdate} onClose={handleCloseUpdate} />
       </>
     );
   }
@@ -256,6 +268,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
 
       <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
       <ThemePickerModal open={showThemePicker} selected={theme} onSelect={setTheme} onClose={() => setShowThemePicker(false)} />
+      <UpdateModal open={showUpdate} onClose={handleCloseUpdate} />
 
       {openSession && openSessionClient && (
         <>

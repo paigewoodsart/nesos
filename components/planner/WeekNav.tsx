@@ -24,7 +24,12 @@ interface WeekNavProps {
   onApplyNeutralColors?: () => void;
 }
 
-function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSession>["data"]> }) {
+function UserMenu({ session, theme, onThemeChange, onApplyNeutralColors }: {
+  session: NonNullable<ReturnType<typeof useSession>["data"]>;
+  theme?: Theme;
+  onThemeChange?: (t: Theme) => void;
+  onApplyNeutralColors?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const email = session.user?.email ?? "";
@@ -73,6 +78,45 @@ function UserMenu({ session }: { session: NonNullable<ReturnType<typeof useSessi
               <p className="text-sm font-semibold text-paper-ink" style={{ fontFamily: "var(--font-serif)" }}>{name}</p>
               <p className="text-[10px] text-paper-ink-light truncate" style={{ fontFamily: "var(--font-body)" }}>{email}</p>
             </div>
+
+            {/* Board palette */}
+            {onThemeChange && (
+              <div className="px-4 py-3 border-b border-paper-line/30">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-paper-ink-light mb-2" style={{ fontFamily: "var(--font-body)" }}>Board palette</p>
+                <div className="flex items-center gap-2">
+                  {THEMES.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => onThemeChange(t)}
+                      title={THEME_LABELS[t]}
+                      aria-label={`Switch to ${THEME_LABELS[t]} theme`}
+                      className="flex items-center gap-1.5 transition-opacity hover:opacity-100"
+                      style={{ opacity: theme === t ? 1 : 0.45 }}
+                    >
+                      <span
+                        className="w-4 h-4 rounded-full flex-shrink-0 transition-transform"
+                        style={{
+                          backgroundColor: THEME_SWATCH_COLOR[t],
+                          boxShadow: theme === t ? "0 0 0 2px rgba(26,26,26,0.4)" : "0 0 0 1px rgba(26,26,26,0.15)",
+                          transform: theme === t ? "scale(1.2)" : "scale(1)",
+                          display: "inline-block",
+                        }}
+                      />
+                      <span className="text-xs text-paper-ink" style={{ fontFamily: "var(--font-body)" }}>{THEME_LABELS[t]}</span>
+                    </button>
+                  ))}
+                </div>
+                {theme === "neutral" && onApplyNeutralColors && (
+                  <button
+                    onClick={() => { onApplyNeutralColors(); setOpen(false); }}
+                    className="mt-2 text-[10px] tracking-wide text-paper-ink-light hover:text-paper-ink transition-colors"
+                    style={{ fontFamily: "var(--font-body)" }}
+                  >
+                    apply neutral colors to panels
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Privacy policy */}
             <a
@@ -219,40 +263,6 @@ export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, o
       {/* Right: sign in / menu → view toggle → nav arrows */}
       <div className="flex items-center gap-4">
 
-        {/* Theme swatches */}
-        {onThemeChange && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              {THEMES.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => onThemeChange(t)}
-                  title={THEME_LABELS[t]}
-                  aria-label={`Switch to ${THEME_LABELS[t]} theme`}
-                  className="w-4 h-4 rounded-full transition-all"
-                  style={{
-                    backgroundColor: THEME_SWATCH_COLOR[t],
-                    boxShadow: theme === t
-                      ? "0 0 0 2px rgba(26,26,26,0.5)"
-                      : "0 0 0 1px rgba(26,26,26,0.15)",
-                    transform: theme === t ? "scale(1.25)" : "scale(1)",
-                  }}
-                />
-              ))}
-            </div>
-            {theme === "neutral" && onApplyNeutralColors && (
-              <button
-                onClick={onApplyNeutralColors}
-                title="Reset all panel colors to neutral"
-                className="text-[10px] tracking-wide opacity-50 hover:opacity-90 transition-opacity"
-                style={{ fontFamily: "var(--font-body)", color: "var(--color-paper-ink)" }}
-              >
-                apply to panels
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Handbook */}
         {onOpenHandbook && (
           <button
@@ -318,7 +328,7 @@ export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, o
         )}
 
         {/* Three-dot menu (authenticated) */}
-        {session && <UserMenu session={session} />}
+        {session && <UserMenu session={session} theme={theme} onThemeChange={onThemeChange} onApplyNeutralColors={onApplyNeutralColors} />}
 
         {showNav && (
           <div className="flex items-center gap-1">
