@@ -15,7 +15,7 @@ import { DesktopArchive } from "./DesktopArchive";
 import { ClientPanel } from "@/components/clients/ClientPanel";
 import { MobileView } from "@/components/mobile/MobileView";
 import { MobileHome } from "@/components/mobile/MobileHome";
-import { HandbookModal } from "@/components/shared/HandbookModal";
+import { HandbookModal, HANDBOOK_VERSION, HANDBOOK_KEY } from "@/components/shared/HandbookModal";
 import type { View } from "./ViewToggle";
 import type { Client, ClientSession } from "@/types";
 
@@ -45,7 +45,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   useEffect(() => {
     if (authStatus === "loading" || !store.loaded || !clientStore.loaded) return;
     try {
-      if (!localStorage.getItem("nesos-handbook-seen")) {
+      if (localStorage.getItem(HANDBOOK_KEY) !== HANDBOOK_VERSION) {
         setShowHandbook(true);
       }
     } catch {}
@@ -58,7 +58,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
 
   const handleCloseHandbook = useCallback(() => {
     setShowHandbook(false);
-    try { localStorage.setItem("nesos-handbook-seen", "1"); } catch {}
+    try { localStorage.setItem(HANDBOOK_KEY, HANDBOOK_VERSION); } catch {}
   }, []);
 
   const handleSelectSession = useCallback((session: ClientSession) => {
