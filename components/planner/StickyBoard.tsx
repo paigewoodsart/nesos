@@ -60,15 +60,15 @@ function ClientTaskRow({
             onChange={(e) => setTextDraft(e.target.value)}
             onBlur={() => setTimeout(() => { if (tappingDate.current) return; commit(); }, 100)}
             onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
-            className="flex-1 text-base bg-transparent border-b border-paper-ink-light/50 outline-none"
-            style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
+            className="flex-1 text-base bg-transparent border-b border-paper-ink-light/50 outline-none [font-family:var(--font-body)]"
+            style={{ color: "#1A1A1A" }}
           />
           {/* Calendar — overlay input, ref-based to avoid re-render */}
           <div
-            className="relative w-7 h-7 flex items-center justify-center flex-shrink-0"
+            className="relative w-9 h-9 flex items-center justify-center flex-shrink-0"
             onMouseDown={() => { tappingDate.current = true; setTimeout(() => { tappingDate.current = false; }, 500); }}
           >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light pointer-events-none">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" className="text-paper-ink-light pointer-events-none">
               <rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/>
               <path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
             </svg>
@@ -80,15 +80,15 @@ function ClientTaskRow({
           </div>
           {/* Check */}
           <button onMouseDown={(e) => { e.preventDefault(); commit(); }}
-            className="flex-shrink-0 text-paper-ink-light hover:text-green-600 transition-colors">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-paper-ink-light hover:text-green-600 transition-colors">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
               <path d="M2 8l4 4 8-8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
           {/* Trash */}
           <button onMouseDown={(e) => { e.preventDefault(); handleDelete(); }}
-            className="flex-shrink-0 text-paper-ink-light hover:text-red-400 transition-colors">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-paper-ink-light hover:text-red-400 transition-colors">
+            <svg width="17" height="17" viewBox="0 0 16 16" fill="none">
               <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -99,7 +99,7 @@ function ClientTaskRow({
             <DueBadge due={task.dueDate} />
           </div>
           <span
-            className={`text-base leading-snug truncate cursor-text ${task.done ? "line-through opacity-50" : "font-medium"}`}
+            className={`text-base leading-snug truncate cursor-text ${task.done ? "line-through opacity-50" : "font-normal"}`}
             style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
             onClick={() => { setTextDraft(task.text); editDueRef.current = task.dueDate ?? ""; committed.current = false; setEditing(true); }}
           >{task.text}</span>
