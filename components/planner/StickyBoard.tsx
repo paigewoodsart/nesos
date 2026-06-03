@@ -60,7 +60,7 @@ function ClientTaskRow({
             onChange={(e) => setTextDraft(e.target.value)}
             onBlur={() => setTimeout(() => { if (tappingDate.current) return; commit(); }, 100)}
             onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
-            className="flex-1 text-sm bg-transparent border-b border-paper-ink-light/50 outline-none"
+            className="flex-1 text-base bg-transparent border-b border-paper-ink-light/50 outline-none"
             style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
           />
           {/* Calendar — overlay input, ref-based to avoid re-render */}
