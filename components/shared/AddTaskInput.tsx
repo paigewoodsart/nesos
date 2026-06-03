@@ -40,7 +40,7 @@ export function AddTaskInput({ color, onAdd }: AddTaskInputProps) {
           onKeyDown={(e) => e.key === "Enter" && commit()}
           onFocus={() => setExpanded(true)}
           placeholder="add task..."
-          className="flex-1 text-sm bg-transparent border-none outline-none placeholder:text-paper-ink-light font-medium"
+          className="flex-1 text-base bg-transparent border-none outline-none placeholder:text-paper-ink-light font-medium"
           style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
         />
       </div>

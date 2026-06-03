@@ -51,7 +51,7 @@ function ClientTaskRow({
   };
 
   return (
-    <div className="group grid items-center gap-x-2 py-1" style={{ gridTemplateColumns: "72px 1fr 24px 20px 20px" }}>
+    <div className="group grid items-center gap-x-2 py-1" style={{ gridTemplateColumns: "76px 1fr 28px 24px 24px" }}>
       {editing ? (
         <div className="col-span-5 flex items-center gap-2 py-0.5">
           <input
@@ -99,22 +99,22 @@ function ClientTaskRow({
             <DueBadge due={task.dueDate} />
           </div>
           <span
-            className={`text-sm leading-snug truncate cursor-text ${task.done ? "line-through opacity-50" : "font-medium"}`}
+            className={`text-base leading-snug truncate cursor-text ${task.done ? "line-through opacity-50" : "font-medium"}`}
             style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}
             onClick={() => { setTextDraft(task.text); editDueRef.current = task.dueDate ?? ""; committed.current = false; setEditing(true); }}
           >{task.text}</span>
           <button onClick={onToggle}
-            className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center mx-auto"
+            className="flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center mx-auto"
             style={{ borderColor: task.done ? color : "rgba(26,26,26,0.25)", backgroundColor: task.done ? color : "transparent" }}>
-            {task.done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            {task.done && <svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
           </button>
           <button onClick={onArchive}
-            className="flex-shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-paper-ink-light hover:text-paper-rust text-[13px] flex items-center justify-center"
+            className="flex-shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-paper-ink-light hover:text-paper-rust flex items-center justify-center"
             title="Archive task">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <rect x="1" y="1" width="12" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
-              <path d="M2 4v7.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V4" stroke="currentColor" strokeWidth="1.2"/>
-              <path d="M5 7h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
+              <rect x="1" y="1" width="12" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M2 4v7.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V4" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M5 7h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </button>
           <button
@@ -122,8 +122,8 @@ function ClientTaskRow({
             className="flex-shrink-0 relative opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-paper-ink-light hover:text-paper-ink flex items-center justify-center"
             title="Attach files"
           >
-            <svg width="11" height="13" viewBox="0 0 12 14" fill="none">
-              <path d="M10.5 6.5L5.5 11.5C4.4 12.6 2.6 12.6 1.5 11.5C0.4 10.4 0.4 8.6 1.5 7.5L6.5 2.5C7.2 1.8 8.3 1.8 9 2.5C9.7 3.2 9.7 4.3 9 5L4.5 9.5C4.2 9.8 3.8 9.8 3.5 9.5C3.2 9.2 3.2 8.8 3.5 8.5L7.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            <svg width="14" height="16" viewBox="0 0 12 14" fill="none">
+              <path d="M10.5 6.5L5.5 11.5C4.4 12.6 2.6 12.6 1.5 11.5C0.4 10.4 0.4 8.6 1.5 7.5L6.5 2.5C7.2 1.8 8.3 1.8 9 2.5C9.7 3.2 9.7 4.3 9 5L4.5 9.5C4.2 9.8 3.8 9.8 3.5 9.5C3.2 9.2 3.2 8.8 3.5 8.5L7.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
             {fileCount > 0 && (
               <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full text-[8px] flex items-center justify-center text-white font-bold" style={{ backgroundColor: color, opacity: 1 }}>
@@ -234,10 +234,10 @@ function MeetingRow({ event }: { event: CalendarEvent }) {
 
 function TaskColumnHeaders() {
   return (
-    <div className="grid gap-x-2 mb-1 pb-1 border-b" style={{ gridTemplateColumns: "72px 1fr 24px 20px 20px", borderColor: "rgba(26,26,26,0.08)" }}>
-      <span className="text-[9px] uppercase tracking-widest text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Due</span>
-      <span className="text-[9px] uppercase tracking-widest text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Task</span>
-      <span className="text-[9px] uppercase tracking-widest text-paper-ink-light text-center" style={{ fontFamily: "var(--font-body)" }}>✓</span>
+    <div className="grid gap-x-2 mb-1 pb-1 border-b" style={{ gridTemplateColumns: "76px 1fr 28px 24px 24px", borderColor: "rgba(26,26,26,0.08)" }}>
+      <span className="text-[11px] uppercase tracking-widest text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Due</span>
+      <span className="text-[11px] uppercase tracking-widest text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Task</span>
+      <span className="text-[11px] uppercase tracking-widest text-paper-ink-light text-center" style={{ fontFamily: "var(--font-body)" }}>✓</span>
       <span />
     </div>
   );
