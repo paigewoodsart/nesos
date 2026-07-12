@@ -7,6 +7,7 @@ import { TaskList } from "./TaskList";
 import { NoteCard } from "./NoteCard";
 import { EventBlock } from "./EventBlock";
 import { Modal } from "@/components/ui/Modal";
+import { noteTextColor } from "@/lib/colors";
 import type { CalendarEvent, Task, Note, Client, ClientSession } from "@/types";
 
 const START_HOUR = 6;
@@ -391,8 +392,12 @@ export function DayView({
           </div>
           <button
             onClick={commitBlock}
-            className="w-full py-2 text-sm font-medium rounded-sm text-white transition-opacity hover:opacity-85"
-            style={{ backgroundColor: selectedClient?.color, fontFamily: "var(--font-serif)" }}
+            className="w-full py-2 text-sm font-medium rounded-sm transition-opacity hover:opacity-85"
+            style={{
+              backgroundColor: selectedClient?.color,
+              color: selectedClient ? noteTextColor(selectedClient.color) : "#FFFFFF",
+              fontFamily: "var(--font-serif)",
+            }}
           >
             Add block
           </button>

@@ -6,6 +6,7 @@ import { MobileFooter } from "./MobileFooter";
 import { SwipeRow } from "./SwipeRow";
 import { parseDueDate } from "@/lib/dates";
 import { DueBadge } from "@/components/shared/DueBadge";
+import { noteTextColor } from "@/lib/colors";
 import {
   DndContext, TouchSensor, useSensor, useSensors, closestCenter,
   type DragEndEvent,
@@ -301,8 +302,8 @@ function ProjectPanel({
             ))}
           </div>
           <div className="flex items-center gap-3 mt-3">
-            <button onClick={saveProjectEdit} className="px-3 py-1.5 text-xs font-bold text-white"
-              style={{ backgroundColor: editColor, fontFamily: "var(--font-body)" }}>
+            <button onClick={saveProjectEdit} className="px-3 py-1.5 text-xs font-bold"
+              style={{ backgroundColor: editColor, color: noteTextColor(editColor), fontFamily: "var(--font-body)" }}>
               Save
             </button>
             <button onClick={() => setEditingProject(false)} className="text-xs px-2 py-1.5 text-paper-ink-light"
@@ -386,7 +387,7 @@ function ProjectPanel({
               </div>
               <div className="flex gap-2">
                 <button onClick={() => { setAddOpen(false); setAddText(""); setAddDue(""); }} className="text-xs text-paper-ink-light px-2" style={{ fontFamily: "var(--font-body)" }}>Cancel</button>
-                <button onClick={commitAdd} disabled={!addText.trim()} className="px-3 py-1.5 text-xs font-bold text-white rounded" style={{ backgroundColor: addText.trim() ? client.color : "rgba(0,0,0,0.12)", fontFamily: "var(--font-body)" }}>Add task</button>
+                <button onClick={commitAdd} disabled={!addText.trim()} className="px-3 py-1.5 text-xs font-bold rounded" style={{ backgroundColor: addText.trim() ? client.color : "rgba(0,0,0,0.12)", color: addText.trim() ? noteTextColor(client.color) : "#FFFFFF", fontFamily: "var(--font-body)" }}>Add task</button>
               </div>
             </div>
           </div>
@@ -588,8 +589,12 @@ export function MobileProjects({
           ))}
         </div>
         <div className="flex items-center gap-3 mt-5">
-          <button onClick={commit} className="flex-1 py-2.5 text-xs font-bold tracking-[0.15em] uppercase text-white"
-            style={{ backgroundColor: name.trim() ? color : "rgba(0,0,0,0.15)", fontFamily: "var(--font-body)" }}>
+          <button onClick={commit} className="flex-1 py-2.5 text-xs font-bold tracking-[0.15em] uppercase"
+            style={{
+              backgroundColor: name.trim() ? color : "rgba(0,0,0,0.15)",
+              color: name.trim() ? noteTextColor(color) : "#FFFFFF",
+              fontFamily: "var(--font-body)",
+            }}>
             Add Project
           </button>
           <button onClick={() => { setAdding(false); setName(""); }} className="text-sm text-paper-ink-light px-2" style={{ fontFamily: "var(--font-body)" }}>Cancel</button>

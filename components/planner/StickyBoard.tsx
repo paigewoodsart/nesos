@@ -896,8 +896,8 @@ function AddProjectInline({ onAdd, colorOptions }: { onAdd: (name: string, color
           <ColorSwatches swatches={colorOptions ?? CLIENT_COLORS_PALETTE} value={color} onChange={setColor} />
           <div className="flex gap-2">
             <button onClick={commit} disabled={!name.trim()}
-              className="flex-1 py-1.5 text-sm font-medium text-white disabled:opacity-40"
-              style={{ backgroundColor: color, fontFamily: "var(--font-body)" }}>
+              className="flex-1 py-1.5 text-sm font-medium disabled:opacity-40"
+              style={{ backgroundColor: color, color: noteTextColor(color), fontFamily: "var(--font-body)" }}>
               Add {name.trim() || "project"}
             </button>
             <button onClick={() => setOpen(false)}

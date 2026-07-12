@@ -194,25 +194,27 @@ export function ExportModal({ open, onClose, clients, tasksByClient, lockedClien
           </div>
         )}
 
-        <div
-          onClick={() => setIncludeCompleted((v) => !v)}
-          className="flex items-center gap-2 text-sm text-paper-ink cursor-pointer"
-        >
-          <span
-            className="flex-shrink-0 w-4 h-4 rounded-sm border-2 transition-all flex items-center justify-center"
-            style={{
-              borderColor: includeCompleted ? "#1A1A1A" : "rgba(26,26,26,0.25)",
-              backgroundColor: includeCompleted ? "#1A1A1A" : "transparent",
-            }}
+        {scope !== "archive" && (
+          <div
+            onClick={() => setIncludeCompleted((v) => !v)}
+            className="flex items-center gap-2 text-sm text-paper-ink cursor-pointer"
           >
-            {includeCompleted && (
-              <svg width="8" height="6" viewBox="0 0 10 8" fill="none">
-                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </span>
-          Include completed tasks
-        </div>
+            <span
+              className="flex-shrink-0 w-4 h-4 rounded-sm border-2 transition-all flex items-center justify-center"
+              style={{
+                borderColor: includeCompleted ? "#1A1A1A" : "rgba(26,26,26,0.25)",
+                backgroundColor: includeCompleted ? "#1A1A1A" : "transparent",
+              }}
+            >
+              {includeCompleted && (
+                <svg width="8" height="6" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </span>
+            Include completed tasks
+          </div>
+        )}
 
         <div className="flex gap-2 pt-2 border-t border-paper-line">
           <button

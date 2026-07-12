@@ -43,7 +43,7 @@ export function filterExportTasks(
       return true; // scope === "all"
     });
 
-    if (!includeCompleted) {
+    if (!includeCompleted && scope !== "archive") {
       filtered = filtered.filter((t) => !t.done);
     }
 

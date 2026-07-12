@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { noteTextColor } from "@/lib/colors";
 
 interface AddTaskInputProps {
   color: string;
@@ -81,8 +82,8 @@ export function AddTaskInput({ color, onAdd }: AddTaskInputProps) {
           <button
             onClick={commit}
             disabled={!text.trim()}
-            className="text-xs font-bold px-2 py-0.5 rounded-sm text-white transition-opacity hover:opacity-80 disabled:opacity-30"
-            style={{ backgroundColor: color, fontFamily: "var(--font-body)" }}
+            className="text-xs font-bold px-2 py-0.5 rounded-sm transition-opacity hover:opacity-80 disabled:opacity-30"
+            style={{ backgroundColor: color, color: noteTextColor(color), fontFamily: "var(--font-body)" }}
           >
             add
           </button>

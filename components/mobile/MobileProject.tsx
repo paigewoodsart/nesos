@@ -175,8 +175,8 @@ export function MobileProject({
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={saveEdit} className="text-xs px-3 py-1 font-bold text-white"
-                style={{ backgroundColor: editColor, fontFamily: "var(--font-body)" }}>
+              <button onClick={saveEdit} className="text-xs px-3 py-1 font-bold"
+                style={{ backgroundColor: editColor, color: noteTextColor(editColor), fontFamily: "var(--font-body)" }}>
                 Save
               </button>
               <button onClick={() => setEditing(false)} className="text-xs px-2 py-1"
@@ -273,8 +273,12 @@ export function MobileProject({
               <button
                 onClick={commit}
                 disabled={!addText.trim()}
-                className="px-4 py-2 text-xs font-bold text-white rounded"
-                style={{ backgroundColor: addText.trim() ? client.color : "rgba(0,0,0,0.12)", fontFamily: "var(--font-body)" }}
+                className="px-4 py-2 text-xs font-bold rounded"
+                style={{
+                  backgroundColor: addText.trim() ? client.color : "rgba(0,0,0,0.12)",
+                  color: addText.trim() ? noteTextColor(client.color) : "#FFFFFF",
+                  fontFamily: "var(--font-body)",
+                }}
               >
                 Add task
               </button>
