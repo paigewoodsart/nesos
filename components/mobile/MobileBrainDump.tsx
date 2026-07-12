@@ -58,7 +58,7 @@ export function MobileBrainDump({ weekId: _weekId, brainDump, onBrainDumpChange,
           )}
         </div>
 
-        {/* Body only — no title, no placeholder */}
+        {/* Body only - no title, no placeholder */}
         <textarea
           ref={bodyRef}
           value={brainDump}

@@ -124,7 +124,7 @@ export function GoalsSidebar({ weekGoals, longtermGoals, onAdd, onToggle, onRemo
               Long-Term
             </h3>
             {longtermGoals.length === 0 && (
-              <p className="text-xs text-paper-ink-light italic mb-2" style={{ fontFamily: "var(--font-serif)" }}>Nothing yet — dream big.</p>
+              <p className="text-xs text-paper-ink-light italic mb-2" style={{ fontFamily: "var(--font-serif)" }}>Nothing yet - dream big.</p>
             )}
             {longtermGoals.map((g) => (
               <GoalItem key={g.id} goal={g} onToggle={onToggle} onRemove={onRemove} />

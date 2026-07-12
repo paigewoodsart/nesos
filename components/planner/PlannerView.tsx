@@ -11,6 +11,7 @@ import { WeekNav } from "./WeekNav";
 import { WeekGrid } from "./WeekGrid";
 import { MonthView } from "./MonthView";
 import { StickyBoard } from "./StickyBoard";
+import { ExportModal } from "./ExportModal";
 import { DesktopArchive } from "./DesktopArchive";
 import { ClientPanel } from "@/components/clients/ClientPanel";
 import { MobileView } from "@/components/mobile/MobileView";
@@ -61,6 +62,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const [showHandbook, setShowHandbook] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     if (authStatus === "loading" || !store.loaded || !clientStore.loaded) return;
@@ -164,12 +166,12 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
 
   return (
     <div className={`flex flex-col h-screen overflow-hidden ${THEME_BOARD_CLASS[theme]} board-grid`}>
-      {/* Beta bar — desktop only, pinned to bottom */}
+      {/* Beta bar - desktop only, pinned to bottom */}
       <div
         className="fixed bottom-0 left-0 right-0 z-20 py-1.5 px-4 text-center text-[11px] tracking-wide border-t border-paper-line/30"
         style={{ fontFamily: "var(--font-body)", color: "var(--color-paper-rust)", backgroundColor: "rgba(249,248,246,0.9)", backdropFilter: "blur(8px)" }}
       >
-        This resource is still in beta — please email{" "}
+        This resource is still in beta - please email{" "}
         <a href="mailto:nesosplanner@gmail.com" className="underline underline-offset-2">nesosplanner@gmail.com</a>
         {" "}to submit feedback
       </div>
@@ -181,6 +183,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         onDayChange={handleDayChange}
         onToggleArchive={() => setShowArchive((v) => !v)}
         onOpenHandbook={() => setShowHandbook(true)}
+        onOpenExport={() => setShowExport(true)}
         theme={theme}
         onThemeChange={setTheme}
         onApplyNeutralColors={applyThemeColors}
@@ -191,6 +194,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
           <StickyBoard
             clients={clientStore.clients}
             tasksByClient={clientStore.tasksByClient}
+            userName={session?.user?.name ?? null}
             events={events}
             onAddClientTask={clientStore.addClientTask}
             onToggleClientTask={clientStore.toggleClientTask}
@@ -268,6 +272,15 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
           onClose={() => setShowArchive(false)}
         />
       )}
+
+      <ExportModal
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        clients={clientStore.clients}
+        tasksByClient={clientStore.tasksByClient}
+        userName={session?.user?.name ?? null}
+        theme={theme}
+      />
 
       <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
       <ThemePickerModal open={showThemePicker} selected={theme} onSelect={setTheme} onClose={() => setShowThemePicker(false)} />

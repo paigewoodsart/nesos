@@ -2,10 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
-export const UPDATE_VERSION = "2026-06-01";
+export const UPDATE_VERSION = "2026-07-12";
 export const UPDATE_KEY = "nesos-update-version";
 
 const UPDATES: { title: string; body: string }[] = [
+  {
+    title: "Export your tasks",
+    body: "You can now export tasks as a PDF or copy them as text. Use the export icon in the top nav to pull tasks across one or more projects, filtered by due date, all tasks, or the full archive. Each project also has its own export icon on its bar to export just that project's tasks the same way.",
+  },
   {
     title: "Color themes",
     body: "The board now has two palettes to choose from. Original keeps the soft pastel rainbow you know. Neutral shifts everything into warm creams and tans for a quieter feel. Switch anytime from the two dots in the nav.",

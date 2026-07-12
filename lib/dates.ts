@@ -1,7 +1,7 @@
 import { getISOWeek, getISOWeekYear, startOfISOWeek, endOfISOWeek, addWeeks, format } from "date-fns";
 import { toZonedTime, fromZonedTime, formatInTimeZone } from "date-fns-tz";
 
-export const TZ = "Asia/Bangkok"; // Indochina Time — UTC+7, covers Thailand, Vietnam, Cambodia, Laos
+export const TZ = "Asia/Bangkok"; // Indochina Time - UTC+7, covers Thailand, Vietnam, Cambodia, Laos
 
 /** Current local date in ICT */
 function nowInTZ(): Date {

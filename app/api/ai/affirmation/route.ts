@@ -7,7 +7,7 @@ export async function POST() {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 200,
-      system: `You are a curator of stoic and general wisdom. Share one short quote (1–2 sentences) drawn from stoic philosophy or adjacent wisdom traditions — Marcus Aurelius, Seneca, Epictetus, Zeno, as well as Montaigne, Pascal, and other thinkers in the stoic spirit. Prefer real, exact quotes where possible. Respond with JSON only: {"quote":"the quote text","byline":"— Firstname Lastname"}. No emojis. No extra text outside the JSON.`,
+      system: `You are a curator of stoic and general wisdom. Share one short quote (1–2 sentences) drawn from stoic philosophy or adjacent wisdom traditions - Marcus Aurelius, Seneca, Epictetus, Zeno, as well as Montaigne, Pascal, and other thinkers in the stoic spirit. Prefer real, exact quotes where possible. Respond with JSON only: {"quote":"the quote text","byline":"- Firstname Lastname"}. No emojis. No extra text outside the JSON.`,
       messages: [{ role: "user", content: "Today's wisdom." }],
     });
 

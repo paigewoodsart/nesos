@@ -373,7 +373,7 @@ function ProjectPanel({
               style={{ fontFamily: "var(--font-body)", fontSize: 16 }}
             />
             <div className="flex items-center justify-between mt-3 gap-2">
-              {/* Date picker — transparent overlay for iOS compatibility */}
+              {/* Date picker - transparent overlay for iOS compatibility */}
               <div className="relative flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs flex-shrink-0 cursor-pointer"
                 style={{ color: addDue ? client.color : "rgba(26,26,26,0.5)", borderColor: addDue ? client.color : "rgba(26,26,26,0.18)", backgroundColor: addDue ? `${client.color}12` : "transparent", fontFamily: "var(--font-body)" }}>
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 1v3M11 1v3M1 7h14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
@@ -603,7 +603,7 @@ export function MobileProjects({
       <MobileScreenHeader title="Projects" onOpenDrawer={onOpenDrawer} />
       <MobileFooter />
       <div className="flex-1 overflow-y-auto bg-white/5 backdrop-blur-sm">
-        {/* Add project — always at top */}
+        {/* Add project - always at top */}
         {!adding ? (
           <button onClick={() => setAdding(true)} className="w-full py-3 text-sm font-bold tracking-[0.22em] uppercase text-white mb-[3px]"
             style={{ backgroundColor: PURPLE, fontFamily: "var(--font-body)" }}>
@@ -611,7 +611,7 @@ export function MobileProjects({
           </button>
         ) : addForm}
 
-        {/* Project list — sortable */}
+        {/* Project list - sortable */}
         <DndContext sensors={projectSensors} collisionDetection={closestCenter} onDragEnd={handleProjectDragEnd}>
           <SortableContext items={orderedClients.map((c) => c.id)} strategy={verticalListSortingStrategy}>
             <div className="flex flex-col gap-[3px]">

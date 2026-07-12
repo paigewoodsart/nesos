@@ -134,7 +134,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook
             </button>
           )}
 
-          {/* Brain Music — below main nav */}
+          {/* Brain Music - below main nav */}
           <a
             href="https://open.spotify.com/playlist/1DS3PGYtl7dV8YGTXfbPRt"
             target="_blank"
@@ -177,7 +177,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook
         {/* Beta note */}
         <div className="flex-shrink-0 border-t border-paper-line/20 px-6 py-2.5">
           <p className="text-[10px] text-paper-ink-light text-center" style={{ fontFamily: "var(--font-body)" }}>
-            beta —{" "}
+            beta -{" "}
             <a href="mailto:nesosplanner@gmail.com" className="underline underline-offset-2">
               nesosplanner@gmail.com
             </a>

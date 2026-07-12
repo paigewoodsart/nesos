@@ -1,13 +1,25 @@
 "use client";
 
 import { dueDateUrgency, formatDueDate } from "@/lib/dates";
+import { noteTextColor } from "@/lib/colors";
 
-export function DueBadge({ due }: { due: string | null }) {
+export function DueBadge({ due, color }: { due: string | null; color?: string }) {
   const urgency = dueDateUrgency(due);
   const label = formatDueDate(due);
 
   if (!label) {
-    return <span className="text-[10px] text-paper-line" style={{ fontFamily: "var(--font-serif)" }}>—</span>;
+    return <span className="text-[10px] text-paper-line" style={{ fontFamily: "var(--font-serif)" }}>-</span>;
+  }
+
+  if (color) {
+    return (
+      <span
+        className="text-[10px] font-medium px-1.5 py-0.5 rounded-sm whitespace-nowrap"
+        style={{ fontFamily: "var(--font-serif)", backgroundColor: color, color: noteTextColor(color) }}
+      >
+        {label}
+      </span>
+    );
   }
 
   const styles: Record<string, string> = {

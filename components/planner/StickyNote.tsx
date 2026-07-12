@@ -31,7 +31,7 @@ interface StickyNoteProps {
   children: React.ReactNode;
   width?: number;
   onWidthChange?: (id: string, width: number) => void;
-  // Edit callbacks — if omitted, note is not editable
+  // Edit callbacks - if omitted, note is not editable
   onTitleChange?: (title: string) => void;
   onColorChange?: (color: string) => void;
   onDelete?: () => void;
@@ -162,7 +162,7 @@ export function StickyNote({
         <div className="absolute top-4 left-1/2 -translate-x-1/2 w-0.5 h-1 bg-black/20 rounded-full" />
       </div>
 
-      {/* Header — drag handle */}
+      {/* Header - drag handle */}
       <div
         className={`flex items-center gap-2 px-4 py-3 select-none ${collapsed ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
         style={{ backgroundColor: color }}
@@ -277,7 +277,7 @@ export function StickyNote({
         </div>
       )}
 
-      {/* Body — hidden when collapsed */}
+      {/* Body - hidden when collapsed */}
       {!collapsed && (
         <>
           <div style={{ height: 2, backgroundColor: color, opacity: lightText ? 0.35 : 0.2 }} />

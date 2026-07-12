@@ -19,6 +19,7 @@ const boardBody = [
   "You can attach files directly to tasks too. Just open a task and add whatever you need to keep alongside it.",
   "On the right side of the board you will find three columns: Urgent, This Week, and This Month. These automatically pull in your tasks based on their due dates. Each task is color coded to match its project so you can see at a glance where it lives. Click any task in those columns and it will open the project it belongs to.",
   "Once a task is marked done, it moves to the archive automatically after 24 hours. Your board stays clean on its own, and nothing is ever lost. You can find everything in the archive anytime using the box icon in the top nav.",
+  "When you need your tasks outside of Nesos, use the export icon in the top nav to download a PDF or copy your tasks as text. You can pick specific projects, a date range, all tasks, or a project's full archive. Each project also has its own export icon on its bar for exporting just that project.",
 ];
 
 interface HandbookModalProps {

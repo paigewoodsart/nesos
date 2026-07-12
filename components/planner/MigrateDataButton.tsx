@@ -62,7 +62,7 @@ export function MigrateDataButton({ userEmail }: Props) {
   if (status === "done") {
     return (
       <div className="text-xs text-green-700 px-3 py-1.5 bg-green-50 border border-green-200 rounded-sm" style={{ fontFamily: "var(--font-body)" }}>
-        ✓ Migration complete — {detail}
+        ✓ Migration complete - {detail}
       </div>
     );
   }

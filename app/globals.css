@@ -2,14 +2,14 @@
 
 @theme {
   /* ── Luxury monochrome palette ── */
-  --color-paper-cream: #F9F8F6;       /* warm alabaster — main background */
-  --color-paper-warm: #EBE5DE;        /* pale taupe — secondary surfaces */
-  --color-paper-line: #D5D3CF;        /* light grey — borders and dividers */
-  --color-paper-ink: #1A1A1A;         /* rich charcoal — primary text */
-  --color-paper-ink-light: #6C6863;   /* warm grey — secondary text */
-  --color-paper-rust: #184e77;        /* yale-blue — primary accent (replaces terracotta) */
-  --color-paper-sage: #34a0a4;        /* tropical-teal — secondary accent (completed states) */
-  --color-gold: #D4AF37;              /* metallic gold — hover/focus accent, use sparingly */
+  --color-paper-cream: #F9F8F6;       /* warm alabaster - main background */
+  --color-paper-warm: #EBE5DE;        /* pale taupe - secondary surfaces */
+  --color-paper-line: #D5D3CF;        /* light grey - borders and dividers */
+  --color-paper-ink: #1A1A1A;         /* rich charcoal - primary text */
+  --color-paper-ink-light: #6C6863;   /* warm grey - secondary text */
+  --color-paper-rust: #184e77;        /* yale-blue - primary accent (replaces terracotta) */
+  --color-paper-sage: #34a0a4;        /* tropical-teal - secondary accent (completed states) */
+  --color-gold: #D4AF37;              /* metallic gold - hover/focus accent, use sparingly */
 
   /* ── Sticky note colors (blue-green palette) ── */
   --color-note-1: #d9ed92;
@@ -43,7 +43,7 @@ body {
   min-height: 100vh;
 }
 
-/* Paper grain texture — mimics expensive laid paper */
+/* Paper grain texture - mimics expensive laid paper */
 body::before {
   content: "";
   position: fixed;

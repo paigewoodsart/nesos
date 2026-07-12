@@ -26,7 +26,7 @@ export function MobileHome({ onOpenDrawer, isLoggedIn }: MobileHomeProps) {
         Privacy Policy
       </a>
 
-      {/* Hamburger — top right, fades in with phase 2 */}
+      {/* Hamburger - top right, fades in with phase 2 */}
       <button
         onClick={onOpenDrawer}
         className="absolute w-11 h-11 flex items-center justify-center text-paper-ink-light z-10"

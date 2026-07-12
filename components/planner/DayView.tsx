@@ -364,7 +364,7 @@ export function DayView({
       <Modal
         open={!!addBlockModal}
         onClose={() => setAddBlockModal(null)}
-        title={selectedClient ? `${selectedClient.name} — add work block` : "Add block"}
+        title={selectedClient ? `${selectedClient.name} - add work block` : "Add block"}
       >
         <div className="space-y-4">
           <div className="flex gap-3">

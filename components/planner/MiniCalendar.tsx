@@ -14,7 +14,7 @@ export function MiniCalendar() {
   const prev = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const next = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
 
-  // Build day grid — week starts Monday
+  // Build day grid - week starts Monday
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   // Monday-based offset: Sun=6, Mon=0 ...

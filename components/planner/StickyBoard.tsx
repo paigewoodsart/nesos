@@ -11,6 +11,7 @@ import { AddGoalInline } from "@/components/shared/AddGoalInline";
 import { MiniCalendar } from "./MiniCalendar";
 import { DailyAffirmation } from "./DailyAffirmation";
 import { ColorSwatches } from "./ColorPicker";
+import { ExportModal } from "./ExportModal";
 import type { Client, ClientTask, ClientFile, Task, Goal, CalendarEvent } from "@/types";
 
 // ── Client task row ─────────────────────────────────────────────
@@ -63,7 +64,7 @@ function ClientTaskRow({
             className="flex-1 text-base bg-transparent border-b border-paper-ink-light/50 outline-none [font-family:var(--font-body)]"
             style={{ color: "#1A1A1A" }}
           />
-          {/* Calendar — overlay input, ref-based to avoid re-render */}
+          {/* Calendar - overlay input, ref-based to avoid re-render */}
           <div
             className="relative w-9 h-9 flex items-center justify-center flex-shrink-0"
             onMouseDown={() => { tappingDate.current = true; setTimeout(() => { tappingDate.current = false; }, 500); }}
@@ -96,7 +97,7 @@ function ClientTaskRow({
       ) : (
         <>
           <div className="flex items-center min-w-0">
-            <DueBadge due={task.dueDate} />
+            <DueBadge due={task.dueDate} color={color} />
           </div>
           <span
             className={`text-base leading-snug truncate cursor-text ${task.done ? "line-through opacity-50" : "font-normal"}`}
@@ -433,7 +434,7 @@ function putWithProgress(url: string, file: File, onProgress: (pct: number) => v
   });
 }
 
-// Uploads directly to Supabase Storage via signed URL — no Vercel body size limit.
+// Uploads directly to Supabase Storage via signed URL - no Vercel body size limit.
 async function uploadFile(
   file: File,
   clientId: string,
@@ -722,7 +723,7 @@ function NotePanel({
 
       {/* Header band */}
       <div className="group/header flex items-center gap-1.5 px-3 py-2.5 flex-shrink-0" style={{ backgroundColor: color }}>
-        {/* Grip icon — drag affordance */}
+        {/* Grip icon - drag affordance */}
         <svg width="8" height="12" viewBox="0 0 8 12" fill="none"
           className="flex-shrink-0 opacity-0 group-hover/header:opacity-40 transition-opacity mr-1"
           style={{ color: textColor }}>
@@ -819,7 +820,7 @@ function NotePanel({
         </div>
       )}
 
-      {/* Frosted glass body — hidden when collapsed */}
+      {/* Frosted glass body - hidden when collapsed */}
       {!collapsed && (
         <div className="flex flex-col"
           style={{
@@ -942,6 +943,7 @@ interface StickyBoardProps {
   onBrainDumpChange: (text: string) => void;
   theme?: Theme;
   colorResetKey?: number;
+  userName?: string | null;
 }
 
 export function StickyBoard({
@@ -950,9 +952,10 @@ export function StickyBoard({
   onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
   weekTasks, onAddWeekTask, onToggleWeekTask, onRemoveWeekTask, onRenameWeekTask,
   weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal,
-  brainDump, onBrainDumpChange, theme = "original", colorResetKey = 0,
+  brainDump, onBrainDumpChange, theme = "original", colorResetKey = 0, userName,
 }: StickyBoardProps) {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
+  const [exportClientId, setExportClientId] = useState<string | null>(null);
   const [systemConfig, setSystemConfig] = useState<Record<SystemKey, SystemConfig>>(() => loadSystemConfig());
   const [clientOrder, setClientOrder] = useState<string[]>(() => loadClientOrder());
   const [dragId, setDragId] = useState<string | null>(null);
@@ -1107,7 +1110,7 @@ export function StickyBoard({
 
   const activeClient = activeClientId ? clients.find((c) => c.id === activeClientId) ?? null : null;
 
-  // Workspace always in col3 (index 2) — projects fixed in col1
+  // Workspace always in col3 (index 2) - projects fixed in col1
   const workspaceColIdx = 2;
 
   // ── Tile content renderer ────────────────────────────────────────
@@ -1277,52 +1280,70 @@ export function StickyBoard({
             const tc = theme === "neutral" ? noteTextColorWarm(c.color) : noteTextColor(c.color);
             const isDragging = dragId === c.id;
             return (
-              <div key={c.id} className="relative">
+              <div key={c.id} className="relative group/bar">
                 {dropIndex === i && dragId !== c.id && (
                   <div className="absolute -top-1 left-0 right-0 h-0.5 rounded-full z-10" style={{ backgroundColor: c.color }} />
                 )}
-                <button
-                  draggable
-                  onClick={() => setActiveClientId(active ? null : c.id)}
-                  onDragStart={(e) => { e.stopPropagation(); setDragId(c.id); e.dataTransfer.effectAllowed = "move"; }}
-                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropIndex(i); }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (!dragId || dragId === c.id) return;
-                    const fromIdx = ordered.findIndex((x) => x.id === dragId);
-                    const newOrder = ordered.map((x) => x.id);
-                    newOrder.splice(fromIdx, 1);
-                    newOrder.splice(i, 0, dragId);
-                    setClientOrder(newOrder);
-                    saveClientOrder(newOrder);
-                    setDragId(null); setDropIndex(null);
-                  }}
-                  onDragEnd={(e) => { e.stopPropagation(); setDragId(null); setDropIndex(null); }}
-                  className="w-full flex items-center gap-2 px-3 py-3 text-left transition-all group/bar"
+                <div
+                  className="w-full flex items-center gap-1 transition-all"
                   style={{
                     backgroundColor: c.color,
                     opacity: isDragging ? 0.4 : active ? 1 : 0.82,
                     boxShadow: active ? "3px 5px 18px rgba(26,26,26,0.18), 0 0 0 2px rgba(26,26,26,0.18)" : "2px 3px 8px rgba(26,26,26,0.10)",
-                    cursor: "grab",
                   }}
                 >
-                  <svg width="10" height="14" viewBox="0 0 10 14" fill="none"
-                    className="flex-shrink-0 opacity-0 group-hover/bar:opacity-40 transition-opacity"
-                    style={{ color: tc }}>
-                    <circle cx="3" cy="2" r="1.2" fill="currentColor"/>
-                    <circle cx="7" cy="2" r="1.2" fill="currentColor"/>
-                    <circle cx="3" cy="7" r="1.2" fill="currentColor"/>
-                    <circle cx="7" cy="7" r="1.2" fill="currentColor"/>
-                    <circle cx="3" cy="12" r="1.2" fill="currentColor"/>
-                    <circle cx="7" cy="12" r="1.2" fill="currentColor"/>
-                  </svg>
-                  <span className="flex-1 text-xs font-semibold uppercase tracking-[0.2em] truncate"
-                    style={{ fontFamily: "var(--font-body)", color: tc, opacity: tc === "#FFFFFF" ? 0.9 : 0.72 }}>
-                    {c.name}
-                  </span>
-                  <span style={{ color: tc, opacity: 0.45, fontSize: 14 }}>›</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setExportClientId(c.id); }}
+                    title="Export project tasks"
+                    aria-label="Export project tasks"
+                    className="flex-shrink-0 flex items-center justify-center w-6 h-6 ml-1 opacity-[0.45] hover:opacity-100 transition-opacity"
+                    style={{ color: tc }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                      <path d="M8 1v9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                      <path d="M4.5 6.5L8 10l3.5-3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                  <button
+                    draggable
+                    onClick={() => setActiveClientId(active ? null : c.id)}
+                    onDragStart={(e) => { e.stopPropagation(); setDragId(c.id); e.dataTransfer.effectAllowed = "move"; }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropIndex(i); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!dragId || dragId === c.id) return;
+                      const fromIdx = ordered.findIndex((x) => x.id === dragId);
+                      const newOrder = ordered.map((x) => x.id);
+                      newOrder.splice(fromIdx, 1);
+                      newOrder.splice(i, 0, dragId);
+                      setClientOrder(newOrder);
+                      saveClientOrder(newOrder);
+                      setDragId(null); setDropIndex(null);
+                    }}
+                    onDragEnd={(e) => { e.stopPropagation(); setDragId(null); setDropIndex(null); }}
+                    className="flex-1 min-w-0 flex items-center gap-2 pr-3 py-3 text-left transition-all"
+                    style={{ cursor: "grab" }}
+                  >
+                    <svg width="10" height="14" viewBox="0 0 10 14" fill="none"
+                      className="flex-shrink-0 opacity-0 group-hover/bar:opacity-40 transition-opacity"
+                      style={{ color: tc }}>
+                      <circle cx="3" cy="2" r="1.2" fill="currentColor"/>
+                      <circle cx="7" cy="2" r="1.2" fill="currentColor"/>
+                      <circle cx="3" cy="7" r="1.2" fill="currentColor"/>
+                      <circle cx="7" cy="7" r="1.2" fill="currentColor"/>
+                      <circle cx="3" cy="12" r="1.2" fill="currentColor"/>
+                      <circle cx="7" cy="12" r="1.2" fill="currentColor"/>
+                    </svg>
+                    <span className="flex-1 text-xs font-semibold uppercase tracking-[0.2em] truncate"
+                      style={{ fontFamily: "var(--font-body)", color: tc, opacity: tc === "#FFFFFF" ? 0.9 : 0.72 }}>
+                      {c.name}
+                    </span>
+                    <span style={{ color: tc, opacity: 0.45, fontSize: 14 }}>›</span>
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -1349,6 +1370,15 @@ export function StickyBoard({
               </div>
             </details>
           )}
+          <ExportModal
+            open={!!exportClientId}
+            onClose={() => setExportClientId(null)}
+            clients={clients}
+            tasksByClient={tasksByClient}
+            lockedClientId={exportClientId ?? undefined}
+            userName={userName}
+            theme={theme}
+          />
         </ProjectsList>
       );
     }

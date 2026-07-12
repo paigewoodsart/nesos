@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Privacy Policy — Nesos",
+  title: "Privacy Policy - Nesos",
 };
 
 export default function PrivacyPage() {
@@ -41,7 +41,7 @@ export default function PrivacyPage() {
               How we store it
             </h2>
             <p>
-              Your data is stored in a PostgreSQL database hosted by Supabase. It is scoped entirely to your email address — no other user can access your data. We do not use shared or pooled data structures.
+              Your data is stored in a PostgreSQL database hosted by Supabase. It is scoped entirely to your email address - no other user can access your data. We do not use shared or pooled data structures.
             </p>
           </section>
 
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
               Deleting your data
             </h2>
             <p>
-              You can permanently delete your account and all associated data at any time from within the app. Open the menu (···) in the top right corner and choose "Delete account." This action is immediate and irreversible — all your tasks, goals, projects, and notes will be removed from our database.
+              You can permanently delete your account and all associated data at any time from within the app. Open the menu (···) in the top right corner and choose "Delete account." This action is immediate and irreversible - all your tasks, goals, projects, and notes will be removed from our database.
             </p>
           </section>
 

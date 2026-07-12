@@ -19,6 +19,7 @@ interface WeekNavProps {
   onDayChange: (d: Date) => void;
   onToggleArchive: () => void;
   onOpenHandbook?: () => void;
+  onOpenExport?: () => void;
   theme?: Theme;
   onThemeChange?: (t: Theme) => void;
   onApplyNeutralColors?: () => void;
@@ -198,7 +199,7 @@ function NesosPhonetic() {
   );
 }
 
-export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, onToggleArchive, onOpenHandbook, theme = "original", onThemeChange, onApplyNeutralColors }: WeekNavProps) {
+export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, onToggleArchive, onOpenHandbook, onOpenExport, theme = "original", onThemeChange, onApplyNeutralColors }: WeekNavProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const isCurrentWeek = weekId === getWeekId(new Date());
@@ -289,6 +290,22 @@ export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, o
             <path d="M6 8h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
           </svg>
         </button>
+
+        {/* Export */}
+        {onOpenExport && (
+          <button
+            onClick={onOpenExport}
+            title="Export tasks"
+            className="flex items-center justify-center w-8 h-8 text-paper-ink-light hover:text-paper-ink transition-colors"
+            aria-label="Export tasks"
+          >
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1v9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <path d="M4.5 6.5L8 10l3.5-3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 12v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
 
         {/* Spotify brain music */}
         <a
