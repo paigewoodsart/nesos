@@ -29,6 +29,7 @@ export function ExportModal({ open, onClose, clients, tasksByClient, lockedClien
   const [dateFrom, setDateFrom] = useState(todayISO());
   const [dateTo, setDateTo] = useState(todayISO());
   const [includeCompleted, setIncludeCompleted] = useState(false);
+  const [includeNotes, setIncludeNotes] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export function ExportModal({ open, onClose, clients, tasksByClient, lockedClien
     setDateFrom(todayISO());
     setDateTo(todayISO());
     setIncludeCompleted(false);
+    setIncludeNotes(false);
     setCopied(false);
   }, [open, lockedClientId]);
 
@@ -65,14 +67,14 @@ export function ExportModal({ open, onClose, clients, tasksByClient, lockedClien
   const handleDownloadPdf = async () => {
     if (!canExport) return;
     const filtered = getFiltered();
-    const doc = await buildExportPdf(clients, filtered, userName);
+    const doc = await buildExportPdf(clients, filtered, userName, includeNotes);
     doc.save("nesos-export.pdf");
   };
 
   const handleCopyText = async () => {
     if (!canExport) return;
     const filtered = getFiltered();
-    const text = buildExportText(clients, filtered);
+    const text = buildExportText(clients, filtered, includeNotes);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -215,6 +217,26 @@ export function ExportModal({ open, onClose, clients, tasksByClient, lockedClien
             Include completed tasks
           </div>
         )}
+
+        <div
+          onClick={() => setIncludeNotes((v) => !v)}
+          className="flex items-center gap-2 text-sm text-paper-ink cursor-pointer"
+        >
+          <span
+            className="flex-shrink-0 w-4 h-4 rounded-sm border-2 transition-all flex items-center justify-center"
+            style={{
+              borderColor: includeNotes ? "#1A1A1A" : "rgba(26,26,26,0.25)",
+              backgroundColor: includeNotes ? "#1A1A1A" : "transparent",
+            }}
+          >
+            {includeNotes && (
+              <svg width="8" height="6" viewBox="0 0 10 8" fill="none">
+                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
+          Include all notes
+        </div>
 
         <div className="flex gap-2 pt-2 border-t border-paper-line">
           <button

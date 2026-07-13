@@ -1467,18 +1467,6 @@ export function StickyBoard({
         onArchive={() => { onArchiveClient(activeClient.id); setActiveClientId(null); }}
         onDelete={() => { onRemoveClient(activeClient.id); setActiveClientId(null); }}
       >
-        <textarea
-          key={activeClient.id}
-          defaultValue={activeClient.notes ?? ""}
-          onBlur={(e) => {
-            const val = e.target.value;
-            if (val !== (activeClient.notes ?? "")) onUpdateClient({ ...activeClient, notes: val });
-          }}
-          placeholder="project notes..."
-          rows={2}
-          className="w-full text-sm bg-transparent border-b border-paper-line/30 outline-none resize-none text-paper-ink leading-relaxed pb-1 mb-3"
-          style={{ fontFamily: "var(--font-body)" }}
-        />
         {sortedActive.length === 0 && archived.length === 0 && (
           <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>No tasks yet.</p>
         )}
@@ -1510,6 +1498,23 @@ export function StickyBoard({
           </details>
         )}
         <AddTaskInput color={activeClient.color} onAdd={(text, due) => onAddClientTask(activeClient.id, text, due)} />
+        <details open className="mt-3">
+          <summary className="text-[10px] uppercase tracking-[0.2em] cursor-pointer list-none select-none text-paper-ink-light py-1 mb-1">
+            ▸ Notes
+          </summary>
+          <textarea
+            key={activeClient.id}
+            defaultValue={activeClient.notes ?? ""}
+            onBlur={(e) => {
+              const val = e.target.value;
+              if (val !== (activeClient.notes ?? "")) onUpdateClient({ ...activeClient, notes: val });
+            }}
+            placeholder="project notes..."
+            rows={10}
+            className="w-full text-sm leading-relaxed bg-transparent border border-paper-line/40 rounded-sm outline-none p-2 resize-y overflow-y-auto text-paper-ink"
+            style={{ fontFamily: "var(--font-body)", minHeight: "12rem", maxHeight: "24rem" }}
+          />
+        </details>
         <FilesSection
           files={(filesByClient[activeClient.id] ?? []).filter((f) => !f.taskId)}
           onUpload={(fl, onProgress) => handleUploadFiles(activeClient.id, null, fl, onProgress)}

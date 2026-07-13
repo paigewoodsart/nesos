@@ -70,7 +70,8 @@ function formatDueDate(dueDate: string | null): string {
 
 export function buildExportText(
   clients: Client[],
-  filteredTasksByClient: Record<string, ClientTask[]>
+  filteredTasksByClient: Record<string, ClientTask[]>,
+  includeNotes = false
 ): string {
   const clientIds = Object.keys(filteredTasksByClient);
   const multiProject = clientIds.length > 1;
@@ -91,6 +92,12 @@ export function buildExportText(
     }
     if (tasks.length === 0) {
       lines.push("(no tasks)");
+    }
+    const notes = client.notes?.trim();
+    if (includeNotes && notes) {
+      lines.push("");
+      lines.push("Notes:");
+      lines.push(notes);
     }
     sections.push(lines.join("\n"));
   }
@@ -167,7 +174,8 @@ let cachedInterBold: string | undefined;
 export async function buildExportPdf(
   clients: Client[],
   filteredTasksByClient: Record<string, ClientTask[]>,
-  userName?: string | null
+  userName?: string | null,
+  includeNotes = false
 ): Promise<jsPDF> {
   const doc = new jsPDF();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -233,6 +241,27 @@ export async function buildExportPdf(
       ensureSpace(wrapped.length * 6);
       doc.text(wrapped, marginLeft, y);
       y += wrapped.length * 6;
+    }
+
+    const notes = client.notes?.trim();
+    if (includeNotes && notes) {
+      y += 3;
+      ensureSpace(6);
+      doc.setFont(bodyFont, "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(108, 104, 99);
+      doc.text("NOTES", marginLeft, y);
+      y += 5;
+
+      doc.setFont(bodyFont, "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(26, 26, 26);
+      const wrappedNotes = doc.splitTextToSize(notes, maxWidth);
+      for (const line of wrappedNotes) {
+        ensureSpace(6);
+        doc.text(line, marginLeft, y);
+        y += 6;
+      }
     }
 
     y += 6;
