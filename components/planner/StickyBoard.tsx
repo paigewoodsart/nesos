@@ -12,7 +12,8 @@ import { MiniCalendar } from "./MiniCalendar";
 import { DailyAffirmation } from "./DailyAffirmation";
 import { ColorSwatches } from "./ColorPicker";
 import { ExportModal } from "./ExportModal";
-import type { Client, ClientTask, ClientFile, Task, Goal, CalendarEvent } from "@/types";
+import { useProjectTimer, formatElapsed } from "@/hooks/useProjectTimer";
+import type { Client, ClientTask, ClientFile, ClientSession, Task, Goal, CalendarEvent } from "@/types";
 
 // ── Client task row ─────────────────────────────────────────────
 
@@ -944,6 +945,7 @@ interface StickyBoardProps {
   theme?: Theme;
   colorResetKey?: number;
   userName?: string | null;
+  onAddSession: (session: Omit<ClientSession, "id" | "createdAt">) => void;
 }
 
 export function StickyBoard({
@@ -952,10 +954,11 @@ export function StickyBoard({
   onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
   weekTasks, onAddWeekTask, onToggleWeekTask, onRemoveWeekTask, onRenameWeekTask,
   weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal,
-  brainDump, onBrainDumpChange, theme = "original", colorResetKey = 0, userName,
+  brainDump, onBrainDumpChange, theme = "original", colorResetKey = 0, userName, onAddSession,
 }: StickyBoardProps) {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [exportClientId, setExportClientId] = useState<string | null>(null);
+  const { activeClientId: runningClientId, elapsedMs, toggle: toggleTimer } = useProjectTimer(onAddSession);
   const [systemConfig, setSystemConfig] = useState<Record<SystemKey, SystemConfig>>(() => loadSystemConfig());
   const [clientOrder, setClientOrder] = useState<string[]>(() => loadClientOrder());
   const [dragId, setDragId] = useState<string | null>(null);
@@ -1467,6 +1470,33 @@ export function StickyBoard({
         onArchive={() => { onArchiveClient(activeClient.id); setActiveClientId(null); }}
         onDelete={() => { onRemoveClient(activeClient.id); setActiveClientId(null); }}
       >
+        <div className="flex items-center gap-3 pb-3 mb-3 border-b border-paper-line/30">
+          <button
+            type="button"
+            onClick={() => toggleTimer(activeClient.id)}
+            aria-label={runningClientId === activeClient.id ? "Stop timer" : "Start timer"}
+            className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-85"
+            style={{ backgroundColor: activeClient.color, color: noteTextColor(activeClient.color) }}
+          >
+            {runningClientId === activeClient.id ? (
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="12" height="12" rx="1.5" fill="currentColor"/>
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M3.5 2.5v11l10-5.5-10-5.5z" fill="currentColor"/>
+              </svg>
+            )}
+          </button>
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Timer</span>
+            {runningClientId === activeClient.id && (
+              <span className="text-lg font-semibold tabular-nums" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}>
+                {formatElapsed(elapsedMs)}
+              </span>
+            )}
+          </div>
+        </div>
         {sortedActive.length === 0 && archived.length === 0 && (
           <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>No tasks yet.</p>
         )}
