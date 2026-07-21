@@ -1,30 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toZonedTime } from "date-fns-tz";
-import { format } from "date-fns";
-import { getWeekId, getWeekDays, isoToMinutes, TZ } from "@/lib/dates";
+import { toZonedTime, formatInTimeZone } from "date-fns-tz";
+import { getWeekId, isoToMinutes, TZ } from "@/lib/dates";
 import type { ClientSession } from "@/types";
 
-const STORAGE_KEY = "nesos-active-timer";
+const STORAGE_KEY = "nesos-project-timers";
 
-interface ActiveTimer {
-  clientId: string;
-  startedAt: number; // epoch ms
+interface TimerEntry {
+  accumulatedMs: number;
+  startedAt: number | null; // epoch ms of the current running segment, null when paused
+  firstStartedAt: number | null; // epoch ms this logging chunk first began, for startMinute on log
 }
 
-function loadActiveTimer(): ActiveTimer | null {
+type TimersMap = Record<string, TimerEntry>;
+
+function loadTimers(): TimersMap {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? JSON.parse(raw) : {};
   } catch {
-    return null;
+    return {};
   }
 }
 
-function saveActiveTimer(timer: ActiveTimer | null) {
+function saveTimers(timers: TimersMap) {
   try {
-    if (timer) localStorage.setItem(STORAGE_KEY, JSON.stringify(timer));
+    const hasAny = Object.keys(timers).length > 0;
+    if (hasAny) localStorage.setItem(STORAGE_KEY, JSON.stringify(timers));
     else localStorage.removeItem(STORAGE_KEY);
   } catch {}
 }
@@ -39,78 +42,125 @@ export function formatElapsed(ms: number): string {
 }
 
 export function useProjectTimer(onAddSession: (session: Omit<ClientSession, "id" | "createdAt">) => void) {
-  const [activeTimer, setActiveTimer] = useState<ActiveTimer | null>(null);
+  const [timers, setTimers] = useState<TimersMap>({});
   const [nowTick, setNowTick] = useState(() => Date.now());
   const onAddSessionRef = useRef(onAddSession);
   onAddSessionRef.current = onAddSession;
-  // Source of truth for "what's currently running", read synchronously by
-  // start()/stop() so the side-effecting session log never runs inside a
-  // React state updater (which may be invoked more than once in Strict Mode).
-  const activeTimerRef = useRef<ActiveTimer | null>(null);
+  // Source of truth read synchronously by play()/pause()/logTime() so the
+  // side-effecting session log never runs inside a React state updater
+  // (which may be invoked more than once in Strict Mode).
+  const timersRef = useRef<TimersMap>({});
 
   useEffect(() => {
-    const loaded = loadActiveTimer();
-    activeTimerRef.current = loaded;
-    setActiveTimer(loaded);
+    const loaded = loadTimers();
+    timersRef.current = loaded;
+    setTimers(loaded);
   }, []);
 
+  const anyRunning = Object.values(timers).some((t) => t.startedAt !== null);
   useEffect(() => {
-    if (!activeTimer) return;
+    if (!anyRunning) return;
     const id = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [activeTimer]);
+  }, [anyRunning]);
 
-  const logSession = useCallback((timer: ActiveTimer, endedAt: number) => {
-    const startIso = new Date(timer.startedAt).toISOString();
-    const endIso = new Date(endedAt).toISOString();
-    const weekId = getWeekId(new Date(endedAt));
-    const zonedEnd = toZonedTime(new Date(endedAt), TZ);
-    const dayIndex = (zonedEnd.getDay() + 6) % 7;
-    const day = getWeekDays(weekId)[dayIndex];
-    const actualMinutes = Math.max(1, Math.round((endedAt - timer.startedAt) / 60000));
+  const commit = useCallback((next: TimersMap) => {
+    timersRef.current = next;
+    saveTimers(next);
+    setTimers(next);
+  }, []);
+
+  const play = useCallback((clientId: string) => {
+    const now = Date.now();
+    const next: TimersMap = {};
+    for (const [id, entry] of Object.entries(timersRef.current)) {
+      if (id === clientId) continue;
+      // pause whatever else was running, preserving its accumulated time
+      if (entry.startedAt !== null) {
+        next[id] = { ...entry, accumulatedMs: entry.accumulatedMs + (now - entry.startedAt), startedAt: null };
+      } else {
+        next[id] = entry;
+      }
+    }
+    const existing = timersRef.current[clientId];
+    next[clientId] = existing
+      ? { ...existing, startedAt: now, firstStartedAt: existing.firstStartedAt ?? now }
+      : { accumulatedMs: 0, startedAt: now, firstStartedAt: now };
+    commit(next);
+    setNowTick(now);
+  }, [commit]);
+
+  const pause = useCallback((clientId: string) => {
+    const now = Date.now();
+    const existing = timersRef.current[clientId];
+    if (!existing || existing.startedAt === null) return;
+    const next: TimersMap = {
+      ...timersRef.current,
+      [clientId]: { ...existing, accumulatedMs: existing.accumulatedMs + (now - existing.startedAt), startedAt: null },
+    };
+    commit(next);
+  }, [commit]);
+
+  const logTime = useCallback((clientId: string, label: string) => {
+    const now = Date.now();
+    const existing = timersRef.current[clientId];
+    if (!existing) return;
+    const totalMs = existing.accumulatedMs + (existing.startedAt !== null ? now - existing.startedAt : 0);
+    if (totalMs <= 0) return;
+
+    const startedAt = existing.firstStartedAt ?? now;
+    const startIso = new Date(startedAt).toISOString();
+    const endIso = new Date(now).toISOString();
+    const weekId = getWeekId(new Date(now));
+    const zonedNow = toZonedTime(new Date(now), TZ);
+    const dayIndex = (zonedNow.getDay() + 6) % 7;
+    const actualMinutes = Math.max(1, Math.round(totalMs / 60000));
+
     onAddSessionRef.current({
-      clientId: timer.clientId,
+      clientId,
       weekId,
       dayIndex,
       startMinute: isoToMinutes(startIso),
       endMinute: isoToMinutes(endIso),
       actualMinutes,
-      notes: "",
-      date: format(day, "yyyy-MM-dd"),
+      notes: label,
+      date: formatInTimeZone(new Date(now), TZ, "yyyy-MM-dd"),
     });
-  }, []);
 
-  const stop = useCallback(() => {
-    const prev = activeTimerRef.current;
-    if (prev) logSession(prev, Date.now());
-    activeTimerRef.current = null;
-    saveActiveTimer(null);
-    setActiveTimer(null);
-  }, [logSession]);
+    const next = { ...timersRef.current };
+    delete next[clientId];
+    commit(next);
+  }, [commit]);
 
-  const start = useCallback((clientId: string) => {
-    const prev = activeTimerRef.current;
-    if (prev) logSession(prev, Date.now());
-    const next = { clientId, startedAt: Date.now() };
-    activeTimerRef.current = next;
-    saveActiveTimer(next);
-    setActiveTimer(next);
-    setNowTick(Date.now());
-  }, [logSession]);
+  const discard = useCallback((clientId: string) => {
+    const next = { ...timersRef.current };
+    delete next[clientId];
+    commit(next);
+  }, [commit]);
 
-  const toggle = useCallback((clientId: string) => {
-    if (activeTimerRef.current?.clientId === clientId) {
-      stop();
-    } else {
-      start(clientId);
-    }
-  }, [start, stop]);
+  const getElapsedMs = useCallback((clientId: string) => {
+    const entry = timers[clientId];
+    if (!entry) return 0;
+    return entry.accumulatedMs + (entry.startedAt !== null ? nowTick - entry.startedAt : 0);
+  }, [timers, nowTick]);
 
-  const elapsedMs = activeTimer ? nowTick - activeTimer.startedAt : 0;
+  const isRunning = useCallback((clientId: string) => {
+    const entry = timers[clientId];
+    return !!entry && entry.startedAt !== null;
+  }, [timers]);
+
+  const hasElapsed = useCallback((clientId: string) => {
+    const entry = timers[clientId];
+    return !!entry && (entry.accumulatedMs > 0 || entry.startedAt !== null);
+  }, [timers]);
 
   return {
-    activeClientId: activeTimer?.clientId ?? null,
-    elapsedMs,
-    toggle,
+    play,
+    pause,
+    logTime,
+    discard,
+    getElapsedMs,
+    isRunning,
+    hasElapsed,
   };
 }

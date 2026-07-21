@@ -15,6 +15,18 @@ import { ExportModal } from "./ExportModal";
 import { useProjectTimer, formatElapsed } from "@/hooks/useProjectTimer";
 import type { Client, ClientTask, ClientFile, ClientSession, Task, Goal, CalendarEvent } from "@/types";
 
+function formatSessionDuration(minutes: number | null): string {
+  if (!minutes) return "0m";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  return `${m}m`;
+}
+
+function formatSessionDate(date: string): string {
+  return new Date(date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 // ── Client task row ─────────────────────────────────────────────
 
 function ClientTaskRow({
@@ -945,7 +957,9 @@ interface StickyBoardProps {
   theme?: Theme;
   colorResetKey?: number;
   userName?: string | null;
+  sessions: ClientSession[];
   onAddSession: (session: Omit<ClientSession, "id" | "createdAt">) => void;
+  onRemoveSession: (id: string) => void;
 }
 
 export function StickyBoard({
@@ -954,11 +968,13 @@ export function StickyBoard({
   onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
   weekTasks, onAddWeekTask, onToggleWeekTask, onRemoveWeekTask, onRenameWeekTask,
   weekGoals, longtermGoals, onToggleGoal, onRemoveGoal, onRenameGoal, onAddGoal,
-  brainDump, onBrainDumpChange, theme = "original", colorResetKey = 0, userName, onAddSession,
+  brainDump, onBrainDumpChange, theme = "original", colorResetKey = 0, userName, sessions, onAddSession, onRemoveSession,
 }: StickyBoardProps) {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [exportClientId, setExportClientId] = useState<string | null>(null);
-  const { activeClientId: runningClientId, elapsedMs, toggle: toggleTimer } = useProjectTimer(onAddSession);
+  const { play: playTimer, pause: pauseTimer, logTime, discard: discardTimer, getElapsedMs, isRunning: isTimerRunning, hasElapsed: hasTimerElapsed } = useProjectTimer(onAddSession);
+  const [timerLogOpen, setTimerLogOpen] = useState<string | null>(null);
+  const [timerLogLabel, setTimerLogLabel] = useState("");
   const [systemConfig, setSystemConfig] = useState<Record<SystemKey, SystemConfig>>(() => loadSystemConfig());
   const [clientOrder, setClientOrder] = useState<string[]>(() => loadClientOrder());
   const [dragId, setDragId] = useState<string | null>(null);
@@ -1458,6 +1474,9 @@ export function StickyBoard({
       if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
       return da.getTime() - db.getTime();
     });
+    const clientSessions = sessions
+      .filter((s) => s.clientId === activeClient.id)
+      .sort((a, b) => b.createdAt - a.createdAt);
     return (
       <NotePanel
         title={activeClient.name}
@@ -1470,17 +1489,18 @@ export function StickyBoard({
         onArchive={() => { onArchiveClient(activeClient.id); setActiveClientId(null); }}
         onDelete={() => { onRemoveClient(activeClient.id); setActiveClientId(null); }}
       >
-        <div className="flex items-center gap-3 pb-3 mb-3 border-b border-paper-line/30">
+        <div className="flex items-center gap-3 pb-3 mb-3 border-b border-paper-line/30 relative">
           <button
             type="button"
-            onClick={() => toggleTimer(activeClient.id)}
-            aria-label={runningClientId === activeClient.id ? "Stop timer" : "Start timer"}
+            onClick={() => (isTimerRunning(activeClient.id) ? pauseTimer(activeClient.id) : playTimer(activeClient.id))}
+            aria-label={isTimerRunning(activeClient.id) ? "Pause timer" : "Start timer"}
             className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-85"
             style={{ backgroundColor: activeClient.color, color: noteTextColor(activeClient.color) }}
           >
-            {runningClientId === activeClient.id ? (
+            {isTimerRunning(activeClient.id) ? (
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="12" height="12" rx="1.5" fill="currentColor"/>
+                <rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor"/>
+                <rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor"/>
               </svg>
             ) : (
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -1488,15 +1508,102 @@ export function StickyBoard({
               </svg>
             )}
           </button>
-          <div className="flex flex-col">
+          <div className="flex flex-col flex-1">
             <span className="text-[10px] uppercase tracking-[0.2em] text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>Timer</span>
-            {runningClientId === activeClient.id && (
+            {hasTimerElapsed(activeClient.id) && (
               <span className="text-lg font-semibold tabular-nums" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}>
-                {formatElapsed(elapsedMs)}
+                {formatElapsed(getElapsedMs(activeClient.id))}
               </span>
             )}
           </div>
+          {hasTimerElapsed(activeClient.id) && (
+            <div className="relative flex-shrink-0 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setTimerLogLabel("");
+                  setTimerLogOpen((v) => (v === activeClient.id ? null : activeClient.id));
+                }}
+                aria-label="Log saved time"
+                title="Log saved time"
+                className="px-2 py-1 text-xs uppercase tracking-[0.1em] rounded-sm text-paper-ink-light hover:text-paper-ink transition-colors"
+                style={{ fontFamily: "var(--font-body)" }}
+              >
+                Log
+              </button>
+              <button
+                type="button"
+                onClick={() => { discardTimer(activeClient.id); setTimerLogOpen(null); }}
+                aria-label="Discard timer"
+                title="Discard timer"
+                className="w-6 h-6 flex items-center justify-center rounded-sm text-paper-ink-light hover:text-paper-rust transition-colors text-sm"
+              >
+                ×
+              </button>
+              {timerLogOpen === activeClient.id && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setTimerLogOpen(null)} />
+                  <div className="absolute right-0 top-full mt-1 w-56 bg-paper-cream border border-paper-line rounded-sm shadow-lg p-3 z-30">
+                    <label className="text-[10px] uppercase tracking-[0.15em] text-paper-ink-light block mb-1.5" style={{ fontFamily: "var(--font-body)" }}>
+                      Log {formatElapsed(getElapsedMs(activeClient.id))} as
+                    </label>
+                    <input
+                      autoFocus
+                      value={timerLogLabel}
+                      onChange={(e) => setTimerLogLabel(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { logTime(activeClient.id, timerLogLabel.trim()); setTimerLogOpen(null); }
+                        if (e.key === "Escape") setTimerLogOpen(null);
+                      }}
+                      placeholder="What did you work on?"
+                      className="w-full text-sm border-b border-paper-line/50 bg-transparent outline-none pb-1 mb-2 text-paper-ink"
+                      style={{ fontFamily: "var(--font-body)" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { logTime(activeClient.id, timerLogLabel.trim()); setTimerLogOpen(null); }}
+                      className="w-full text-xs py-1.5 rounded-sm"
+                      style={{ backgroundColor: activeClient.color, color: noteTextColor(activeClient.color), fontFamily: "var(--font-body)" }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
+        {clientSessions.length > 0 && (
+          <details className="mb-3">
+            <summary className="text-[10px] uppercase tracking-[0.2em] cursor-pointer list-none select-none text-paper-ink-light py-1 mb-1">
+              ▸ Time logged ({clientSessions.length})
+            </summary>
+            <div className="flex flex-col gap-1.5 mt-1">
+              {clientSessions.map((s) => (
+                <div key={s.id} className="flex items-center gap-2 text-xs group/session">
+                  <span className="flex-1 truncate" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A" }}>
+                    {s.notes || "Untitled"}
+                  </span>
+                  <span className="flex-shrink-0 text-paper-ink-light tabular-nums" style={{ fontFamily: "var(--font-body)" }}>
+                    {formatSessionDuration(s.actualMinutes)}
+                  </span>
+                  <span className="flex-shrink-0 text-paper-ink-light" style={{ fontFamily: "var(--font-body)" }}>
+                    {formatSessionDate(s.date)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveSession(s.id)}
+                    aria-label="Remove logged time"
+                    title="Remove logged time"
+                    className="flex-shrink-0 opacity-0 group-hover/session:opacity-60 hover:!opacity-100 text-paper-ink-light hover:text-paper-rust transition-opacity"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
         {sortedActive.length === 0 && archived.length === 0 && (
           <p className="text-xs italic pb-1" style={{ fontFamily: "var(--font-body)", color: "#1A1A1A", opacity: 0.5 }}>No tasks yet.</p>
         )}

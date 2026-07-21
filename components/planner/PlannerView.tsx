@@ -195,7 +195,9 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
             clients={clientStore.clients}
             tasksByClient={clientStore.tasksByClient}
             userName={session?.user?.name ?? null}
+            sessions={clientStore.sessions}
             onAddSession={clientStore.addSession}
+            onRemoveSession={clientStore.removeSession}
             events={events}
             onAddClientTask={clientStore.addClientTask}
             onToggleClientTask={clientStore.toggleClientTask}
