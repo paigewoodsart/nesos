@@ -369,6 +369,7 @@ const SYSTEM_DEFAULTS: Record<SystemKey, SystemConfig> = {
 const SYSTEM_CONFIG_KEYS: Record<string, string> = {
   original: "sticky-system-config",
   neutral:  "sticky-system-config-neutral",
+  custom:   "sticky-system-config",
 };
 
 function loadSystemConfig(theme?: string | null): Record<SystemKey, SystemConfig> {

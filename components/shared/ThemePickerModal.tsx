@@ -3,15 +3,20 @@
 import { useEffect, useRef } from "react";
 import type { Theme } from "@/lib/theme";
 import { THEME_LABELS } from "@/lib/theme";
+import { PillSwitch } from "@/components/ui/PillSwitch";
 
 interface ThemePickerModalProps {
   open: boolean;
   selected: Theme;
   onSelect: (t: Theme) => void;
+  customColor?: string;
+  onCustomColorChange?: (hex: string) => void;
+  staticBackground?: boolean;
+  onStaticBackgroundChange?: (v: boolean) => void;
   onClose: () => void;
 }
 
-const THEME_CONFIG: Record<Theme, { gradient: string; description: string }> = {
+const THEME_CONFIG: Record<Exclude<Theme, "custom">, { gradient: string; description: string }> = {
   original: {
     gradient: "linear-gradient(135deg, #ffdfe5 0%, #fce4ff 14%, #dfe8ff 28%, #d4f5f5 42%, #d8fae5 56%, #fffbd4 70%, #ffe8d4 84%, #ffdfe5 100%)",
     description: "Soft pastels that shift as you work. The full-color version.",
@@ -24,7 +29,7 @@ const THEME_CONFIG: Record<Theme, { gradient: string; description: string }> = {
 
 export const THEME_PICKER_KEY = "nesos-theme-picked";
 
-export function ThemePickerModal({ open, selected, onSelect, onClose }: ThemePickerModalProps) {
+export function ThemePickerModal({ open, selected, onSelect, customColor, onCustomColorChange, staticBackground, onStaticBackgroundChange, onClose }: ThemePickerModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -74,7 +79,7 @@ export function ThemePickerModal({ open, selected, onSelect, onClose }: ThemePic
 
         {/* Theme options */}
         <div className="px-6 py-5 flex flex-col gap-3">
-          {(["original", "neutral"] as Theme[]).map((t) => {
+          {(["original", "neutral"] as const).map((t) => {
             const cfg = THEME_CONFIG[t];
             const isActive = selected === t;
             return (
@@ -110,6 +115,56 @@ export function ThemePickerModal({ open, selected, onSelect, onClose }: ThemePic
               </button>
             );
           })}
+
+          {onCustomColorChange && (
+            <button
+              onClick={() => onSelect("custom")}
+              className="w-full text-left rounded-sm border-2 overflow-hidden transition-all"
+              style={{
+                borderColor: selected === "custom" ? "var(--color-paper-ink)" : "var(--color-paper-line)",
+                boxShadow: selected === "custom" ? "0 0 0 1px var(--color-paper-ink)" : "none",
+              }}
+            >
+              {/* Preview strip */}
+              <div className="w-full h-12 relative" style={{ background: customColor ?? "#EBE5DE" }}>
+                <input
+                  type="color"
+                  value={customColor ?? "#EBE5DE"}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => { onCustomColorChange(e.target.value); onSelect("custom"); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 cursor-pointer bg-transparent border-0"
+                  aria-label="Pick a custom board color"
+                />
+              </div>
+              {/* Label */}
+              <div className="px-4 py-3 bg-paper-cream">
+                <p
+                  className="text-xs font-semibold uppercase tracking-[0.15em] text-paper-ink"
+                  style={{ fontFamily: "var(--font-body)" }}
+                >
+                  {THEME_LABELS.custom}
+                </p>
+                <p
+                  className="text-xs text-paper-ink-light mt-0.5 leading-relaxed"
+                  style={{ fontFamily: "var(--font-serif)" }}
+                >
+                  Pick your own flat color. No shifting, no pattern.
+                </p>
+              </div>
+            </button>
+          )}
+
+          {onStaticBackgroundChange && (
+            <div className="pt-1">
+              <PillSwitch
+                checked={!(staticBackground ?? false)}
+                onChange={(v) => onStaticBackgroundChange(!v)}
+                label="Animate background"
+                disabled={selected === "custom"}
+                size="md"
+              />
+            </div>
+          )}
         </div>
 
         {/* Footer */}

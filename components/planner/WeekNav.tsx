@@ -8,8 +8,9 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import type { View } from "./ViewToggle";
 import type { Theme } from "@/lib/theme";
 import { THEME_LABELS, THEME_SWATCH_COLOR } from "@/lib/theme";
+import { PillSwitch } from "@/components/ui/PillSwitch";
 
-const THEMES: Theme[] = ["original", "neutral"];
+const THEMES: Theme[] = ["original", "neutral", "custom"];
 
 interface WeekNavProps {
   weekId: string;
@@ -23,13 +24,21 @@ interface WeekNavProps {
   theme?: Theme;
   onThemeChange?: (t: Theme) => void;
   onApplyNeutralColors?: () => void;
+  customColor?: string;
+  onCustomColorChange?: (hex: string) => void;
+  staticBackground?: boolean;
+  onStaticBackgroundChange?: (v: boolean) => void;
 }
 
-function UserMenu({ session, theme, onThemeChange, onApplyNeutralColors }: {
+function UserMenu({ session, theme, onThemeChange, onApplyNeutralColors, customColor, onCustomColorChange, staticBackground, onStaticBackgroundChange }: {
   session: NonNullable<ReturnType<typeof useSession>["data"]>;
   theme?: Theme;
   onThemeChange?: (t: Theme) => void;
   onApplyNeutralColors?: () => void;
+  customColor?: string;
+  onCustomColorChange?: (hex: string) => void;
+  staticBackground?: boolean;
+  onStaticBackgroundChange?: (v: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -97,7 +106,7 @@ function UserMenu({ session, theme, onThemeChange, onApplyNeutralColors }: {
                       <span
                         className="w-4 h-4 rounded-full flex-shrink-0 transition-transform"
                         style={{
-                          backgroundColor: THEME_SWATCH_COLOR[t],
+                          backgroundColor: t === "custom" ? (customColor ?? THEME_SWATCH_COLOR[t]) : THEME_SWATCH_COLOR[t],
                           boxShadow: theme === t ? "0 0 0 2px rgba(26,26,26,0.4)" : "0 0 0 1px rgba(26,26,26,0.15)",
                           transform: theme === t ? "scale(1.2)" : "scale(1)",
                           display: "inline-block",
@@ -106,6 +115,15 @@ function UserMenu({ session, theme, onThemeChange, onApplyNeutralColors }: {
                       <span className="text-xs text-paper-ink" style={{ fontFamily: "var(--font-body)" }}>{THEME_LABELS[t]}</span>
                     </button>
                   ))}
+                  {theme === "custom" && onCustomColorChange && (
+                    <input
+                      type="color"
+                      value={customColor ?? "#EBE5DE"}
+                      onChange={(e) => onCustomColorChange(e.target.value)}
+                      className="w-5 h-5 cursor-pointer bg-transparent border-0 p-0"
+                      aria-label="Pick a custom board color"
+                    />
+                  )}
                 </div>
                 {onApplyNeutralColors && (
                   <button
@@ -115,6 +133,17 @@ function UserMenu({ session, theme, onThemeChange, onApplyNeutralColors }: {
                   >
                     apply to panels
                   </button>
+                )}
+                {onStaticBackgroundChange && (
+                  <div className="mt-2.5">
+                    <PillSwitch
+                      checked={!(staticBackground ?? false)}
+                      onChange={(v) => onStaticBackgroundChange(!v)}
+                      label="Animate background"
+                      disabled={theme === "custom"}
+                      size="sm"
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -199,7 +228,7 @@ function NesosPhonetic() {
   );
 }
 
-export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, onToggleArchive, onOpenHandbook, onOpenExport, theme = "original", onThemeChange, onApplyNeutralColors }: WeekNavProps) {
+export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, onToggleArchive, onOpenHandbook, onOpenExport, theme = "original", onThemeChange, onApplyNeutralColors, customColor, onCustomColorChange, staticBackground, onStaticBackgroundChange }: WeekNavProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const isCurrentWeek = weekId === getWeekId(new Date());
@@ -345,7 +374,18 @@ export function WeekNav({ weekId, view, onViewChange, activeDate, onDayChange, o
         )}
 
         {/* Three-dot menu (authenticated) */}
-        {session && <UserMenu session={session} theme={theme} onThemeChange={onThemeChange} onApplyNeutralColors={onApplyNeutralColors} />}
+        {session && (
+          <UserMenu
+            session={session}
+            theme={theme}
+            onThemeChange={onThemeChange}
+            onApplyNeutralColors={onApplyNeutralColors}
+            customColor={customColor}
+            onCustomColorChange={onCustomColorChange}
+            staticBackground={staticBackground}
+            onStaticBackgroundChange={onStaticBackgroundChange}
+          />
+        )}
 
         {showNav && (
           <div className="flex items-center gap-1">

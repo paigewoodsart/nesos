@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { THEME_BOARD_CLASS } from "@/lib/theme";
+import { getBoardClassName, getBoardStyle } from "@/lib/theme";
 import { MobileHome } from "./MobileHome";
 import { MobileDrawer } from "./MobileDrawer";
 import { MobileThisWeek } from "./MobileThisWeek";
@@ -65,6 +65,10 @@ interface MobileViewProps {
   onOpenHandbook?: () => void;
   theme?: import("@/lib/theme").Theme;
   onThemeChange?: (t: import("@/lib/theme").Theme) => void;
+  customColor?: string;
+  onCustomColorChange?: (hex: string) => void;
+  staticBackground?: boolean;
+  onStaticBackgroundChange?: (v: boolean) => void;
 }
 
 export function MobileView({
@@ -77,6 +81,7 @@ export function MobileView({
   onAddClientTask, onToggleClientTask, onArchiveClientTask, onRemoveClientTask, onUpdateClientTask,
   onAddClient, onUpdateClient, onRemoveClient, onArchiveClient, onUnarchiveClient,
   events, activeDate, onDayChange, onOpenHandbook, theme, onThemeChange,
+  customColor, onCustomColorChange, staticBackground, onStaticBackgroundChange,
 }: MobileViewProps) {
   const [screen, setScreen] = useState<MobileScreen>(getInitialScreen);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -101,7 +106,10 @@ export function MobileView({
     onAddTask({ dayIndex: -1, text, completed: false, startMinute: null, endMinute: null, recurring: false, recurringPattern: null });
 
   return (
-    <div className={`relative h-dvh overflow-hidden ${THEME_BOARD_CLASS[theme ?? "original"]} board-grid`}>
+    <div
+      className={`relative h-dvh overflow-hidden ${getBoardClassName(theme ?? "original", staticBackground ?? false)} board-grid`}
+      style={getBoardStyle(theme ?? "original", customColor ?? "#EBE5DE")}
+    >
       {screen === "home" && (
         <MobileHome onOpenDrawer={openDrawer} isLoggedIn={!!userEmail} />
       )}
@@ -198,6 +206,10 @@ export function MobileView({
         onOpenHandbook={onOpenHandbook}
         theme={theme}
         onThemeChange={onThemeChange}
+        customColor={customColor}
+        onCustomColorChange={onCustomColorChange}
+        staticBackground={staticBackground}
+        onStaticBackgroundChange={onStaticBackgroundChange}
       />
     </div>
   );

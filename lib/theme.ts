@@ -1,19 +1,32 @@
-export type Theme = "original" | "neutral";
+import type { CSSProperties } from "react";
+
+export type Theme = "original" | "neutral" | "custom";
 
 export const THEME_LABELS: Record<Theme, string> = {
   original: "Original",
   neutral: "Neutral",
+  custom: "Custom",
 };
 
 export const THEME_BOARD_CLASS: Record<Theme, string> = {
   original: "board-breathe",
   neutral: "board-breathe-neutral",
+  custom: "board-breathe-custom",
 };
 
 export const THEME_SWATCH_COLOR: Record<Theme, string> = {
   original: "#fce4ff",
   neutral: "#F0E8DC",
+  custom: "#EBE5DE", // fallback only; UI reads the live customColor for this entry
 };
+
+export function getBoardClassName(theme: Theme, staticBackground: boolean): string {
+  return `${THEME_BOARD_CLASS[theme]}${staticBackground ? " board-static" : ""}`;
+}
+
+export function getBoardStyle(theme: Theme, customColor: string): CSSProperties | undefined {
+  return theme === "custom" ? ({ ["--custom-board-color" as string]: customColor } as CSSProperties) : undefined;
+}
 
 export const SYSTEM_DEFAULTS_ORIGINAL: Record<string, { color: string; title: string }> = {
   "__overdue__":   { color: "#5a9cd4", title: "Overdue" },

@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import type { Theme } from "@/lib/theme";
 import { THEME_LABELS, THEME_SWATCH_COLOR } from "@/lib/theme";
+import { PillSwitch } from "@/components/ui/PillSwitch";
 
-const THEMES: Theme[] = ["original", "neutral"];
+const THEMES: Theme[] = ["original", "neutral", "custom"];
 
 type MobileScreen = string;
 
@@ -17,11 +18,15 @@ interface MobileDrawerProps {
   onOpenHandbook?: () => void;
   theme?: Theme;
   onThemeChange?: (t: Theme) => void;
+  customColor?: string;
+  onCustomColorChange?: (hex: string) => void;
+  staticBackground?: boolean;
+  onStaticBackgroundChange?: (v: boolean) => void;
 }
 
 const NAVY = "#1e6091";
 
-export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook, theme = "original", onThemeChange }: MobileDrawerProps) {
+export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook, theme = "original", onThemeChange, customColor, onCustomColorChange, staticBackground, onStaticBackgroundChange }: MobileDrawerProps) {
   const { data: session } = useSession();
 
   const go = (s: MobileScreen) => { onNavigate(s); };
@@ -109,7 +114,7 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook
                     aria-label={`Switch to ${THEME_LABELS[t]} theme`}
                     className="w-5 h-5 rounded-full transition-all"
                     style={{
-                      backgroundColor: THEME_SWATCH_COLOR[t],
+                      backgroundColor: t === "custom" ? (customColor ?? THEME_SWATCH_COLOR[t]) : THEME_SWATCH_COLOR[t],
                       boxShadow: theme === t
                         ? "0 0 0 2px rgba(26,26,26,0.5)"
                         : "0 0 0 1px rgba(26,26,26,0.15)",
@@ -117,7 +122,29 @@ export function MobileDrawer({ open, onClose, screen, onNavigate, onOpenHandbook
                     }}
                   />
                 ))}
+                {theme === "custom" && onCustomColorChange && (
+                  <input
+                    type="color"
+                    value={customColor ?? "#EBE5DE"}
+                    onChange={(e) => onCustomColorChange(e.target.value)}
+                    className="w-6 h-6 cursor-pointer bg-transparent border-0 p-0"
+                    aria-label="Pick a custom board color"
+                  />
+                )}
               </div>
+            </div>
+          )}
+
+          {/* Static/animate toggle */}
+          {onStaticBackgroundChange && (
+            <div className="w-full flex items-center px-8 py-3.5 border-t border-paper-line/20">
+              <PillSwitch
+                checked={!(staticBackground ?? false)}
+                onChange={(v) => onStaticBackgroundChange(!v)}
+                label="Animate background"
+                disabled={theme === "custom"}
+                size="md"
+              />
             </div>
           )}
 

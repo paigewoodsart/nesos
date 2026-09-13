@@ -154,6 +154,21 @@ body::before {
   animation: board-breathe 60s ease infinite;
 }
 
+/* ── Custom theme (flat user-chosen color, no gradient/animation) ── */
+.board-breathe-custom {
+  background-image:
+    linear-gradient(rgba(26,26,26,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,26,26,0.05) 1px, transparent 1px);
+  background-color: var(--custom-board-color, var(--color-paper-warm));
+  background-size: 28px 28px, 28px 28px;
+}
+
+/* ── Static override: freezes the animated gradient in place ── */
+.board-static {
+  animation: none !important;
+  background-position: 0 0, 0 0, 30% 45% !important;
+}
+
 
 .focus-dimmed {
   opacity: 0.12;

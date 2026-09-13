@@ -19,8 +19,8 @@ import { MobileHome } from "@/components/mobile/MobileHome";
 import { HandbookModal, HANDBOOK_VERSION, HANDBOOK_KEY } from "@/components/shared/HandbookModal";
 import { ThemePickerModal } from "@/components/shared/ThemePickerModal";
 import { UpdateModal, UPDATE_VERSION, UPDATE_KEY } from "@/components/shared/UpdateModal";
-import { useTheme } from "@/hooks/useTheme";
-import { THEME_BOARD_CLASS, NEUTRAL_SYSTEM_DEFAULTS, NEUTRAL_CLIENT_COLORS_PALETTE, SYSTEM_DEFAULTS_ORIGINAL, CLIENT_COLORS_PALETTE_ORIGINAL } from "@/lib/theme";
+import { useAppearance } from "@/hooks/useAppearance";
+import { getBoardClassName, getBoardStyle, NEUTRAL_SYSTEM_DEFAULTS, NEUTRAL_CLIENT_COLORS_PALETTE, SYSTEM_DEFAULTS_ORIGINAL, CLIENT_COLORS_PALETTE_ORIGINAL } from "@/lib/theme";
 import type { View } from "./ViewToggle";
 import type { Client, ClientSession } from "@/types";
 
@@ -38,7 +38,7 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
 
   const store = useWeekStore(activeWeekId, userEmail ?? null);
   const clientStore = useClientStore(activeWeekId, userEmail ?? null);
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, customColor, setCustomColor, staticBackground, setStaticBackground } = useAppearance();
   const { events } = useCalendarEvents(activeWeekId);
   const [colorResetKey, setColorResetKey] = useState(0);
 
@@ -150,9 +150,22 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
           onOpenHandbook={() => setShowHandbook(true)}
           theme={theme}
           onThemeChange={setTheme}
+          customColor={customColor}
+          onCustomColorChange={setCustomColor}
+          staticBackground={staticBackground}
+          onStaticBackgroundChange={setStaticBackground}
         />
         <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
-        <ThemePickerModal open={showThemePicker} selected={theme} onSelect={setTheme} onClose={() => setShowThemePicker(false)} />
+        <ThemePickerModal
+          open={showThemePicker}
+          selected={theme}
+          onSelect={setTheme}
+          customColor={customColor}
+          onCustomColorChange={setCustomColor}
+          staticBackground={staticBackground}
+          onStaticBackgroundChange={setStaticBackground}
+          onClose={() => setShowThemePicker(false)}
+        />
         <UpdateModal open={showUpdate} onClose={handleCloseUpdate} />
       </>
     );
@@ -165,7 +178,10 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
   const weekTasks = store.tasks.filter((t) => t.dayIndex === -1);
 
   return (
-    <div className={`flex flex-col h-screen overflow-hidden ${THEME_BOARD_CLASS[theme]} board-grid`}>
+    <div
+      className={`flex flex-col h-screen overflow-hidden ${getBoardClassName(theme, staticBackground)} board-grid`}
+      style={getBoardStyle(theme, customColor)}
+    >
       {/* Beta bar - desktop only, pinned to bottom */}
       <div
         className="fixed bottom-0 left-0 right-0 z-20 py-1.5 px-4 text-center text-[11px] tracking-wide border-t border-paper-line/30"
@@ -187,6 +203,10 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
         theme={theme}
         onThemeChange={setTheme}
         onApplyNeutralColors={applyThemeColors}
+        customColor={customColor}
+        onCustomColorChange={setCustomColor}
+        staticBackground={staticBackground}
+        onStaticBackgroundChange={setStaticBackground}
       />
 
       <div className="flex flex-1 min-h-0">
@@ -286,7 +306,16 @@ function PlannerInner({ weekId: initialWeekId }: PlannerViewProps) {
       />
 
       <HandbookModal open={showHandbook} onClose={handleCloseHandbook} />
-      <ThemePickerModal open={showThemePicker} selected={theme} onSelect={setTheme} onClose={() => setShowThemePicker(false)} />
+      <ThemePickerModal
+        open={showThemePicker}
+        selected={theme}
+        onSelect={setTheme}
+        customColor={customColor}
+        onCustomColorChange={setCustomColor}
+        staticBackground={staticBackground}
+        onStaticBackgroundChange={setStaticBackground}
+        onClose={() => setShowThemePicker(false)}
+      />
       <UpdateModal open={showUpdate} onClose={handleCloseUpdate} />
 
       {openSession && openSessionClient && (
