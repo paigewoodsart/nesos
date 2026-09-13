@@ -93,7 +93,7 @@ function UserMenu({ session, theme, onThemeChange, onApplyNeutralColors, customC
             {onThemeChange && (
               <div className="px-4 py-3 border-b border-paper-line/30">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-paper-ink-light mb-2" style={{ fontFamily: "var(--font-body)" }}>Board palette</p>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
                   {THEMES.map((t) => (
                     <button
                       key={t}
