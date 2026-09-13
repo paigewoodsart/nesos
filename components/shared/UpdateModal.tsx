@@ -2,10 +2,18 @@
 
 import { useEffect, useRef } from "react";
 
-export const UPDATE_VERSION = "2026-07-12";
+export const UPDATE_VERSION = "2026-09-13";
 export const UPDATE_KEY = "nesos-update-version";
 
 const UPDATES: { title: string; body: string }[] = [
+  {
+    title: "Static backgrounds and custom colors",
+    body: "The board's shifting palette can now hold still. Flip Animate background off in the account menu's Board palette section to freeze it in place. Or choose Custom from the same spot to pick your own solid color instead of Original or Neutral. Both work on desktop and mobile.",
+  },
+  {
+    title: "Track time per project",
+    body: "Every project now has its own timer. Open a project and hit play to start tracking, pause to freeze it without losing your progress, and resume whenever you pick it back up. When you're ready, hit Log to save the time with a short label, or the x to discard it. Logged time shows up in the Time logged list right below the timer, with its label, duration, and date, and can be removed if you log something by mistake.",
+  },
   {
     title: "Export your tasks",
     body: "You can now export tasks as a PDF or copy them as text. Use the export icon in the top nav to pull tasks across one or more projects, filtered by due date, all tasks, or the full archive. Each project also has its own export icon on its bar to export just that project's tasks the same way.",
