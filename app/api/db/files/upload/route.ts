@@ -1,16 +1,8 @@
 export const maxDuration = 30;
 
-import { getToken } from "next-auth/jwt";
+import { getEmail } from "@/lib/api-auth";
 import { createServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
-
-const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
-const secureCookie = process.env.NODE_ENV === "production";
-
-async function getEmail(req: NextRequest): Promise<string | null> {
-  const token = await getToken({ req, secret, secureCookie });
-  return (token?.email as string) ?? null;
-}
 
 export async function POST(req: NextRequest) {
   const email = await getEmail(req);

@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import Apple from "next-auth/providers/apple";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -7,13 +8,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+    Apple({
+      clientId: process.env.APPLE_CLIENT_ID!,
+      clientSecret: process.env.APPLE_CLIENT_SECRET!,
+    }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account, profile }) {
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.expiresAt = account.expires_at;
+      }
+      // Apple: prefer real email when user chose "Share My Email"
+      if (account?.provider === "apple" && profile?.email) {
+        token.email = profile.email;
       }
       return token;
     },
