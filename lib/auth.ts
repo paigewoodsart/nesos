@@ -2,7 +2,21 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Apple from "next-auth/providers/apple";
 
+// Apple returns to the callback with a cross-site form POST, which drops
+// SameSite=Lax cookies. The OAuth check cookies need SameSite=None in
+// production or Apple sign-in fails with a "could not be parsed" error.
+const isProd = process.env.NODE_ENV === "production";
+const crossSite = { httpOnly: true, sameSite: "none" as const, path: "/", secure: true };
+const oauthCookies = isProd
+  ? {
+      pkceCodeVerifier: { name: "__Secure-authjs.pkce.code_verifier", options: crossSite },
+      state: { name: "__Secure-authjs.state", options: crossSite },
+      nonce: { name: "__Secure-authjs.nonce", options: crossSite },
+    }
+  : undefined;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  cookies: oauthCookies,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,

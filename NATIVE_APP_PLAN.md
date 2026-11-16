@@ -24,19 +24,19 @@ Ship Nesos (Next.js 16 app at nesos.co) to the App Store for Mac, iPad, and iPho
 
 ### Sign-in flow
 
-1. Native app opens `ASWebAuthenticationSession` to `https://nesos.co/api/auth/signin/google` (or `/apple`)
+1. Native app opens `ASWebAuthenticationSession` (callback scheme `nesos`) to `https://nesos.co/api/auth/mobile-start?provider=google` (or `apple`). That route calls Auth.js `signIn()` server-side with `redirectTo: /api/auth/mobile-callback`
 2. User completes OAuth in a system browser sheet (not WKWebView — satisfies Google's policy)
 3. After NextAuth completes sign-in, the app navigates to `/api/auth/mobile-callback` which:
    - Reads the now-valid session
    - Mints a **90-day HS256-signed bearer JWT** containing `{ email, name, image, iat, exp }`
-   - Mints a **60-second one-time session token** (random hex, stored in `mobile_session_tokens` table)
+   - Mints a **60-second one-time session token** (random hex, stored in `mobile_session_tokens` with the full Auth.js token payload, so the webview session keeps the Google access token for calendar)
    - Redirects to `nesos://auth-callback?token=<bearer>&session_token=<one-time>`
 4. Native app receives both tokens via the custom URL scheme
 5. Bearer token is stored in Keychain for native API calls
-6. For **Mac/iPad WKWebView**: the app loads `/api/auth/mobile-session?token=<one-time>` which:
+6. For **Mac/iPad WKWebView**: the app loads `/api/auth/mobile-session?token=<one-time>&desktop=1` which:
    - Verifies and deletes the one-time token (single use, 60s expiry)
    - Mints a proper Auth.js encrypted session cookie using `encode()` from `@auth/core/jwt`
-   - Sets the cookie and redirects to `/` — the planner loads authenticated
+   - Sets the session cookie, plus the `nesos-desktop=1` cookie when `desktop=1`, and redirects to `/`. The planner loads authenticated, in desktop layout
 
 ### Token refresh
 
@@ -62,7 +62,12 @@ When an account is deleted via `/api/account/delete`:
 
 ### Step 1: API — bearer token support + mobile sign-in handoff + Apple provider [DONE]
 
-**Committed**: `9950856` on `native-app` branch
+**Committed**: `9950856` on `native-app` branch, follow-up fixes in the step 2 commit:
+- New `app/api/auth/mobile-start/route.ts` (server-side `signIn()` entry point for the native app)
+- `mobile-callback` stores the full Auth.js token payload with the one-time token; `mobile-session` re-encodes it (keeps calendar access in the webview) and uses `NextResponse` cookies
+- `/api/account/delete` now uses `getEmail(req)` so the native app can delete accounts with its bearer token, and uses the server Supabase client so deletes are not blocked by RLS
+- `lib/auth.ts`: OAuth check cookies (pkce, state, nonce) use `SameSite=None` in production, needed for Apple's cross-site form POST callback
+- `jose` added as a direct dependency
 
 New files:
 - `lib/api-auth.ts` — shared `getEmail()` with bearer + cookie support + revocation check
@@ -74,7 +79,11 @@ Modified files:
 - `app/api/account/delete/route.ts` — revokes tokens + cleans up session tokens
 - All 10 `app/api/db/*/route.ts` — replaced local `getEmail` with shared import
 
-### Step 2: Desktop layout override on the web
+### Step 2: Desktop layout override on the web [DONE]
+
+`hooks/useIsMobile.ts` skips the width check when the `nesos-desktop=1` cookie is present. `/api/auth/mobile-session?desktop=1` sets it (1 year). Web users never get this cookie. The desktop planner has no Tailwind breakpoints, so iPad portrait keeps the desktop layout.
+
+Original notes:
 
 - Modify `hooks/useIsMobile.ts` to check for a `nesos-desktop` cookie (or similar flag)
 - When the cookie is present, `useIsMobile()` always returns `false`
@@ -121,8 +130,12 @@ Modified files:
 create table mobile_session_tokens (
   token text primary key,
   user_email text not null,
+  payload jsonb,
   expires_at timestamptz not null
 );
+
+-- If you already created it without payload:
+-- alter table mobile_session_tokens add column payload jsonb;
 
 -- Token revocation on account deletion
 create table token_revocations (
