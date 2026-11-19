@@ -16,6 +16,8 @@ final class AppStore {
     private(set) var customColor: String
     /// The person's own color (profile tile, due tiles, date tile).
     private(set) var personalColor: String
+    /// The name the person chose to be greeted by ("" until they set one).
+    private(set) var displayName = ""
 
     private let auth: AuthStore
     private static let themeKey = "nesos-theme"
@@ -39,6 +41,7 @@ final class AppStore {
 
     func load() async {
         guard let backend else { return }
+        displayName = UserDefaults.standard.string(forKey: nameKey) ?? ""
         await run {
             async let projectList = backend.projects()
             async let taskList = backend.openTasks()
@@ -56,6 +59,7 @@ final class AppStore {
         tasks = []
         archivedCounts = [:]
         loaded = false
+        displayName = ""
     }
 
     // MARK: Reading
@@ -283,6 +287,21 @@ final class AppStore {
 
     var palette: Palette { Palette(personalColor) }
 
+    private var nameKey: String {
+        "nesos-display-name-" + (auth.isGuest ? "guest" : (auth.email ?? "account"))
+    }
+
+    /// The name to greet the person by: the one they set, else the first
+    /// name from their account, else nothing.
+    var greetingName: String? { displayName.isEmpty ? auth.firstName : displayName }
+
+    func setDisplayName(_ name: String) {
+        let trimmed = String(name.trimmingCharacters(in: .whitespaces).prefix(40))
+        displayName = trimmed
+        UserDefaults.standard.set(trimmed, forKey: nameKey)
+        pushSettings(AppearanceSettings(displayName: trimmed))
+    }
+
     func setPersonalColor(_ hex: String) {
         personalColor = hex
         UserDefaults.standard.set(hex, forKey: Self.personalKey)
@@ -290,6 +309,10 @@ final class AppStore {
     }
 
     private func applyRemote(_ settings: AppearanceSettings) {
+        if let n = settings.displayName {
+            displayName = n
+            UserDefaults.standard.set(n, forKey: nameKey)
+        }
         if let p = settings.personalColor {
             personalColor = p
             UserDefaults.standard.set(p, forKey: Self.personalKey)
