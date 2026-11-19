@@ -7,17 +7,26 @@ import Observation
 final class AuthStore {
     private(set) var token: String?
     private(set) var email: String?
+    private(set) var name: String?
+
+    /// Guest mode for testing: data stays on this device. Remove before launch
+    /// if it's no longer wanted (SignInView has the button).
+    private(set) var isGuest: Bool
 
     /// One-time token (60 seconds) that signs the Mac/iPad planner window in.
-    /// Only present right after a sign-in.
     var pendingSessionToken: String?
 
     var isSignedIn: Bool { token != nil }
+    var hasSession: Bool { isSignedIn || isGuest }
+
+    private static let guestKey = "nesos-guest-mode"
 
     init() {
+        isGuest = UserDefaults.standard.bool(forKey: Self.guestKey)
         if let saved = Keychain.read(), let claims = JWT.claims(saved), !JWT.isExpired(claims) {
             token = saved
             email = claims["email"] as? String
+            name = claims["name"] as? String
         } else {
             Keychain.delete()
         }
@@ -30,16 +39,27 @@ final class AuthStore {
             throw AuthError.badCallback
         }
         Keychain.save(token)
+        setGuest(false)
         self.token = token
         self.email = claims["email"] as? String
+        self.name = claims["name"] as? String
         self.pendingSessionToken = items.first(where: { $0.name == "session_token" })?.value
     }
+
+    func continueAsGuest() { setGuest(true) }
 
     func signOut() {
         Keychain.delete()
         token = nil
         email = nil
+        name = nil
         pendingSessionToken = nil
+        setGuest(false)
+    }
+
+    private func setGuest(_ value: Bool) {
+        isGuest = value
+        UserDefaults.standard.set(value, forKey: Self.guestKey)
     }
 }
 

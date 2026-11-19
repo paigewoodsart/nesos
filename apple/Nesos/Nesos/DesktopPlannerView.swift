@@ -74,7 +74,6 @@ struct QuickAddMenu: View {
     var body: some View {
         Menu {
             Button("New Task", systemImage: "checkmark.circle") { router.sheet = .task }
-            Button("New Note", systemImage: "note.text") { router.sheet = .note }
             Button("New Project", systemImage: "folder") { router.sheet = .project }
             #if os(iOS)
             Divider()

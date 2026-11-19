@@ -90,7 +90,7 @@ Original notes:
 - The native Mac/iPad app sets this cookie when loading the WKWebView
 - Web users are completely unaffected
 
-### Step 3: iPhone native app (SwiftUI) [WRITTEN, needs first Xcode build]
+### Step 3: iPhone native app (SwiftUI) [REBUILT to the storyboard, builds pass]
 
 Code lives in `apple/Nesos/Nesos/`. Xcode project: `apple/Nesos/Nesos.xcodeproj` (new Xcode 27 text format, folder-synced, so new .swift files are picked up automatically). Bundle id `co.nesos.app`, iOS 17+ / macOS 14+, iPhone + iPad + Mac in one target. Base URL `https://www.nesos.co` (Config.swift). If the week is empty, the app copies recurring tasks in first, like the web does.
 
@@ -105,7 +105,7 @@ Original notes:
 - Keychain storage for bearer token
 - `weekId` calculation must match `lib/dates.ts` (ISO week, Asia/Bangkok timezone)
 
-### Step 4: Mac and iPad webview shell + native quick-add [WRITTEN, needs first Xcode build]
+### Step 4: Mac and iPad webview shell + native quick-add [BUILDS PASS]
 
 `DesktopPlannerView.swift`. If the planner tries to start Google/Apple sign-in inside the web view, the app cancels it and signs in natively instead. Mac: toolbar + menu, File menu shortcuts, MenuBarExtra, Settings window (Cmd+,). iPad: floating + button.
 
@@ -232,3 +232,53 @@ Adding a task (inline, no separate screen):
 - After adding, the card closes and the task appears in the list.
 
 Still to restyle: Due lists screen, Sign in screen.
+
+## iPhone app: built to the storyboard (Nov 18, 2026)
+
+Status: both builds pass (iOS Simulator and Mac). Next is a test on Paige's phone in guest mode.
+
+### What the phone app is now
+
+- Project based, not week based. Home shows Overdue, Today and This Week tiles, a 2-column grid of project tiles, the quote of the day and a date tile.
+- Due page: Overdue, Today and This Week on one page. One section is open at a time and keeps its color. Tapping a home tile opens that section.
+- Project page: header tile (timer, pencil to edit name and color), tasks, notes, files bar, and a frosted archive button.
+- Add and edit happen inline: the card opens under the TASKS or PROJECTS header and the list drops down. Tapping a task opens the same card with Save and Delete.
+- Archive is per project: search, grouped by month, restore.
+- Profile: theme (Pastel, Neutral, Custom color), privacy link, sign out, delete account.
+- Fonts are hers and bundled in the app: Playfair Display, Inter, Aboreto. The N in the logo stays #b9c8de. Logo treatment is parked.
+
+### Decisions
+
+- Theme syncs to the account (`user_settings` table, `/api/db/settings`).
+- Archived projects sync to the account (`clients.archived`).
+- Today and This Week use the person's own time zone on the phone. Timer sessions are still logged in Bangkok time to match the website.
+- iPad and Mac keep the desktop planner, with New Task and New Project quick add.
+- Finished tasks move to the archive after 24 hours, same as the website.
+
+### Guest mode (temporary, for testing)
+
+- "Continue as guest" on the sign-in screen (iPhone and iPad). Data is saved on the device only, in `nesos-guest.json`.
+- To remove: delete the guest button in `SignInView.swift`. `LocalBackend` in `Backend.swift` and `isGuest` in `AuthStore.swift` can go with it.
+
+### Still to do
+
+- Supabase: add `clients.archived` and create `user_settings` (SQL below), then deploy the `native-app` branch so sign-in works.
+- Phone: "Today" total on the running timer, a real "How Nesos works" page, which sign-in was used on the profile tile.
+- Logo treatment in the app.
+
+```sql
+alter table clients add column if not exists archived boolean not null default false;
+
+create table if not exists user_settings (
+  user_email text primary key,
+  theme text,
+  custom_color text,
+  static_background boolean,
+  updated_at timestamptz
+);
+alter table user_settings enable row level security;
+```
+
+### How to build
+
+Double-click `apple/build.command`. It builds for iPhone and Mac and writes `apple/build.log`.

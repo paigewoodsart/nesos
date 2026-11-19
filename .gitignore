@@ -51,3 +51,5 @@ next-env.d.ts
 xcuserdata/
 *.xcuserstate
 DerivedData/
+apple/.build/
+apple/build*.log

@@ -1,73 +1,159 @@
 import Foundation
 
-/// A task row from /api/db/tasks. Decodes the database's snake_case row and
-/// encodes the camelCase shape the POST route expects.
-struct TaskItem: Codable, Identifiable, Hashable {
-    var id: String
-    var weekId: String
-    var dayIndex: Int
-    var text: String
-    var completed: Bool
-    var sortOrder: Double
-    var startMinute: Int?
-    var endMinute: Int?
-    var recurring: Bool
-    var recurringPattern: String?
-    var createdAt: Double
-
-    init(text: String, weekId: String, dayIndex: Int) {
-        let now = Date().timeIntervalSince1970 * 1000
-        self.id = UUID().uuidString.lowercased()
-        self.weekId = weekId
-        self.dayIndex = dayIndex
-        self.text = text
-        self.completed = false
-        self.sortOrder = now
-        self.startMinute = nil
-        self.endMinute = nil
-        self.recurring = false
-        self.recurringPattern = nil
-        self.createdAt = now
+// Decoding helpers: rows from the website's API use snake_case and numbers
+// that may arrive as numbers or strings. Guest data on the phone uses camelCase.
+extension KeyedDecodingContainer {
+    func flexString(_ keys: [Key]) -> String? {
+        for key in keys {
+            if let value = try? decodeIfPresent(String.self, forKey: key) { return value }
+        }
+        return nil
     }
 
-    private enum RowKeys: String, CodingKey {
-        case id, text, completed, recurring
-        case weekId = "week_id", dayIndex = "day_index", sortOrder = "sort_order"
-        case startMinute = "start_minute", endMinute = "end_minute"
-        case recurringPattern = "recurring_pattern", createdAt = "created_at"
+    func flexBool(_ keys: [Key]) -> Bool? {
+        for key in keys {
+            if let value = try? decodeIfPresent(Bool.self, forKey: key) { return value }
+        }
+        return nil
+    }
+
+    func flexDouble(_ keys: [Key]) -> Double? {
+        for key in keys {
+            if let value = try? decodeIfPresent(Double.self, forKey: key) { return value }
+            if let text = try? decodeIfPresent(String.self, forKey: key) {
+                if let number = Double(text) { return number }
+                if let date = ISO8601DateFormatter().date(from: text) { return date.timeIntervalSince1970 * 1000 }
+            }
+        }
+        return nil
+    }
+}
+
+private var nowMs: Double { Date().timeIntervalSince1970 * 1000 }
+
+/// A project ("client" in the website's data).
+struct Project: Codable, Identifiable, Hashable {
+    var id: String
+    var name: String
+    var color: String
+    var notes: String?
+    var archived: Bool
+    var createdAt: Double
+
+    init(name: String, color: String) {
+        self.id = UUID().uuidString.lowercased()
+        self.name = name
+        self.color = color
+        self.notes = nil
+        self.archived = false
+        self.createdAt = nowMs
+    }
+
+    enum CodingKeys: String, CodingKey { case id, name, color, notes, archived, createdAt }
+    private enum ReadKeys: String, CodingKey { case id, name, color, notes, archived, createdAt, created_at }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: ReadKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = c.flexString([.name]) ?? ""
+        color = c.flexString([.color]) ?? "#6cb46f"
+        notes = c.flexString([.notes])
+        archived = c.flexBool([.archived]) ?? false
+        createdAt = c.flexDouble([.createdAt, .created_at]) ?? 0
+    }
+
+    // Matches what POST /api/db/clients reads. Nil is sent as null.
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(name, forKey: .name)
+        try c.encode(color, forKey: .color)
+        try c.encode(notes, forKey: .notes)
+        try c.encode(archived, forKey: .archived)
+        try c.encode(createdAt, forKey: .createdAt)
+    }
+}
+
+/// A project task ("client task" in the website's data).
+struct ProjectTask: Codable, Identifiable, Hashable {
+    var id: String
+    var clientId: String
+    var text: String
+    var done: Bool
+    var doneAt: Double?
+    var dueDate: String?
+    var archived: Bool
+    var archivedAt: Double?
+    var createdAt: Double
+
+    init(projectId: String, text: String, dueDate: String?) {
+        self.id = UUID().uuidString.lowercased()
+        self.clientId = projectId
+        self.text = text
+        self.done = false
+        self.doneAt = nil
+        self.dueDate = dueDate
+        self.archived = false
+        self.archivedAt = nil
+        self.createdAt = nowMs
+    }
+
+    enum CodingKeys: String, CodingKey { case id, clientId, text, done, doneAt, dueDate, archived, archivedAt, createdAt }
+    private enum ReadKeys: String, CodingKey {
+        case id, text, done, archived
+        case clientId, client_id, doneAt, done_at, dueDate, due_date, archivedAt, archived_at, createdAt, created_at
     }
 
     init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: RowKeys.self)
+        let c = try decoder.container(keyedBy: ReadKeys.self)
         id = try c.decode(String.self, forKey: .id)
-        weekId = try c.decodeIfPresent(String.self, forKey: .weekId) ?? ""
-        dayIndex = try c.decodeIfPresent(Int.self, forKey: .dayIndex) ?? -1
-        text = try c.decodeIfPresent(String.self, forKey: .text) ?? ""
-        completed = try c.decodeIfPresent(Bool.self, forKey: .completed) ?? false
-        sortOrder = (try? c.decodeIfPresent(Double.self, forKey: .sortOrder)) ?? 0
-        startMinute = try? c.decodeIfPresent(Int.self, forKey: .startMinute)
-        endMinute = try? c.decodeIfPresent(Int.self, forKey: .endMinute)
-        recurring = (try? c.decodeIfPresent(Bool.self, forKey: .recurring)) ?? false
-        recurringPattern = try? c.decodeIfPresent(String.self, forKey: .recurringPattern)
-        createdAt = (try? c.decodeIfPresent(Double.self, forKey: .createdAt)) ?? 0
+        clientId = c.flexString([.clientId, .client_id]) ?? ""
+        text = c.flexString([.text]) ?? ""
+        done = c.flexBool([.done]) ?? false
+        doneAt = c.flexDouble([.doneAt, .done_at])
+        dueDate = c.flexString([.dueDate, .due_date])
+        archived = c.flexBool([.archived]) ?? false
+        archivedAt = c.flexDouble([.archivedAt, .archived_at])
+        createdAt = c.flexDouble([.createdAt, .created_at]) ?? 0
     }
-    // Encoding uses the default camelCase keys, which is what POST /api/db/tasks reads.
+
+    // Matches what POST /api/db/client-tasks reads. Nil is sent as null so
+    // clearing a due date or un-checking a task really clears it.
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(clientId, forKey: .clientId)
+        try c.encode(text, forKey: .text)
+        try c.encode(done, forKey: .done)
+        try c.encode(doneAt, forKey: .doneAt)
+        try c.encode(dueDate, forKey: .dueDate)
+        try c.encode(archived, forKey: .archived)
+        try c.encode(archivedAt, forKey: .archivedAt)
+        try c.encode(createdAt, forKey: .createdAt)
+    }
 }
 
-struct NewNote: Encodable {
-    let id = UUID().uuidString.lowercased()
-    let weekId: String
-    let dayIndex: Int
-    let text: String
-    let photoIds: [String] = []
-    let createdAt = Date().timeIntervalSince1970 * 1000
-    let updatedAt = Date().timeIntervalSince1970 * 1000
+/// A logged timer session, the same shape the website's timer saves.
+struct SessionLog: Codable {
+    var id: String = UUID().uuidString.lowercased()
+    var clientId: String
+    var weekId: String
+    var dayIndex: Int
+    var startMinute: Int
+    var endMinute: Int
+    var actualMinutes: Int
+    var notes: String
+    var date: String
+    var createdAt: Double = Date().timeIntervalSince1970 * 1000
 }
 
-/// A project is a "client" in the web app's data model.
-struct NewProject: Encodable {
-    let id = UUID().uuidString.lowercased()
-    let name: String
-    let color: String
-    let createdAt = Date().timeIntervalSince1970 * 1000
+struct AppearanceSettings: Codable {
+    var theme: String?
+    var customColor: String?
+    var staticBackground: Bool?
+}
+
+struct ProjectFile: Decodable, Identifiable {
+    var id: String
+    var fileName: String?
 }

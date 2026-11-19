@@ -6,32 +6,29 @@ import UIKit
 import AppKit
 #endif
 
-/// Decides what to show: sign-in, the iPhone quick-capture app,
-/// or the desktop planner on Mac and iPad.
+/// Decides what to show: sign-in, the iPhone app, or the desktop planner on
+/// Mac and iPad.
 struct ContentView: View {
     @Environment(AuthStore.self) private var auth
-    @Environment(PlannerStore.self) private var store
+    @Environment(AppStore.self) private var store
     @Environment(QuickAddRouter.self) private var router
 
     var body: some View {
         @Bindable var router = router
 
         Group {
-            if !auth.isSignedIn {
+            if !auth.hasSession {
                 SignInView()
-            } else if Self.usesDesktopPlanner {
-                DesktopPlannerView()
             } else {
-                TodayView()
+                signedIn
             }
         }
         .sheet(item: $router.sheet) { sheet in
             Group {
                 switch sheet {
-                case .task: QuickAddTaskView()
-                case .note: QuickAddNoteView()
-                case .project: QuickAddProjectView()
-                case .settings: SettingsView()
+                case .task: QuickTaskSheet()
+                case .project: QuickProjectSheet()
+                case .settings: AccountSheet()
                 }
             }
             .environment(auth)
@@ -39,16 +36,25 @@ struct ContentView: View {
             .environment(router)
             .tint(Theme.accent)
         }
-        .onChange(of: auth.isSignedIn) { _, signedIn in
-            if !signedIn { router.sheet = nil }
+        .onChange(of: auth.hasSession) { _, has in
+            if !has {
+                router.sheet = nil
+                store.reset()
+            }
         }
     }
 
-    static var usesDesktopPlanner: Bool {
+    @ViewBuilder private var signedIn: some View {
         #if os(macOS)
-        true
+        DesktopPlannerView()
         #else
-        UIDevice.current.userInterfaceIdiom == .pad
+        // iPad shows the desktop planner. Guest mode has no website session,
+        // so a guest gets the phone app on iPad too.
+        if UIDevice.current.userInterfaceIdiom == .pad && !auth.isGuest {
+            DesktopPlannerView()
+        } else {
+            PhoneRoot()
+        }
         #endif
     }
 }

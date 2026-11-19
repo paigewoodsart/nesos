@@ -2,12 +2,12 @@ import Foundation
 import Observation
 
 enum AppSheet: String, Identifiable {
-    case task, note, project, settings
+    case task, project, settings
     var id: String { rawValue }
 }
 
-/// Opens the quick-add sheets from anywhere: buttons, the Mac menu bar,
-/// and keyboard shortcuts.
+/// Opens the quick-add sheets on Mac and iPad from anywhere: buttons, the
+/// Mac menu bar, and keyboard shortcuts.
 @Observable
 final class QuickAddRouter {
     var sheet: AppSheet?

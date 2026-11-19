@@ -9,13 +9,15 @@ import AppKit
 @main
 struct NesosApp: App {
     @State private var auth: AuthStore
-    @State private var store: PlannerStore
+    @State private var store: AppStore
+    @State private var timers = TimerStore()
     @State private var router = QuickAddRouter()
 
     init() {
+        NFont.register()
         let auth = AuthStore()
         _auth = State(initialValue: auth)
-        _store = State(initialValue: PlannerStore(auth: auth))
+        _store = State(initialValue: AppStore(auth: auth))
     }
 
     var body: some Scene {
@@ -23,31 +25,30 @@ struct NesosApp: App {
             ContentView()
                 .environment(auth)
                 .environment(store)
+                .environment(timers)
                 .environment(router)
                 .tint(Theme.accent)
+                .preferredColorScheme(.light)
                 #if os(macOS)
                 .frame(minWidth: 900, minHeight: 600)
                 #endif
         }
         .commands {
-            // File menu: New Task (Cmd+N), New Note (Cmd+Shift+N), New Project.
+            // File menu: New Task (Cmd+N), New Project (Cmd+Shift+N).
             // Also works with a keyboard on iPad.
             CommandGroup(replacing: .newItem) {
                 Button("New Task") { router.sheet = .task }
                     .keyboardShortcut("n")
                     .disabled(!auth.isSignedIn)
-                Button("New Note") { router.sheet = .note }
-                    .keyboardShortcut("n", modifiers: [.command, .shift])
-                    .disabled(!auth.isSignedIn)
                 Button("New Project") { router.sheet = .project }
-                    .keyboardShortcut("p", modifiers: [.command, .shift])
+                    .keyboardShortcut("n", modifiers: [.command, .shift])
                     .disabled(!auth.isSignedIn)
             }
         }
 
         #if os(macOS)
         Settings {
-            SettingsView(showsDone: false)
+            AccountSheet(showsDone: false)
                 .environment(auth)
                 .environment(store)
                 .tint(Theme.accent)
@@ -56,8 +57,6 @@ struct NesosApp: App {
         // Menu bar item for quick add from anywhere on the Mac.
         MenuBarExtra("Nesos", systemImage: "plus.circle") {
             Button("New Task") { open(.task) }
-                .disabled(!auth.isSignedIn)
-            Button("New Note") { open(.note) }
                 .disabled(!auth.isSignedIn)
             Button("New Project") { open(.project) }
                 .disabled(!auth.isSignedIn)

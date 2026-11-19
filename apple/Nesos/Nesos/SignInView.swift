@@ -1,5 +1,8 @@
 import SwiftUI
 import AuthenticationServices
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct SignInView: View {
     @Environment(AuthStore.self) private var auth
@@ -9,56 +12,80 @@ struct SignInView: View {
 
     var body: some View {
         ZStack {
-            Theme.islandGradient.ignoresSafeArea()
+            BoardBackground(theme: "original", customColor: "#EBE5DE")
 
-            VStack(spacing: 28) {
+            VStack(spacing: 10) {
                 Spacer()
 
-                VStack(spacing: 8) {
-                    Text("nesos")
-                        .font(.system(size: 52, weight: .light, design: .serif))
-                        .foregroundStyle(Theme.ink)
-                    Text("Sign in to your planner")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.inkLight)
-                }
+                Text("N")
+                    .font(NFont.playfair(72))
+                    .foregroundStyle(Theme.logoN)
+                    .padding(.bottom, 18)
+                Text("NESOS")
+                    .font(NFont.aboreto(44))
+                    .tracking(44 * 0.12)
+                    .foregroundStyle(Theme.ocean)
+                Text("YOUR WORK, YOUR RHYTHM, YOUR ISLAND.")
+                    .caps(10, spacing: 0.28, weight: .regular)
+                    .foregroundStyle(Theme.ocean.opacity(0.8))
+                    .multilineTextAlignment(.center)
 
-                Spacer()
+                VStack(spacing: 10) {
+                    signInButton("SIGN IN WITH GOOGLE", provider: "google", background: Theme.ocean, showsApple: false)
+                    signInButton("SIGN IN WITH APPLE", provider: "apple", background: .black, showsApple: true)
 
-                VStack(spacing: 12) {
-                    signInButton("Continue with Google", systemImage: "globe", provider: "google")
-                    signInButton("Continue with Apple", systemImage: "apple.logo", provider: "apple")
+                    #if os(iOS)
+                    // Guest mode is for testing. Delete this button to remove it.
+                    Button { auth.continueAsGuest() } label: {
+                        Text("CONTINUE AS GUEST").caps(11, spacing: 0.26)
+                            .foregroundStyle(Theme.accent)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .frosted()
+                    }
+                    .buttonStyle(.plain)
+                    #endif
                 }
                 .disabled(busy)
+                .padding(.top, 36)
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
+                        .font(NFont.inter(12))
+                        .foregroundStyle(Theme.danger)
                         .multilineTextAlignment(.center)
+                        .padding(.top, 6)
                 }
 
-                Link("Privacy policy", destination: Config.privacyURL)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.inkLight)
-                    .padding(.bottom, 8)
+                Spacer()
+
+                Link(destination: Config.privacyURL) {
+                    Text("PRIVACY POLICY").caps(9, spacing: 0.24)
+                        .foregroundStyle(Theme.inkSoft)
+                        .frame(width: 140, height: 32)
+                        .frosted()
+                }
+                .padding(.bottom, 20)
             }
-            .padding(32)
+            .padding(.horizontal, 32)
             .frame(maxWidth: 420)
         }
     }
 
-    private func signInButton(_ title: String, systemImage: String, provider: String) -> some View {
+    private func signInButton(_ title: String, provider: String, background: Color, showsApple: Bool) -> some View {
         Button {
             Task { await signIn(provider: provider) }
         } label: {
-            Label(title, systemImage: systemImage)
-                .font(.body.weight(.medium))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(.white, in: Capsule())
-                .foregroundStyle(Theme.ink)
-                .overlay(Capsule().stroke(Theme.line))
+            HStack(spacing: 8) {
+                if showsApple {
+                    Image(systemName: "apple.logo").font(.system(size: 14, weight: .medium))
+                }
+                Text(title).caps(11, spacing: 0.26)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(background, in: RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
     }

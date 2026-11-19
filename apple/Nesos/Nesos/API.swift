@@ -16,39 +16,41 @@ enum APIError: LocalizedError {
 struct API {
     let token: String
 
-    // MARK: Tasks
+    func projects() async throws -> [Project] { try await get("api/db/clients") }
+    func openTasks() async throws -> [ProjectTask] { try await get("api/db/client-tasks", ["all": "1"]) }
+    func tasks(projectId: String) async throws -> [ProjectTask] { try await get("api/db/client-tasks", ["clientId": projectId]) }
+    func save(_ task: ProjectTask) async throws { try await send("POST", "api/db/client-tasks", body: task) }
+    func deleteTask(id: String) async throws { try await send("DELETE", "api/db/client-tasks", query: ["id": id]) }
+    func save(_ project: Project) async throws { try await send("POST", "api/db/clients", body: project) }
+    func save(_ session: SessionLog) async throws { try await send("POST", "api/db/sessions", body: session) }
+    func settings() async throws -> AppearanceSettings { try await get("api/db/settings") }
+    func save(_ settings: AppearanceSettings) async throws { try await send("POST", "api/db/settings", body: settings) }
+    func files(projectId: String) async throws -> [ProjectFile] { try await get("api/db/files", ["clientId": projectId]) }
+    func deleteAccount() async throws { try await send("DELETE", "api/account/delete") }
 
-    func tasks(weekId: String) async throws -> [TaskItem] {
-        try await get("api/db/tasks", query: ["weekId": weekId])
-    }
+    /// Multipart upload to /api/db/files/upload, the same route the website uses.
+    func upload(_ data: Data, fileName: String, mimeType: String, projectId: String) async throws {
+        let boundary = "nesos-\(UUID().uuidString)"
+        var body = Data()
+        func field(_ name: String, _ value: String) {
+            body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n".data(using: .utf8)!)
+        }
+        field("clientId", projectId)
+        body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\nContent-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(data)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
 
-    func recurringTasks() async throws -> [TaskItem] {
-        try await get("api/db/tasks", query: ["recurring": "true"])
-    }
-
-    func save(_ task: TaskItem) async throws {
-        try await send("POST", "api/db/tasks", body: task)
-    }
-
-    // MARK: Notes and projects
-
-    func save(_ note: NewNote) async throws {
-        try await send("POST", "api/db/notes", body: note)
-    }
-
-    func save(_ project: NewProject) async throws {
-        try await send("POST", "api/db/clients", body: project)
-    }
-
-    // MARK: Account
-
-    func deleteAccount() async throws {
-        try await send("DELETE", "api/account/delete")
+        var request = URLRequest(url: Config.baseURL.appending(path: "api/db/files/upload"))
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
+        try await perform(request)
     }
 
     // MARK: Plumbing
 
-    private func get<T: Decodable>(_ path: String, query: [String: String]) async throws -> T {
+    private func get<T: Decodable>(_ path: String, _ query: [String: String] = [:]) async throws -> T {
         let data = try await send("GET", path, query: query)
         return try JSONDecoder().decode(T.self, from: data)
     }
@@ -71,7 +73,11 @@ struct API {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONEncoder().encode(body)
         }
+        return try await perform(request)
+    }
 
+    @discardableResult
+    private func perform(_ request: URLRequest) async throws -> Data {
         let (data, response) = try await URLSession.shared.data(for: request, delegate: KeepAuthOnRedirect(token: token))
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         if status == 401 { throw APIError.unauthorized }
@@ -94,12 +100,13 @@ nonisolated final class KeepAuthOnRedirect: NSObject, URLSessionTaskDelegate {
         _ session: URLSession,
         task: URLSessionTask,
         willPerformHTTPRedirection response: HTTPURLResponse,
-        newRequest request: URLRequest
-    ) async -> URLRequest? {
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
         var request = request
         if let host = request.url?.host, host == "nesos.co" || host.hasSuffix(".nesos.co") {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        return request
+        completionHandler(request)
     }
 }

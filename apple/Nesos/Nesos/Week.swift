@@ -36,3 +36,21 @@ enum Week {
         return f.string(from: date)
     }
 }
+
+extension Week {
+    /// Minutes since midnight, Bangkok time (how the website logs sessions).
+    static func minutes(_ date: Date) -> Int {
+        let c = calendar.dateComponents([.hour, .minute], from: date)
+        return (c.hour ?? 0) * 60 + (c.minute ?? 0)
+    }
+
+    /// "yyyy-MM-dd", Bangkok time (how the website logs sessions).
+    static func dateString(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = timeZone
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+}
