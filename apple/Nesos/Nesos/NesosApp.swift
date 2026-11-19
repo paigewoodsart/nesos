@@ -12,6 +12,7 @@ struct NesosApp: App {
     @State private var store: AppStore
     @State private var timers = TimerStore()
     @State private var router = QuickAddRouter()
+    @AppStorage(PlannerZoom.key) private var plannerZoom = PlannerZoom.standard
 
     init() {
         NFont.register()
@@ -42,6 +43,20 @@ struct NesosApp: App {
                 Button("New Project") { router.sheet = .project }
                     .keyboardShortcut("n", modifiers: [.command, .shift])
                     .disabled(!auth.isSignedIn)
+            }
+            // View menu: planner size on Mac and iPad, like zoom in a browser.
+            CommandGroup(after: .toolbar) {
+                Button("Zoom In") {
+                    plannerZoom = PlannerZoom.next(from: plannerZoom, direction: 1)
+                }
+                .keyboardShortcut("+")
+                Button("Zoom Out") {
+                    plannerZoom = PlannerZoom.next(from: plannerZoom, direction: -1)
+                }
+                .keyboardShortcut("-")
+                Button("Actual Size") { plannerZoom = PlannerZoom.standard }
+                    .keyboardShortcut("0")
+                Divider()
             }
         }
 

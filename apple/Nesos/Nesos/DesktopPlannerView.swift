@@ -13,6 +13,8 @@ struct DesktopPlannerView: View {
     @Environment(AuthStore.self) private var auth
     @Environment(QuickAddRouter.self) private var router
     @State private var startURL: URL?
+    /// Planner size, changed from the View menu (Cmd +, Cmd -, Cmd 0).
+    @AppStorage(PlannerZoom.key) private var zoom = PlannerZoom.standard
 
     var body: some View {
         Group {
@@ -20,6 +22,7 @@ struct DesktopPlannerView: View {
                 PlannerWebView(
                     startURL: startURL,
                     reloadCount: router.reloadCount,
+                    zoom: zoom,
                     onNeedsSignIn: {
                         // The planner's own session ran out. Sign in again
                         // natively; that hands the window a fresh session.
@@ -67,6 +70,23 @@ struct DesktopPlannerView: View {
     }
 }
 
+/// How big the planner is drawn in the Mac and iPad window, like zoom in a
+/// browser. The choice is remembered on this device.
+enum PlannerZoom {
+    static let key = "nesos-planner-zoom"
+    static let standard = 1.0
+    static let steps: [Double] = [0.75, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0]
+
+    /// The next size up (direction 1) or down (direction -1) from `current`.
+    static func next(from current: Double, direction: Int) -> Double {
+        var nearest = 0
+        for index in steps.indices where abs(steps[index] - current) < abs(steps[nearest] - current) {
+            nearest = index
+        }
+        return steps[min(max(nearest + direction, 0), steps.count - 1)]
+    }
+}
+
 /// The "+" menu on Mac (toolbar) and iPad (floating button).
 struct QuickAddMenu: View {
     @Environment(QuickAddRouter.self) private var router
@@ -104,6 +124,7 @@ private typealias PlatformViewRepresentable = UIViewRepresentable
 private struct PlannerWebView: PlatformViewRepresentable {
     let startURL: URL
     let reloadCount: Int
+    let zoom: Double
     let onNeedsSignIn: () -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -120,6 +141,7 @@ private struct PlannerWebView: PlatformViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
+        webView.pageZoom = zoom
         context.coordinator.lastReload = reloadCount
 
         // Always the desktop layout in the app (see hooks/useIsMobile.ts).
@@ -146,6 +168,9 @@ private struct PlannerWebView: PlatformViewRepresentable {
         if context.coordinator.lastReload != reloadCount {
             context.coordinator.lastReload = reloadCount
             webView.reload()
+        }
+        if abs(webView.pageZoom - zoom) > 0.001 {
+            webView.pageZoom = zoom
         }
     }
 
