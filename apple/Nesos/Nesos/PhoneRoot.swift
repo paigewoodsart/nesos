@@ -1,6 +1,7 @@
 #if os(iOS)
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 /// Screens on the phone.
 enum Route: Hashable {
@@ -96,6 +97,8 @@ struct HomeView: View {
     @Environment(AppStore.self) private var store
     @State private var adding = false
     @State private var keyboardUp = false
+    /// The project tile being dragged to a new spot.
+    @State private var dragging: String?
 
     init(path: Binding<[Route]>) {
         _path = path
@@ -143,6 +146,16 @@ struct HomeView: View {
                             } onAdd: {
                                 path.append(.project(project.id, adding: true))
                             }
+                            // Press and hold to lift a tile, then drag it to
+                            // a new spot. The phone remembers the order.
+                            .onDrag {
+                                dragging = project.id
+                                return NSItemProvider(object: project.id as NSString)
+                            }
+                            .onDrop(
+                                of: [UTType.text],
+                                delegate: ProjectDropDelegate(targetId: project.id, dragging: $dragging, store: store)
+                            )
                         }
                     }
                     .padding(.bottom, 22)
@@ -161,6 +174,29 @@ struct HomeView: View {
             }
         }
         .trackKeyboard($keyboardUp)
+    }
+}
+
+/// Moves a dragged project tile into the spot it is held over.
+struct ProjectDropDelegate: DropDelegate {
+    let targetId: String
+    @Binding var dragging: String?
+    let store: AppStore
+
+    func dropEntered(info: DropInfo) {
+        guard let dragging, dragging != targetId else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            store.moveProject(dragging, to: targetId)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        dragging = nil
+        return true
     }
 }
 
