@@ -17,6 +17,18 @@ final class AuthStore {
     var pendingSessionToken: String?
 
     var isSignedIn: Bool { token != nil }
+
+    /// The person's first name, when the account has a real one. Apple
+    /// sign-in with a hidden email has no name (the "name" is the made-up
+    /// address), so this is nil and screens fall back to a plain greeting.
+    var firstName: String? {
+        guard !isGuest, let name, !name.contains("@"),
+              let first = name.split(separator: " ").first else { return nil }
+        return String(first)
+    }
+
+    /// True when Apple is hiding the person's email behind a relay address.
+    var hidesEmail: Bool { email?.hasSuffix("@privaterelay.appleid.com") ?? false }
     var hasSession: Bool { isSignedIn || isGuest }
 
     private static let guestKey = "nesos-guest-mode"

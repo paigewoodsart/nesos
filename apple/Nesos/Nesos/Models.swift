@@ -205,6 +205,7 @@ struct AppearanceSettings: Codable {
     var customColor: String?
     var staticBackground: Bool?
     var personalColor: String?
+    var displayName: String?
 }
 
 struct ProjectFile: Decodable, Identifiable {

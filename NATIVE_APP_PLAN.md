@@ -291,6 +291,7 @@ create table if not exists user_settings (
   custom_color text,
   static_background boolean,
   personal_color text,
+  display_name text,
   updated_at timestamptz
 );
 alter table user_settings enable row level security;

@@ -107,6 +107,7 @@ final class LocalBackend: Backend {
         if let color = settings.customColor { store.settings.customColor = color }
         if let flag = settings.staticBackground { store.settings.staticBackground = flag }
         if let personal = settings.personalColor { store.settings.personalColor = personal }
+        if let name = settings.displayName { store.settings.displayName = name }
         persist()
     }
 

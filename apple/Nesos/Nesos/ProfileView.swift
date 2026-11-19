@@ -16,15 +16,25 @@ struct ProfileView: View {
     }
     @State private var confirmDelete = false
     @State private var deleting = false
+    @State private var editingName = false
+    @State private var nameDraft = ""
+    @FocusState private var nameFocused: Bool
 
     init(path: Binding<[Route]>) {
         _path = path
     }
 
     private var displayName: String {
+        if let name = store.greetingName { return name }
         if auth.isGuest { return "Guest" }
-        if let name = auth.name?.split(separator: " ").first { return String(name) }
-        return auth.email?.split(separator: "@").first.map { String($0) } ?? "You"
+        if auth.hidesEmail { return "Welcome" }
+        return auth.email?.split(separator: "@").first.map { String($0) } ?? "Welcome"
+    }
+
+    private func saveName() {
+        store.setDisplayName(nameDraft)
+        nameFocused = false
+        withAnimation(.easeOut(duration: 0.2)) { editingName = false }
     }
 
     var body: some View {
@@ -37,13 +47,46 @@ struct ProfileView: View {
                         .font(NFont.playfair(18))
                         .frame(width: 40, height: 40)
                         .background(Color.white.opacity(0.3), in: Circle())
-                    Text(displayName).caps(16, spacing: 0.24).lineLimit(1).minimumScaleFactor(0.7)
+                    if editingName {
+                        TextField("", text: $nameDraft, prompt: Text("Your name").foregroundStyle(store.palette.onBase.opacity(0.7)))
+                            .font(NFont.inter(16, .semibold))
+                            .textFieldStyle(.plain)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .focused($nameFocused)
+                            .submitLabel(.done)
+                            .onSubmit(saveName)
+                            .overlay(alignment: .bottom) {
+                                Rectangle().fill(store.palette.onBase.opacity(0.6)).frame(height: 1.5).offset(y: 4)
+                            }
+                    } else {
+                        Text(displayName).caps(16, spacing: 0.24).lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    Spacer(minLength: 0)
+                    // Tap the pencil to choose the name you're greeted by.
+                    Button {
+                        if editingName {
+                            saveName()
+                        } else {
+                            nameDraft = store.greetingName ?? ""
+                            withAnimation(.easeOut(duration: 0.2)) { editingName = true }
+                            nameFocused = true
+                        }
+                    } label: {
+                        Icon(editingName ? .check : .pencil, size: 15)
+                            .frame(width: 40, height: 40)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(editingName ? "Save name" : "Edit name")
                 }
-                .padding(EdgeInsets(top: 14, leading: 16, bottom: 0, trailing: 16))
+                .padding(EdgeInsets(top: 14, leading: 16, bottom: 0, trailing: 6))
                 Spacer(minLength: 0)
                 TileBar(height: 28, leading: 16, trailing: 16) {
                     if auth.isGuest {
                         Text("GUEST · SAVED ON THIS PHONE ONLY").caps(10, spacing: 0.22).lineLimit(1)
+                    } else if auth.hidesEmail {
+                        Text("SIGNED IN WITH APPLE · EMAIL HIDDEN").caps(10, spacing: 0.22).lineLimit(1)
                     } else {
                         Text(auth.email ?? "SIGNED IN")
                             .font(NFont.inter(10, .semibold))

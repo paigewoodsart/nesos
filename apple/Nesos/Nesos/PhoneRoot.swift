@@ -252,7 +252,7 @@ struct HomeBanner: View {
     private func greeting(at date: Date) -> String {
         let hour = Calendar.current.component(.hour, from: date)
         let part = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
-        guard !auth.isGuest, let first = auth.name?.split(separator: " ").first else { return part }
+        guard let first = store.greetingName else { return part }
         return "\(part), \(first)"
     }
 }
