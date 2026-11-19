@@ -262,6 +262,15 @@ Status: both builds pass (iOS Simulator and Mac). Next is a test on Paige's phon
 - Timer log: a page per project listing saved sessions. Tap a session to name it, ✕ to delete it. Uses `GET /api/db/sessions?clientId=`.
 - Your color: picked in the profile (six presets or custom). It colors the profile tile, the date tile and the quote bar, and Overdue, Today and This Week become shades of it. Sky (#8fb0ec) is the default and gives the original colors. Saved as `user_settings.personal_color`.
 
+### Logo, icon and home banner (Nov 18, 2026)
+
+- Her real N is the tapered Aboreto N from `public/nesos-icon.webp`. The app draws it as a shape (`NMark` in `Components.swift`). The serif stand-in is gone.
+- One ink: the N is Nesos blue on light boards and pale on dark ones.
+- Where the logo shows: the N on the home banner only. NESOS spelled out in Aboreto (spacing -0.04) on the profile page only. Other pages carry no logo. The Greek line is dropped.
+- Home banner: a tile at the top of home in Nesos blue at 70%, with the N, a greeting and the profile button. The greeting follows the time of day and uses the account's first name (guests get no name).
+- App icon: "Deep water". Nesos blue, a soft grid five squares across, and the yellow to mint N. Made by `apple/make_icon.py`, which writes the iPhone and Mac sizes into the asset catalog. Dark and tinted iPhone variants are not made yet.
+- Sign-in page: currently NESOS in Aboreto with the tagline, no N. Still to confirm with Paige.
+
 ### Guest mode (temporary, for testing)
 
 - "Continue as guest" on the sign-in screen (iPhone and iPad). Data is saved on the device only, in `nesos-guest.json`.

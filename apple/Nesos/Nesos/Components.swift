@@ -6,22 +6,44 @@ import UIKit
 
 // Shared pieces of the phone designs.
 
-/// N + NESOS + νῆσος · nê·sos
+/// Her tapered N, traced from the website's logo file (public/nesos-icon.webp).
+struct NMark: Shape {
+    func path(in rect: CGRect) -> Path {
+        // Points on a 780 x 962 box.
+        let points: [(CGFloat, CGFloat)] = [
+            (46, 18), (13, 923), (105, 923), (78, 180), (712, 943),
+            (732, 943), (766, 38), (674, 38), (700, 786), (67, 18),
+        ]
+        let scale = min(rect.width / 780, rect.height / 962)
+        let dx = rect.minX + (rect.width - 780 * scale) / 2
+        let dy = rect.minY + (rect.height - 962 * scale) / 2
+        var path = Path()
+        for (i, point) in points.enumerated() {
+            let p = CGPoint(x: dx + point.0 * scale, y: dy + point.1 * scale)
+            if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// The logo in the app: the N alone, or the name spelled out (profile page).
+/// One ink: the N matches the word, blue on light boards, pale on dark ones.
 struct Wordmark: View {
+    var showsName = false
+
     var body: some View {
-        HStack(spacing: 10) {
-            Text("N")
-                .font(NFont.playfair(34))
-                .foregroundStyle(Theme.logoN)
-            VStack(alignment: .leading, spacing: 2) {
+        Group {
+            if showsName {
+                // Aboreto is the typeface her N comes from.
                 Text("NESOS")
-                    .font(NFont.playfair(19))
-                    .tracking(19 * 0.06)
+                    .font(NFont.aboreto(24))
+                    .tracking(24 * -0.04)
                     .foregroundStyle(Theme.accent)
-                Text("νῆσος · nê·sos")
-                    .font(NFont.inter(9))
-                    .tracking(9 * 0.14)
-                    .foregroundStyle(Theme.inkLight)
+            } else {
+                NMark()
+                    .fill(Theme.accent)
+                    .frame(width: 18, height: 22)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -33,15 +55,19 @@ struct Wordmark: View {
 struct CircleIconButton: View {
     let icon: NIcon
     let label: String
+    /// How big the circle looks. The tappable area stays 44pt.
+    var size: CGFloat = 44
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Icon(icon, size: 20)
+            Icon(icon, size: size * 20 / 44)
                 .foregroundStyle(Theme.inkLight)
-                .frame(width: 44, height: 44)
+                .frame(width: size, height: size)
                 .background(Theme.glass, in: Circle())
                 .overlay(Circle().stroke(Theme.glassBorder, lineWidth: 1))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
@@ -53,15 +79,21 @@ struct CircleIconButton: View {
 struct HeaderBar: View {
     var onBack: (() -> Void)?
     var onAccount: (() -> Void)?
+    /// The profile page spells the name out. Home shows the N. Other pages show neither.
+    var showsName = false
 
     var body: some View {
         HStack {
             if let onBack {
+                // Inner pages carry no logo. Only the profile spells the name out.
                 CircleIconButton(icon: .back, label: "Back", action: onBack)
                 Spacer()
-                Wordmark()
-                Spacer()
+                if showsName {
+                    Wordmark(showsName: true)
+                    Spacer()
+                }
             } else {
+                // Home: the N alone, upper left.
                 Wordmark()
                 Spacer()
             }

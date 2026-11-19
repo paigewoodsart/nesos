@@ -29,7 +29,7 @@ struct ProfileView: View {
 
     var body: some View {
         Screen {
-            HeaderBar(onBack: { path.removeLast() }, onAccount: nil)
+            HeaderBar(onBack: { path.removeLast() }, onAccount: nil, showsName: true)
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 12) {

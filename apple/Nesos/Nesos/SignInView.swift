@@ -17,10 +17,6 @@ struct SignInView: View {
             VStack(spacing: 10) {
                 Spacer()
 
-                Text("N")
-                    .font(NFont.playfair(72))
-                    .foregroundStyle(Theme.logoN)
-                    .padding(.bottom, 18)
                 Text("NESOS")
                     .font(NFont.aboreto(44))
                     .tracking(44 * 0.12)

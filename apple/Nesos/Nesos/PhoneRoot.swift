@@ -103,7 +103,7 @@ struct HomeView: View {
 
     var body: some View {
         Screen {
-            HeaderBar(onBack: nil, onAccount: { path.append(.profile) })
+            HomeBanner { path.append(.profile) }
 
             HStack(spacing: 10) {
                 ForEach(DueSection.allCases) { section in
@@ -161,6 +161,58 @@ struct HomeView: View {
             }
         }
         .trackKeyboard($keyboardUp)
+    }
+}
+
+/// The heading banner on home: the N, a greeting and the profile button,
+/// on Nesos blue at 70% so the board shows through.
+struct HomeBanner: View {
+    let onProfile: () -> Void
+
+    @Environment(AuthStore.self) private var auth
+
+    init(onProfile: @escaping () -> Void) {
+        self.onProfile = onProfile
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            NMark()
+                .fill(Color.white)
+                .frame(width: 18, height: 22)
+                .accessibilityHidden(true)
+            TimelineView(.everyMinute) { context in
+                Text(greeting(at: context.date))
+                    .font(NFont.playfair(17))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Button(action: onProfile) {
+                Icon(.person, size: 18)
+                    .foregroundStyle(.white)
+                    .frame(width: 38, height: 38)
+                    .background(Color.white.opacity(0.22), in: Circle())
+                    .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 1))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Account")
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 6)
+        .frame(height: 56)
+        .background(Color(hex: "#184e77").opacity(0.7), in: RoundedRectangle(cornerRadius: 7))
+    }
+
+    /// "Good morning, Paige". Guests and accounts with no name get no name.
+    private func greeting(at date: Date) -> String {
+        let hour = Calendar.current.component(.hour, from: date)
+        let part = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
+        guard !auth.isGuest, let first = auth.name?.split(separator: " ").first else { return part }
+        return "\(part), \(first)"
     }
 }
 
