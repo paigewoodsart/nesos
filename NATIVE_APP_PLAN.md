@@ -205,3 +205,30 @@ create table token_revocations (
 - Do not commit secrets (`.env.local` is gitignored)
 - Every env var and console setting that must be configured by hand is listed above
 - Read `node_modules/next/dist/docs/` before touching any Next.js code — this is Next.js 16 with breaking changes
+
+## iPhone design: locked in (Nov 18, 2026)
+
+Storyboard: https://claude.ai/artifact/NWtn72Fht9uFjUH7vJR8g5 (Nesos iPhone Storyboard). Built from the live desktop planner. Paige's real workflow is projects (the `clients` / `client_tasks` tables) with due dates, not weekly tasks, so the iPhone app is rebuilt around projects. The earlier weekly "Today" iPhone screens in `apple/` get replaced.
+
+Style (match the website, never substitute): Playfair Display, Inter, Aboreto bundled in the app; pastel grid "board" background; 7px corners; white spaced caps (600 weight, 0.2em tracking) on solid color tiles; a see-through white band (22%) across the bottom of tiles for counts and plus icons.
+
+Home:
+- Header: N mark, NESOS wordmark, "νῆσος · nê·sos", round profile button. Sits high, just under the status bar.
+- Row of three tiles: Overdue, Today, This Week (blues #7f9fd6, #6fb0c8, #6a95a8), count + plus in the band.
+- PROJECTS heading, then a 2-column grid of project tiles (84px tall, project color, name on top, "N TASKS" + plus in the band). Shows 8 tiles, scrolls for the rest, with a permanent thin scroll bar (custom on iOS) and a light bottom fade. The grid runs down to 3px above the bottom row so tiles tuck under it.
+- Bottom row: quote card (wide) + date tile (136px, #8fb0ec) aligned with the tile columns.
+- No Capture button. Adding happens from plus buttons.
+
+Inside a project:
+- Same header with a round back button.
+- Full-width project tile: name, Timer pill, band "N TASKS · N OVERDUE".
+- TASKS heading with "ADD +" on the right.
+- Task rows: soft white rounded rows, project-color due chip, task text, check circle; done tasks fade. Scrolls with the same bar and fade.
+- Notes: full-width card under the list. Files: slim solid project-color bar below it ("FILES", "ATTACH +").
+
+Adding a task (inline, no separate screen):
+- Tapping ADD turns it into CLOSE ×, the add card opens under the TASKS heading and the list slides down.
+- Card: NEW TASK text line, DUE quick picks on one line (Today, Tomorrow, Pick date, None), full-width "ADD TO <PROJECT> +" button in the project color.
+- After adding, the card closes and the task appears in the list.
+
+Still to restyle: Due lists screen, Sign in screen.
