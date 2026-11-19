@@ -322,4 +322,7 @@ Steps for Paige, in order:
 
 If the website stops loading data after step 4: run `supabase-sql/undo-reopen.sql`, then tell Claude.
 
-Still to look at after step 1: the "Client files" storage bucket and its rules. Files already go through the server, so the bucket should be private.
+What the look-first check showed (Nov 19):
+- Row security was already on for every table, but each planner table had an `anon_all` rule that let the public key do everything. So the tables were open in practice.
+- The "Client files" bucket is private, but four `allow_all` rules on `storage.objects` let the public key read, upload, change and delete files.
+- The website only touches files through the server key and signed links (`app/api/db/files/*`), so those four rules are not needed. The closing SQL removes them too.
