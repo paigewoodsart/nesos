@@ -302,3 +302,24 @@ alter table user_settings enable row level security;
 Double-click `apple/build.command`. It builds for iPhone and Mac and writes `apple/build.log`.
 
 - Security, before the App Store: close anon access to the planner tables (see chat of Nov 18).
+
+## Closing the open access to the tables (ready to run, Nov 19, 2026)
+
+Why: the planner tables were reachable with the site's public key (anon role, row security off). The website's browser code fell back to that route whenever the server route failed.
+
+Done so far (committed on `native-app`, not pushed):
+- The five files in `lib/storage/supabase/` no longer touch the tables from the browser. They call the server routes through `lib/storage/supabase/api.ts`, which retries once.
+- Nothing else in the website uses the browser database client.
+- The server role was granted access to every table on Nov 18.
+
+Steps for Paige, in order:
+1. Supabase: run `supabase-sql/1-look-first.sql` and send a screenshot. Claude checks for anything unexpected, especially the file storage rules.
+2. Publish: `git push`, then merge the pull request. Wait for Vercel to say Ready.
+3. Use nesos.co for a minute: open a project, add a task, check one off, add a note. Confirm it all saves and survives a reload.
+4. Supabase: run `supabase-sql/2-close-the-door.sql`.
+5. Supabase: run `supabase-sql/3-check-it-is-closed.sql`. Every row should say false, false, true, true.
+6. Reload nesos.co and open the phone app. Both should still load and save.
+
+If the website stops loading data after step 4: run `supabase-sql/undo-reopen.sql`, then tell Claude.
+
+Still to look at after step 1: the "Client files" storage bucket and its rules. Files already go through the server, so the bucket should be private.

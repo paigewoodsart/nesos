@@ -1,105 +1,49 @@
-import { supabase } from "@/lib/supabase";
+import { api } from "./api";
 import type { Client, ClientTask, ClientSession } from "@/types";
 
 // ── Clients ──────────────────────────────────────────────────────
 
-export async function sbGetAllClients(userEmail: string): Promise<Client[]> {
-  try {
-    const res = await fetch("/api/db/clients");
-    if (!res.ok) throw new Error(await res.text());
-    return (await res.json()).map((r: Record<string, unknown>) => ({ id: r.id, name: r.name, color: r.color, notes: (r.notes as string | null) ?? undefined, archived: (r.archived as boolean | null) ?? false, createdAt: r.created_at }));
-  } catch {
-    const { data } = await supabase.from("clients").select("*").eq("user_email", userEmail);
-    return (data ?? []).map(r => ({ id: r.id, name: r.name, color: r.color, notes: r.notes ?? undefined, archived: r.archived ?? false, createdAt: r.created_at }));
-  }
+export async function sbGetAllClients(_userEmail: string): Promise<Client[]> {
+  const res = await api("/api/db/clients");
+  return (await res.json()).map((r: Record<string, unknown>) => ({ id: r.id, name: r.name, color: r.color, notes: (r.notes as string | null) ?? undefined, archived: (r.archived as boolean | null) ?? false, createdAt: r.created_at }));
 }
 
-export async function sbSaveClient(userEmail: string, client: Client): Promise<void> {
-  try {
-    const res = await fetch("/api/db/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(client) });
-    if (!res.ok) throw new Error(await res.text());
-  } catch {
-    await supabase.from("clients").upsert({ id: client.id, user_email: userEmail, name: client.name, color: client.color, notes: client.notes ?? null, archived: client.archived ?? false, created_at: client.createdAt });
-  }
+export async function sbSaveClient(_userEmail: string, client: Client): Promise<void> {
+  await api("/api/db/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(client) });
 }
 
 export async function sbDeleteClient(id: string): Promise<void> {
-  try {
-    const res = await fetch(`/api/db/clients?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (!res.ok) throw new Error(await res.text());
-  } catch {
-    await supabase.from("clients").delete().eq("id", id);
-  }
+  await api(`/api/db/clients?id=${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 // ── Client Tasks ─────────────────────────────────────────────────
 
-export async function sbGetClientTasks(userEmail: string, clientId: string): Promise<ClientTask[]> {
-  try {
-    const res = await fetch(`/api/db/client-tasks?clientId=${encodeURIComponent(clientId)}`);
-    if (!res.ok) throw new Error(await res.text());
-    return (await res.json()).map(rowToClientTask);
-  } catch {
-    const { data } = await supabase.from("client_tasks").select("*").eq("user_email", userEmail).eq("client_id", clientId);
-    return (data ?? []).map(rowToClientTask);
-  }
+export async function sbGetClientTasks(_userEmail: string, clientId: string): Promise<ClientTask[]> {
+  const res = await api(`/api/db/client-tasks?clientId=${encodeURIComponent(clientId)}`);
+  return (await res.json()).map(rowToClientTask);
 }
 
-export async function sbSaveClientTask(userEmail: string, task: ClientTask): Promise<void> {
-  try {
-    const res = await fetch("/api/db/client-tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(task) });
-    if (!res.ok) throw new Error(await res.text());
-  } catch {
-    await supabase.from("client_tasks").upsert({
-      id: task.id, user_email: userEmail, client_id: task.clientId, text: task.text,
-      done: task.done, done_at: task.doneAt, due_date: task.dueDate,
-      archived: task.archived, archived_at: task.archivedAt, created_at: task.createdAt,
-    });
-  }
+export async function sbSaveClientTask(_userEmail: string, task: ClientTask): Promise<void> {
+  await api("/api/db/client-tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(task) });
 }
 
 export async function sbDeleteClientTask(id: string): Promise<void> {
-  try {
-    const res = await fetch(`/api/db/client-tasks?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (!res.ok) throw new Error(await res.text());
-  } catch {
-    await supabase.from("client_tasks").delete().eq("id", id);
-  }
+  await api(`/api/db/client-tasks?id=${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 // ── Client Sessions ──────────────────────────────────────────────
 
-export async function sbGetSessionsByWeek(userEmail: string, weekId: string): Promise<ClientSession[]> {
-  try {
-    const res = await fetch(`/api/db/sessions?weekId=${encodeURIComponent(weekId)}`);
-    if (!res.ok) throw new Error(await res.text());
-    return (await res.json()).map(rowToSession);
-  } catch {
-    const { data } = await supabase.from("client_sessions").select("*").eq("user_email", userEmail).eq("week_id", weekId);
-    return (data ?? []).map(rowToSession);
-  }
+export async function sbGetSessionsByWeek(_userEmail: string, weekId: string): Promise<ClientSession[]> {
+  const res = await api(`/api/db/sessions?weekId=${encodeURIComponent(weekId)}`);
+  return (await res.json()).map(rowToSession);
 }
 
-export async function sbSaveSession(userEmail: string, session: ClientSession): Promise<void> {
-  try {
-    const res = await fetch("/api/db/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(session) });
-    if (!res.ok) throw new Error(await res.text());
-  } catch {
-    await supabase.from("client_sessions").upsert({
-      id: session.id, user_email: userEmail, client_id: session.clientId, week_id: session.weekId,
-      day_index: session.dayIndex, start_minute: session.startMinute, end_minute: session.endMinute,
-      actual_minutes: session.actualMinutes, notes: session.notes, date: session.date, created_at: session.createdAt,
-    });
-  }
+export async function sbSaveSession(_userEmail: string, session: ClientSession): Promise<void> {
+  await api("/api/db/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(session) });
 }
 
 export async function sbDeleteSession(id: string): Promise<void> {
-  try {
-    const res = await fetch(`/api/db/sessions?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (!res.ok) throw new Error(await res.text());
-  } catch {
-    await supabase.from("client_sessions").delete().eq("id", id);
-  }
+  await api(`/api/db/sessions?id=${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 // ── Row mappers ──────────────────────────────────────────────────

@@ -1,36 +1,17 @@
-import { supabase } from "@/lib/supabase";
+import { api } from "./api";
 import type { Note } from "@/types";
 
-export async function sbGetNotesByWeek(userEmail: string, weekId: string): Promise<Note[]> {
-  try {
-    const res = await fetch(`/api/db/notes?weekId=${encodeURIComponent(weekId)}`);
-    if (!res.ok) throw new Error(await res.text());
-    return (await res.json()).map(rowToNote);
-  } catch {
-    const { data } = await supabase.from("notes").select("*").eq("user_email", userEmail).eq("week_id", weekId);
-    return (data ?? []).map(rowToNote);
-  }
+export async function sbGetNotesByWeek(_userEmail: string, weekId: string): Promise<Note[]> {
+  const res = await api(`/api/db/notes?weekId=${encodeURIComponent(weekId)}`);
+  return (await res.json()).map(rowToNote);
 }
 
-export async function sbSaveNote(userEmail: string, note: Note): Promise<void> {
-  try {
-    const res = await fetch("/api/db/notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(note) });
-    if (!res.ok) throw new Error(await res.text());
-  } catch {
-    await supabase.from("notes").upsert({
-      id: note.id, user_email: userEmail, week_id: note.weekId, day_index: note.dayIndex,
-      text: note.text, photo_ids: note.photoIds, created_at: note.createdAt, updated_at: note.updatedAt,
-    });
-  }
+export async function sbSaveNote(_userEmail: string, note: Note): Promise<void> {
+  await api("/api/db/notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(note) });
 }
 
 export async function sbDeleteNote(id: string): Promise<void> {
-  try {
-    const res = await fetch(`/api/db/notes?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (!res.ok) throw new Error(await res.text());
-  } catch {
-    await supabase.from("notes").delete().eq("id", id);
-  }
+  await api(`/api/db/notes?id=${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 function rowToNote(r: Record<string, unknown>): Note {
