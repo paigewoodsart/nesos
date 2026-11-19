@@ -53,3 +53,6 @@ xcuserdata/
 DerivedData/
 apple/.build/
 apple/build*.log
+
+# Apple sign-in key files: never commit these
+*.p8
