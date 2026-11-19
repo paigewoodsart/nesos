@@ -280,7 +280,7 @@ Status: both builds pass (iOS Simulator and Mac). Next is a test on Paige's phon
 
 - Supabase: add `clients.archived` and create `user_settings` (SQL below), then deploy the `native-app` branch so sign-in works.
 - Phone: "Today" total on the running timer, a real "How Nesos works" page, which sign-in was used on the profile tile.
-- Logo treatment in the app.
+- Website: the readable-text switch for custom background colors exists only in the phone app. On the website a dark or mid-tone custom color (seen with a brown-orange, Nov 18) leaves the logo, Greek line, top icons, calendar labels and the "Nothing overdue" text hard to read. Bring the same rule to the website (`hooks/useAppearance.ts` and the board styles). Mid-tones like that brown sit right at the phone's switch point (`AppStore.darkBoardBelow`, 0.5), so test it there too and consider raising it.
 
 ```sql
 alter table clients add column if not exists archived boolean not null default false;
