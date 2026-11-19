@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase.from("clients").upsert({
     id: client.id, user_email: email, name: client.name,
     color: client.color, notes: client.notes ?? null, created_at: client.createdAt,
+    archived: client.archived ?? false,
   });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
