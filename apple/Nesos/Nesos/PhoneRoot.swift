@@ -165,36 +165,41 @@ struct HomeView: View {
 }
 
 /// The heading banner on home: the N, a greeting and the profile button,
-/// on Nesos blue at 70% so the board shows through.
+/// on the person's own color at 70% so the board shows through.
 struct HomeBanner: View {
     let onProfile: () -> Void
 
     @Environment(AuthStore.self) private var auth
+    @Environment(AppStore.self) private var store
 
     init(onProfile: @escaping () -> Void) {
         self.onProfile = onProfile
     }
 
     var body: some View {
+        let ink = Palette.bannerText(on: store.personalColor, darkBoard: store.boardIsDark)
         HStack(spacing: 12) {
+            // The N takes the same width as the profile button, so the
+            // greeting sits in the true middle of the banner.
             NMark()
-                .fill(Color.white)
+                .fill(ink)
                 .frame(width: 18, height: 22)
+                .frame(width: 34, alignment: .leading)
                 .accessibilityHidden(true)
             TimelineView(.everyMinute) { context in
                 Text(greeting(at: context.date))
                     .font(NFont.playfair(17))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
             Button(action: onProfile) {
                 Icon(.person, size: 18)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(ink)
                     .frame(width: 38, height: 38)
-                    .background(Color.white.opacity(0.22), in: Circle())
-                    .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 1))
+                    .background(Color.white.opacity(0.3), in: Circle())
+                    .overlay(Circle().stroke(Color.white.opacity(0.6), lineWidth: 1))
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
@@ -204,7 +209,7 @@ struct HomeBanner: View {
         .padding(.leading, 16)
         .padding(.trailing, 6)
         .frame(height: 56)
-        .background(Color(hex: "#184e77").opacity(0.7), in: RoundedRectangle(cornerRadius: 7))
+        .background(store.palette.base.opacity(0.7), in: RoundedRectangle(cornerRadius: 7))
     }
 
     /// "Good morning, Paige". Guests and accounts with no name get no name.

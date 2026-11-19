@@ -267,9 +267,9 @@ Status: both builds pass (iOS Simulator and Mac). Next is a test on Paige's phon
 - Her real N is the tapered Aboreto N from `public/nesos-icon.webp`. The app draws it as a shape (`NMark` in `Components.swift`). The serif stand-in is gone.
 - One ink: the N is Nesos blue on light boards and pale on dark ones.
 - Where the logo shows: the N on the home banner only. NESOS spelled out in Aboreto (spacing -0.04) on the profile page only. Other pages carry no logo. The Greek line is dropped.
-- Home banner: a tile at the top of home in Nesos blue at 70%, with the N, a greeting and the profile button. The greeting follows the time of day and uses the account's first name (guests get no name).
+- Home banner: a tile at the top of home in the person's own color at 70%, with the N, a centered greeting and the profile button. The greeting follows the time of day and uses the account's first name (guests get no name).
 - App icon: "Deep water". Nesos blue, a soft grid five squares across, and the yellow to mint N. Made by `apple/make_icon.py`, which writes the iPhone and Mac sizes into the asset catalog. Dark and tinted iPhone variants are not made yet.
-- Sign-in page: currently NESOS in Aboreto with the tagline, no N. Still to confirm with Paige.
+- Sign-in page: her N above NESOS spelled out in Aboreto, both in the sign-in blue, then the tagline.
 
 ### Guest mode (temporary, for testing)
 

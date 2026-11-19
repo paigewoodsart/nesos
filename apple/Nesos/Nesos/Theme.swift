@@ -165,6 +165,14 @@ struct Palette {
     func color(_ section: DueSection) -> Color { Color(hex: hex(section)) }
     func text(_ section: DueSection) -> Color { Self.textColor(on: hex(section)) }
 
+    /// Text on the see-through home banner. The banner is the color at 70%
+    /// over the board, so it reads lighter (or darker) than the color itself.
+    static func bannerText(on hex: String, darkBoard: Bool) -> Color {
+        let rgb = RGB(hex: hex)
+        let seen = 0.7 * rgb.luminance + 0.3 * (darkBoard ? 0.1 : 0.93)
+        return seen > 0.6 ? rgb.darker(0.62).color : .white
+    }
+
     /// White, or a deep shade of the color when the tile is very light.
     static func textColor(on hex: String) -> Color {
         let rgb = RGB(hex: hex)

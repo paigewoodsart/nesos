@@ -17,6 +17,12 @@ struct SignInView: View {
             VStack(spacing: 10) {
                 Spacer()
 
+                // Her N above the name, in the same ink as the word.
+                NMark()
+                    .fill(Theme.ocean)
+                    .frame(width: 52, height: 64)
+                    .padding(.bottom, 18)
+                    .accessibilityHidden(true)
                 Text("NESOS")
                     .font(NFont.aboreto(44))
                     .tracking(44 * 0.12)
