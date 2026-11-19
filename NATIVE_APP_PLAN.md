@@ -90,7 +90,11 @@ Original notes:
 - The native Mac/iPad app sets this cookie when loading the WKWebView
 - Web users are completely unaffected
 
-### Step 3: iPhone native app (SwiftUI)
+### Step 3: iPhone native app (SwiftUI) [WRITTEN, needs first Xcode build]
+
+Code lives in `apple/Nesos/Nesos/`. Xcode project: `apple/Nesos/Nesos.xcodeproj` (new Xcode 27 text format, folder-synced, so new .swift files are picked up automatically). Bundle id `co.nesos.app`, iOS 17+ / macOS 14+, iPhone + iPad + Mac in one target. Base URL `https://www.nesos.co` (Config.swift). If the week is empty, the app copies recurring tasks in first, like the web does.
+
+Original notes:
 
 - Sign-in screen (Google + Apple via `ASWebAuthenticationSession`)
 - Today view: fetch tasks for current `weekId` + today's `dayIndex`, show with check-off
@@ -101,7 +105,11 @@ Original notes:
 - Keychain storage for bearer token
 - `weekId` calculation must match `lib/dates.ts` (ISO week, Asia/Bangkok timezone)
 
-### Step 4: Mac and iPad webview shell + native quick-add
+### Step 4: Mac and iPad webview shell + native quick-add [WRITTEN, needs first Xcode build]
+
+`DesktopPlannerView.swift`. If the planner tries to start Google/Apple sign-in inside the web view, the app cancels it and signs in natively instead. Mac: toolbar + menu, File menu shortcuts, MenuBarExtra, Settings window (Cmd+,). iPad: floating + button.
+
+Original notes:
 
 - WKWebView loading `nesos.co` with `nesos-desktop` cookie
 - Session injection via `/api/auth/mobile-session`

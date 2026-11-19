@@ -46,3 +46,8 @@ next-env.d.ts
 *.sketch
 *copy*.webp
 *copy*.png
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
