@@ -303,7 +303,11 @@ Double-click `apple/build.command`. It builds for iPhone and Mac and writes `app
 
 - Security, before the App Store: close anon access to the planner tables (see chat of Nov 18).
 
-## Closing the open access to the tables (ready to run, Nov 19, 2026)
+## Closing the open access to the tables (DONE Nov 19, 2026)
+
+Result: merged to main as pull request #6, closing SQL run, check passed on all 11 tables (public cannot read or write, row security on, server can read, 0 open rules left, file storage rules included).
+
+Do not re-run the old saved Supabase query "Grant Anon Full Access". It would reopen everything.
 
 Why: the planner tables were reachable with the site's public key (anon role, row security off). The website's browser code fell back to that route whenever the server route failed.
 
