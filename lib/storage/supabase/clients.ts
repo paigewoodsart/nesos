@@ -7,10 +7,10 @@ export async function sbGetAllClients(userEmail: string): Promise<Client[]> {
   try {
     const res = await fetch("/api/db/clients");
     if (!res.ok) throw new Error(await res.text());
-    return (await res.json()).map((r: Record<string, unknown>) => ({ id: r.id, name: r.name, color: r.color, notes: (r.notes as string | null) ?? undefined, createdAt: r.created_at }));
+    return (await res.json()).map((r: Record<string, unknown>) => ({ id: r.id, name: r.name, color: r.color, notes: (r.notes as string | null) ?? undefined, archived: (r.archived as boolean | null) ?? false, createdAt: r.created_at }));
   } catch {
     const { data } = await supabase.from("clients").select("*").eq("user_email", userEmail);
-    return (data ?? []).map(r => ({ id: r.id, name: r.name, color: r.color, notes: r.notes ?? undefined, createdAt: r.created_at }));
+    return (data ?? []).map(r => ({ id: r.id, name: r.name, color: r.color, notes: r.notes ?? undefined, archived: r.archived ?? false, createdAt: r.created_at }));
   }
 }
 
@@ -19,7 +19,7 @@ export async function sbSaveClient(userEmail: string, client: Client): Promise<v
     const res = await fetch("/api/db/clients", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(client) });
     if (!res.ok) throw new Error(await res.text());
   } catch {
-    await supabase.from("clients").upsert({ id: client.id, user_email: userEmail, name: client.name, color: client.color, notes: client.notes ?? null, created_at: client.createdAt });
+    await supabase.from("clients").upsert({ id: client.id, user_email: userEmail, name: client.name, color: client.color, notes: client.notes ?? null, archived: client.archived ?? false, created_at: client.createdAt });
   }
 }
 

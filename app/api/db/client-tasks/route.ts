@@ -1,20 +1,19 @@
-import { getToken } from "next-auth/jwt";
+import { getEmail } from "@/lib/api-auth";
 import { createServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
-
-const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
-const secureCookie = process.env.NODE_ENV === "production";
-
-async function getEmail(req: NextRequest): Promise<string | null> {
-  const token = await getToken({ req, secret, secureCookie });
-  return (token?.email as string) ?? null;
-}
 
 export async function GET(req: NextRequest) {
   const email = await getEmail(req);
   if (!email) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const supabase = createServerClient();
-  const clientId = new URL(req.url).searchParams.get("clientId");
+  const params = new URL(req.url).searchParams;
+  // all=1: every not-yet-archived task across all projects (iPhone home + Due page)
+  if (params.get("all") === "1") {
+    const { data, error } = await supabase.from("client_tasks").select("*").eq("user_email", email).or("archived.is.null,archived.eq.false");
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json(data);
+  }
+  const clientId = params.get("clientId");
   if (!clientId) return Response.json({ error: "clientId required" }, { status: 400 });
   const { data, error } = await supabase.from("client_tasks").select("*").eq("user_email", email).eq("client_id", clientId);
   if (error) return Response.json({ error: error.message }, { status: 500 });

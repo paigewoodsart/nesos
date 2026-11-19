@@ -1,20 +1,21 @@
-import { getToken } from "next-auth/jwt";
+import { getEmail } from "@/lib/api-auth";
 import { createServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
-
-const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
-const secureCookie = process.env.NODE_ENV === "production";
-
-async function getEmail(req: NextRequest): Promise<string | null> {
-  const token = await getToken({ req, secret, secureCookie });
-  return (token?.email as string) ?? null;
-}
 
 export async function GET(req: NextRequest) {
   const email = await getEmail(req);
   if (!email) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const supabase = createServerClient();
-  const weekId = new URL(req.url).searchParams.get("weekId");
+  const params = new URL(req.url).searchParams;
+  // The phone app's timer log: every session for one project, newest first.
+  const clientId = params.get("clientId");
+  if (clientId) {
+    const { data, error } = await supabase.from("client_sessions").select("*")
+      .eq("user_email", email).eq("client_id", clientId).order("created_at", { ascending: false });
+    if (error) return Response.json({ error: error.message }, { status: 500 });
+    return Response.json(data);
+  }
+  const weekId = params.get("weekId");
   if (!weekId) return Response.json({ error: "weekId required" }, { status: 400 });
   const { data, error } = await supabase.from("client_sessions").select("*").eq("user_email", email).eq("week_id", weekId);
   if (error) return Response.json({ error: error.message }, { status: 500 });

@@ -1,14 +1,6 @@
-import { getToken } from "next-auth/jwt";
+import { getEmail } from "@/lib/api-auth";
 import { createServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
-
-const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
-const secureCookie = process.env.NODE_ENV === "production";
-
-async function getEmail(req: NextRequest): Promise<string | null> {
-  const token = await getToken({ req, secret, secureCookie });
-  return (token?.email as string) ?? null;
-}
 
 export async function GET(req: NextRequest) {
   const email = await getEmail(req);
@@ -27,6 +19,7 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase.from("clients").upsert({
     id: client.id, user_email: email, name: client.name,
     color: client.color, notes: client.notes ?? null, created_at: client.createdAt,
+    archived: client.archived ?? false,
   });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });

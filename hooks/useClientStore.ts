@@ -35,6 +35,8 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
   const [loaded, setLoaded] = useState(false);
   const tasksByClientRef = useRef(tasksByClient);
   useEffect(() => { tasksByClientRef.current = tasksByClient; });
+  const clientsRef = useRef(clients);
+  useEffect(() => { clientsRef.current = clients; });
 
   const sb = !!userEmail;
 
@@ -52,8 +54,16 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
         [c, s] = await Promise.all([getAllClients(), getSessionsByWeek(weekId)]);
       }
       if (cancelled) return;
+      // Archived lives in the account now (so the iPhone app sees it too).
+      // Older archives only exist in this browser: keep honoring them and
+      // copy them up to the account once.
       const archivedIds = loadArchivedIds();
-      const clientsWithArchived = c.map((cl) => ({ ...cl, archived: archivedIds.has(cl.id) }));
+      const clientsWithArchived = c.map((cl) => ({ ...cl, archived: !!cl.archived || archivedIds.has(cl.id) }));
+      if (sb) {
+        clientsWithArchived
+          .filter((cl) => archivedIds.has(cl.id) && !c.find((x) => x.id === cl.id)?.archived)
+          .forEach((cl) => { sbSaveClient(userEmail!, cl).catch(() => {}); });
+      }
       setClients(clientsWithArchived);
       setSessions(s);
 
@@ -111,14 +121,18 @@ export function useClientStore(weekId: string, userEmail?: string | null) {
     ids.add(id);
     saveArchivedIds(ids);
     setClients((prev) => prev.map((c) => c.id === id ? { ...c, archived: true } : c));
-  }, []);
+    const existing = clientsRef.current.find((c) => c.id === id);
+    if (existing) void wClient({ ...existing, archived: true });
+  }, [wClient]);
 
   const unarchiveClient = useCallback((id: string) => {
     const ids = loadArchivedIds();
     ids.delete(id);
     saveArchivedIds(ids);
     setClients((prev) => prev.map((c) => c.id === id ? { ...c, archived: false } : c));
-  }, []);
+    const existing = clientsRef.current.find((c) => c.id === id);
+    if (existing) void wClient({ ...existing, archived: false });
+  }, [wClient]);
 
   const addClientTask = useCallback(async (clientId: string, text: string, dueDate?: string | null): Promise<ClientTask> => {
     const task: ClientTask = { id: crypto.randomUUID(), clientId, text, done: false, doneAt: null, dueDate: dueDate ?? null, archived: false, archivedAt: null, createdAt: Date.now() };
