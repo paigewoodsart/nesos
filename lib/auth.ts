@@ -12,6 +12,9 @@ const oauthCookies = isProd
       pkceCodeVerifier: { name: "__Secure-authjs.pkce.code_verifier", options: crossSite },
       state: { name: "__Secure-authjs.state", options: crossSite },
       nonce: { name: "__Secure-authjs.nonce", options: crossSite },
+      // Remembers where to go after sign-in (the app's hand-off page). Without
+      // this, Apple sign-in forgets it and lands on the website instead.
+      callbackUrl: { name: "__Secure-authjs.callback-url", options: crossSite },
     }
   : undefined;
 

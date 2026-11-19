@@ -29,7 +29,14 @@ extension KeyedDecodingContainer {
     }
 }
 
-private var nowMs: Double { Date().timeIntervalSince1970 * 1000 }
+/// Times are whole milliseconds. The database stores them as whole numbers
+/// and refuses anything with a decimal point.
+nonisolated enum Ms {
+    static var now: Double { (Date().timeIntervalSince1970 * 1000).rounded() }
+    /// The whole-number form sent to the website.
+    static func whole(_ value: Double) -> Int64 { Int64(value.rounded()) }
+    static func whole(_ value: Double?) -> Int64? { value.map { Int64($0.rounded()) } }
+}
 
 /// A project ("client" in the website's data).
 struct Project: Codable, Identifiable, Hashable {
@@ -46,7 +53,7 @@ struct Project: Codable, Identifiable, Hashable {
         self.color = color
         self.notes = nil
         self.archived = false
-        self.createdAt = nowMs
+        self.createdAt = Ms.now
     }
 
     enum CodingKeys: String, CodingKey { case id, name, color, notes, archived, createdAt }
@@ -70,7 +77,7 @@ struct Project: Codable, Identifiable, Hashable {
         try c.encode(color, forKey: .color)
         try c.encode(notes, forKey: .notes)
         try c.encode(archived, forKey: .archived)
-        try c.encode(createdAt, forKey: .createdAt)
+        try c.encode(Ms.whole(createdAt), forKey: .createdAt)
     }
 }
 
@@ -95,7 +102,7 @@ struct ProjectTask: Codable, Identifiable, Hashable {
         self.dueDate = dueDate
         self.archived = false
         self.archivedAt = nil
-        self.createdAt = nowMs
+        self.createdAt = Ms.now
     }
 
     enum CodingKeys: String, CodingKey { case id, clientId, text, done, doneAt, dueDate, archived, archivedAt, createdAt }
@@ -125,11 +132,11 @@ struct ProjectTask: Codable, Identifiable, Hashable {
         try c.encode(clientId, forKey: .clientId)
         try c.encode(text, forKey: .text)
         try c.encode(done, forKey: .done)
-        try c.encode(doneAt, forKey: .doneAt)
+        try c.encode(Ms.whole(doneAt), forKey: .doneAt)
         try c.encode(dueDate, forKey: .dueDate)
         try c.encode(archived, forKey: .archived)
-        try c.encode(archivedAt, forKey: .archivedAt)
-        try c.encode(createdAt, forKey: .createdAt)
+        try c.encode(Ms.whole(archivedAt), forKey: .archivedAt)
+        try c.encode(Ms.whole(createdAt), forKey: .createdAt)
     }
 }
 
@@ -144,7 +151,7 @@ struct SessionLog: Codable, Identifiable, Hashable {
     var actualMinutes: Int
     var notes: String
     var date: String
-    var createdAt: Double = Date().timeIntervalSince1970 * 1000
+    var createdAt: Double = Ms.now
 
     enum CodingKeys: String, CodingKey {
         case id, clientId, weekId, dayIndex, startMinute, endMinute, actualMinutes, notes, date, createdAt
@@ -155,6 +162,21 @@ struct SessionLog: Codable, Identifiable, Hashable {
 }
 
 extension SessionLog {
+    // Same as the default, except the time goes out as a whole number.
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(clientId, forKey: .clientId)
+        try c.encode(weekId, forKey: .weekId)
+        try c.encode(dayIndex, forKey: .dayIndex)
+        try c.encode(startMinute, forKey: .startMinute)
+        try c.encode(endMinute, forKey: .endMinute)
+        try c.encode(actualMinutes, forKey: .actualMinutes)
+        try c.encode(notes, forKey: .notes)
+        try c.encode(date, forKey: .date)
+        try c.encode(Ms.whole(createdAt), forKey: .createdAt)
+    }
+
     private enum ReadKeys: String, CodingKey {
         case id, clientId, weekId, dayIndex, startMinute, endMinute, actualMinutes, notes, date, createdAt
         case client_id, week_id, day_index, start_minute, end_minute, actual_minutes, created_at

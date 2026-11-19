@@ -43,7 +43,7 @@ final class AppStore {
             async let projectList = backend.projects()
             async let taskList = backend.openTasks()
             let (p, t) = try await (projectList, taskList)
-            self.projects = p.filter { !$0.archived }.sorted { $0.createdAt < $1.createdAt }
+            self.projects = self.inSavedOrder(p.filter { !$0.archived }.sorted { $0.createdAt < $1.createdAt })
             self.tasks = t.filter { !$0.archived }
             self.loaded = true
             await self.sweepFinishedTasks()
@@ -108,7 +108,7 @@ final class AppStore {
     func toggle(_ task: ProjectTask) async {
         var updated = task
         updated.done.toggle()
-        updated.doneAt = updated.done ? Date().timeIntervalSince1970 * 1000 : nil
+        updated.doneAt = updated.done ? Ms.now : nil
         _ = await save(updated, insert: false)
     }
 
@@ -133,11 +133,11 @@ final class AppStore {
     /// Finished tasks move to the archive after a day, like on the website.
     private func sweepFinishedTasks() async {
         guard let backend else { return }
-        let cutoff = Date().timeIntervalSince1970 * 1000 - 86_400_000
+        let cutoff = Ms.now - 86_400_000
         for task in tasks where task.done && !task.archived && (task.doneAt ?? .infinity) <= cutoff {
             var archived = task
             archived.archived = true
-            archived.archivedAt = Date().timeIntervalSince1970 * 1000
+            archived.archivedAt = Ms.now
             if (try? await backend.save(archived)) != nil {
                 tasks.removeAll { $0.id == task.id }
             }
@@ -166,6 +166,34 @@ final class AppStore {
         let ok = await save(restored, insert: true)
         if ok, let n = archivedCounts[task.clientId] { archivedCounts[task.clientId] = max(0, n - 1) }
         return ok
+    }
+
+    // MARK: Project order (kept on this phone only)
+
+    private var orderKey: String {
+        "nesos-project-order-" + (auth.isGuest ? "guest" : (auth.email ?? "account"))
+    }
+
+    /// Projects the person has arranged come first, in their order. Any
+    /// others (new ones, made elsewhere) follow, oldest first.
+    private func inSavedOrder(_ list: [Project]) -> [Project] {
+        let saved = UserDefaults.standard.stringArray(forKey: orderKey) ?? []
+        guard !saved.isEmpty else { return list }
+        var place: [String: Int] = [:]
+        for (index, id) in saved.enumerated() { place[id] = index }
+        let arranged = list.filter { place[$0.id] != nil }.sorted { (place[$0.id] ?? 0) < (place[$1.id] ?? 0) }
+        let rest = list.filter { place[$0.id] == nil }
+        return arranged + rest
+    }
+
+    /// Moves a project to where another one sits (dragging tiles on home).
+    func moveProject(_ id: String, to targetId: String) {
+        guard id != targetId,
+              let from = projects.firstIndex(where: { $0.id == id }),
+              let to = projects.firstIndex(where: { $0.id == targetId }) else { return }
+        let moved = projects.remove(at: from)
+        projects.insert(moved, at: to)
+        UserDefaults.standard.set(projects.map(\.id), forKey: orderKey)
     }
 
     // MARK: Projects
