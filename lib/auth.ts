@@ -21,6 +21,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Always show Google's "choose an account" screen, so sign-in never
+      // completes silently and people with two accounts can pick one.
+      authorization: { params: { prompt: "select_account" } },
     }),
     // Only enabled once the Apple env vars exist, so deploying this before
     // the Apple setup is finished can't break Google sign-in.

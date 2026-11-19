@@ -41,7 +41,11 @@ export async function GET(req: NextRequest) {
     payload,
     expires_at: new Date(Date.now() + 60_000).toISOString(),
   });
-  if (error) return new Response("Could not start session", { status: 500 });
+  if (error) {
+    // Shows up in Vercel's logs, so the cause isn't a guess next time.
+    console.error("mobile-callback: could not save session token:", error.message);
+    return new Response("Could not start session", { status: 500 });
+  }
 
   const params = new URLSearchParams({
     token: bearerToken,

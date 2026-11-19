@@ -299,3 +299,5 @@ alter table user_settings enable row level security;
 ### How to build
 
 Double-click `apple/build.command`. It builds for iPhone and Mac and writes `apple/build.log`.
+
+- Security, before the App Store: close anon access to the planner tables (see chat of Nov 18).
