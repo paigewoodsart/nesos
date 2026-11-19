@@ -14,15 +14,19 @@ final class AppStore {
     // Appearance, cached on the device so the right background shows instantly.
     private(set) var theme: String
     private(set) var customColor: String
+    /// The person's own color (profile tile, due tiles, date tile).
+    private(set) var personalColor: String
 
     private let auth: AuthStore
     private static let themeKey = "nesos-theme"
     private static let colorKey = "nesos-custom-bg-color"
+    private static let personalKey = "nesos-personal-color"
 
     init(auth: AuthStore) {
         self.auth = auth
         theme = UserDefaults.standard.string(forKey: Self.themeKey) ?? "original"
         customColor = UserDefaults.standard.string(forKey: Self.colorKey) ?? "#EBE5DE"
+        personalColor = UserDefaults.standard.string(forKey: Self.personalKey) ?? Palette.defaultHex
     }
 
     private var backend: (any Backend)? {
@@ -197,6 +201,24 @@ final class AppStore {
         await run { try await backend.save(session) }
     }
 
+    /// The project's logged timer sessions, newest first.
+    func sessions(_ projectId: String) async -> [SessionLog] {
+        guard let backend else { return [] }
+        let all = (try? await backend.sessions(projectId: projectId)) ?? []
+        return all.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Saves a change to a logged session (its name).
+    func updateSession(_ session: SessionLog) async -> Bool {
+        guard let backend else { return false }
+        return await run { try await backend.save(session) }
+    }
+
+    func deleteSession(_ id: String) async -> Bool {
+        guard let backend else { return false }
+        return await run { try await backend.deleteSession(id: id) }
+    }
+
     func fileCount(_ projectId: String) async -> Int {
         guard let backend else { return 0 }
         return (try? await backend.fileCount(projectId: projectId)) ?? 0
@@ -208,6 +230,14 @@ final class AppStore {
     }
 
     // MARK: Appearance
+
+    /// A custom background darker than this switches the phone app to light
+    /// text (0 is black, 1 is white).
+    static let darkBoardBelow = 0.5
+
+    var boardIsDark: Bool {
+        theme == "custom" && RGB(hex: customColor).luminance < Self.darkBoardBelow
+    }
 
     func setTheme(_ value: String) {
         theme = value
@@ -223,7 +253,19 @@ final class AppStore {
         pushSettings(AppearanceSettings(theme: "custom", customColor: hex))
     }
 
+    var palette: Palette { Palette(personalColor) }
+
+    func setPersonalColor(_ hex: String) {
+        personalColor = hex
+        UserDefaults.standard.set(hex, forKey: Self.personalKey)
+        pushSettings(AppearanceSettings(personalColor: hex))
+    }
+
     private func applyRemote(_ settings: AppearanceSettings) {
+        if let p = settings.personalColor {
+            personalColor = p
+            UserDefaults.standard.set(p, forKey: Self.personalKey)
+        }
         if let t = settings.theme, ["original", "neutral", "custom"].contains(t) {
             theme = t
             UserDefaults.standard.set(t, forKey: Self.themeKey)

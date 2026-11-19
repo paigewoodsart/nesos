@@ -40,8 +40,8 @@ struct CircleIconButton: View {
             Icon(icon, size: 20)
                 .foregroundStyle(Theme.inkLight)
                 .frame(width: 44, height: 44)
-                .background(Color.white.opacity(0.55), in: Circle())
-                .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 1))
+                .background(Theme.glass, in: Circle())
+                .overlay(Circle().stroke(Theme.glassBorder, lineWidth: 1))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
@@ -119,29 +119,35 @@ struct TileBar<Content: View>: View {
     }
 }
 
-/// White frosted card with the thin white border.
+/// White frosted card with the thin white border. On a dark board it
+/// becomes a faint glass panel instead.
 struct CardBackground: ViewModifier {
     var opacity: Double = 0.6
-    var border: Color = Theme.cardBorder
+    var borderOpacity: Double = 0.85
+    @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
+        let dark = scheme == .dark
         content
-            .background(Color.white.opacity(opacity), in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).stroke(border, lineWidth: 1))
+            .background(Color.white.opacity(dark ? opacity * 0.22 : opacity), in: RoundedRectangle(cornerRadius: 7))
+            .overlay(
+                RoundedRectangle(cornerRadius: 7)
+                    .stroke(Color.white.opacity(dark ? borderOpacity * 0.26 : borderOpacity), lineWidth: 1)
+            )
     }
 }
 
 extension View {
-    func card(_ opacity: Double = 0.6, border: Color = Theme.cardBorder) -> some View {
-        modifier(CardBackground(opacity: opacity, border: border))
+    func card(_ opacity: Double = 0.6, borderOpacity: Double = 0.85) -> some View {
+        modifier(CardBackground(opacity: opacity, borderOpacity: borderOpacity))
     }
 
     /// Frosted glass, for floating buttons.
     func frosted(radius: CGFloat = 7) -> some View {
-        background(Color.white.opacity(0.2), in: RoundedRectangle(cornerRadius: radius))
+        background(Theme.frost, in: RoundedRectangle(cornerRadius: radius))
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: radius))
             .overlay(RoundedRectangle(cornerRadius: radius).stroke(Theme.cardBorder, lineWidth: 1))
-            .shadow(color: Theme.accent.opacity(0.08), radius: 7, y: 4)
+            .shadow(color: Color(hex: "#184e77").opacity(0.08), radius: 7, y: 4)
     }
 
     /// The soft fade at the bottom of scrolling lists.
@@ -159,13 +165,13 @@ extension View {
 /// A vertical scroll area with the always-visible thin scroll bar from the
 /// designs (5pt wide, 8pt gap from the content).
 struct BarScroll<Content: View>: View {
-    var thumb: Color = Theme.accent.opacity(0.45)
+    var thumb: Color = Theme.scrollThumb
     var gap: CGFloat = 8
     /// Shrink to the content's height (up to the space available).
     var hugs = false
     let content: Content
 
-    init(thumb: Color = Theme.accent.opacity(0.45), gap: CGFloat = 8, hugs: Bool = false, @ViewBuilder content: () -> Content) {
+    init(thumb: Color = Theme.scrollThumb, gap: CGFloat = 8, hugs: Bool = false, @ViewBuilder content: () -> Content) {
         self.thumb = thumb
         self.gap = gap
         self.hugs = hugs
@@ -199,7 +205,7 @@ struct BarScroll<Content: View>: View {
             let thumbHeight = max(28, viewHeight * viewHeight / contentHeight)
             let progress = min(1, max(0, offset / (contentHeight - viewHeight)))
             ZStack(alignment: .top) {
-                Capsule().fill(Color.white.opacity(0.45))
+                Capsule().fill(Theme.scrollTrack)
                 Capsule().fill(thumb)
                     .frame(height: thumbHeight)
                     .offset(y: progress * (viewHeight - thumbHeight))
@@ -270,7 +276,7 @@ struct TaskRow: View {
                     .foregroundStyle(task.done ? Theme.inkLight : Theme.ink)
                     .lineLimit(1)
                 if let projectName {
-                    Text(projectName).caps(9).foregroundStyle(tint.fill).lineLimit(1)
+                    Text(projectName).caps(9).foregroundStyle(tint.text).lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -285,7 +291,7 @@ struct TaskRow: View {
         }
         .padding(.horizontal, 12)
         .frame(height: height)
-        .card(task.done ? 0.35 : openOpacity, border: Color.white.opacity(task.done && projectName == nil ? 0.6 : 0.85))
+        .card(task.done ? 0.35 : openOpacity, borderOpacity: task.done && projectName == nil ? 0.6 : 0.85)
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
     }
@@ -293,8 +299,11 @@ struct TaskRow: View {
 
 /// Quote of the day + date tile.
 struct QuoteDateRow: View {
+    @Environment(AppStore.self) private var store
+
     var body: some View {
         let quote = Quotes.today
+        let palette = store.palette
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(quote.quote)
@@ -307,7 +316,7 @@ struct QuoteDateRow: View {
                     .foregroundStyle(Theme.inkLight)
             }
             .padding(.leading, 10)
-            .overlay(alignment: .leading) { Rectangle().fill(Theme.sky).frame(width: 2) }
+            .overlay(alignment: .leading) { Rectangle().fill(palette.base).frame(width: 2) }
             .padding(12)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             .card()
@@ -326,10 +335,10 @@ struct QuoteDateRow: View {
                         Spacer()
                     }
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(palette.onBase)
                 .frame(width: 136)
                 .frame(maxHeight: .infinity)
-                .background(Theme.sky)
+                .background(palette.base)
                 .clipShape(RoundedRectangle(cornerRadius: 7))
             }
         }

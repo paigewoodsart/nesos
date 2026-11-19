@@ -134,7 +134,7 @@ struct ProjectTask: Codable, Identifiable, Hashable {
 }
 
 /// A logged timer session, the same shape the website's timer saves.
-struct SessionLog: Codable {
+struct SessionLog: Codable, Identifiable, Hashable {
     var id: String = UUID().uuidString.lowercased()
     var clientId: String
     var weekId: String
@@ -145,12 +145,44 @@ struct SessionLog: Codable {
     var notes: String
     var date: String
     var createdAt: Double = Date().timeIntervalSince1970 * 1000
+
+    enum CodingKeys: String, CodingKey {
+        case id, clientId, weekId, dayIndex, startMinute, endMinute, actualMinutes, notes, date, createdAt
+    }
+
+    /// Minutes worked: the timer's count, or the block's length.
+    var minutes: Int { actualMinutes > 0 ? actualMinutes : max(0, endMinute - startMinute) }
+}
+
+extension SessionLog {
+    private enum ReadKeys: String, CodingKey {
+        case id, clientId, weekId, dayIndex, startMinute, endMinute, actualMinutes, notes, date, createdAt
+        case client_id, week_id, day_index, start_minute, end_minute, actual_minutes, created_at
+    }
+
+    // Reads rows from the website (snake_case) and guest data (camelCase).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: ReadKeys.self)
+        self.init(
+            id: try c.decode(String.self, forKey: .id),
+            clientId: c.flexString([.clientId, .client_id]) ?? "",
+            weekId: c.flexString([.weekId, .week_id]) ?? "",
+            dayIndex: Int(c.flexDouble([.dayIndex, .day_index]) ?? 0),
+            startMinute: Int(c.flexDouble([.startMinute, .start_minute]) ?? 0),
+            endMinute: Int(c.flexDouble([.endMinute, .end_minute]) ?? 0),
+            actualMinutes: Int(c.flexDouble([.actualMinutes, .actual_minutes]) ?? 0),
+            notes: c.flexString([.notes]) ?? "",
+            date: c.flexString([.date]) ?? "",
+            createdAt: c.flexDouble([.createdAt, .created_at]) ?? 0
+        )
+    }
 }
 
 struct AppearanceSettings: Codable {
     var theme: String?
     var customColor: String?
     var staticBackground: Bool?
+    var personalColor: String?
 }
 
 struct ProjectFile: Decodable, Identifiable {

@@ -7,6 +7,7 @@ enum Route: Hashable {
     case project(String, adding: Bool)
     case due(DueSection, adding: Bool)
     case archive(String)
+    case sessions(String)
     case profile
 }
 
@@ -28,6 +29,8 @@ struct PhoneRoot: View {
                         DueView(start: section, startAdding: adding, path: $path)
                     case let .archive(id):
                         ArchiveView(projectId: id, path: $path)
+                    case let .sessions(id):
+                        TimerLogView(projectId: id, path: $path)
                     case .profile:
                         ProfileView(path: $path)
                     }
@@ -66,6 +69,11 @@ struct Screen<Content: View>: View {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: store.errorMessage)
+            .task(id: store.errorMessage) {
+                guard store.errorMessage != nil else { return }
+                try? await Task.sleep(for: .seconds(4))
+                if !Task.isCancelled { store.errorMessage = nil }
+            }
     }
 }
 
@@ -87,6 +95,7 @@ struct HomeView: View {
     @Binding var path: [Route]
     @Environment(AppStore.self) private var store
     @State private var adding = false
+    @State private var keyboardUp = false
 
     init(path: Binding<[Route]>) {
         _path = path
@@ -146,14 +155,18 @@ struct HomeView: View {
                 .refreshable { await store.load() }
             }
 
-            QuoteDateRow()
-                .padding(.top, -13)
+            if !keyboardUp {
+                QuoteDateRow()
+                    .padding(.top, -13)
+            }
         }
+        .trackKeyboard($keyboardUp)
     }
 }
 
 /// OVERDUE / TODAY / THIS WEEK tiles on home.
 struct DueTile: View {
+    @Environment(AppStore.self) private var store
     let section: DueSection
     let count: Int
     let onOpen: () -> Void
@@ -170,10 +183,10 @@ struct DueTile: View {
                 PlusButton(label: "Add to \(section.title)", action: onAdd)
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(store.palette.text(section))
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 64)
-        .background(Color(hex: section.colorHex))
+        .background(store.palette.color(section))
         .clipShape(RoundedRectangle(cornerRadius: 7))
         .contentShape(RoundedRectangle(cornerRadius: 7))
         .onTapGesture(perform: onOpen)
@@ -239,7 +252,7 @@ struct FirstRunTile: View {
             Button(action: onAdd) {
                 VStack(spacing: 12) {
                     Icon(.plus, size: 18)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.onAccent)
                         .frame(width: 44, height: 44)
                         .background(Theme.accent, in: Circle())
                     Text("ADD YOUR FIRST PROJECT").caps(12, spacing: 0.24).foregroundStyle(Theme.accent)
@@ -249,7 +262,7 @@ struct FirstRunTile: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 178)
-                .background(Color.white.opacity(0.42), in: RoundedRectangle(cornerRadius: 7))
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: 7))
                 .overlay(RoundedRectangle(cornerRadius: 7).stroke(Theme.accent.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])))
             }
             .buttonStyle(.plain)

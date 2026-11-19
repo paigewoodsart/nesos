@@ -10,6 +10,8 @@ protocol Backend {
     func deleteTask(id: String) async throws
     func save(_ project: Project) async throws
     func save(_ session: SessionLog) async throws
+    func sessions(projectId: String) async throws -> [SessionLog]
+    func deleteSession(id: String) async throws
     func settings() async throws -> AppearanceSettings
     func save(_ settings: AppearanceSettings) async throws
     func fileCount(projectId: String) async throws -> Int
@@ -27,6 +29,8 @@ struct RemoteBackend: Backend {
     func deleteTask(id: String) async throws { try await api.deleteTask(id: id) }
     func save(_ project: Project) async throws { try await api.save(project) }
     func save(_ session: SessionLog) async throws { try await api.save(session) }
+    func sessions(projectId: String) async throws -> [SessionLog] { try await api.sessions(projectId: projectId) }
+    func deleteSession(id: String) async throws { try await api.deleteSession(id: id) }
     func settings() async throws -> AppearanceSettings { try await api.settings() }
     func save(_ settings: AppearanceSettings) async throws { try await api.save(settings) }
     func fileCount(projectId: String) async throws -> Int { try await api.files(projectId: projectId).count }
@@ -85,7 +89,14 @@ final class LocalBackend: Backend {
     }
 
     func save(_ session: SessionLog) async throws {
-        store.sessions.append(session)
+        if let i = store.sessions.firstIndex(where: { $0.id == session.id }) { store.sessions[i] = session } else { store.sessions.append(session) }
+        persist()
+    }
+
+    func sessions(projectId: String) async throws -> [SessionLog] { store.sessions.filter { $0.clientId == projectId } }
+
+    func deleteSession(id: String) async throws {
+        store.sessions.removeAll { $0.id == id }
         persist()
     }
 
@@ -95,6 +106,7 @@ final class LocalBackend: Backend {
         if let theme = settings.theme { store.settings.theme = theme }
         if let color = settings.customColor { store.settings.customColor = color }
         if let flag = settings.staticBackground { store.settings.staticBackground = flag }
+        if let personal = settings.personalColor { store.settings.personalColor = personal }
         persist()
     }
 

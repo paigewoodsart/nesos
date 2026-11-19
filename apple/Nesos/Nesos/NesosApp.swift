@@ -28,7 +28,6 @@ struct NesosApp: App {
                 .environment(timers)
                 .environment(router)
                 .tint(Theme.accent)
-                .preferredColorScheme(.light)
                 #if os(macOS)
                 .frame(minWidth: 900, minHeight: 600)
                 #endif

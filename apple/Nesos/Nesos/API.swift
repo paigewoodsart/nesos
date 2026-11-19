@@ -23,6 +23,8 @@ struct API {
     func deleteTask(id: String) async throws { try await send("DELETE", "api/db/client-tasks", query: ["id": id]) }
     func save(_ project: Project) async throws { try await send("POST", "api/db/clients", body: project) }
     func save(_ session: SessionLog) async throws { try await send("POST", "api/db/sessions", body: session) }
+    func sessions(projectId: String) async throws -> [SessionLog] { try await get("api/db/sessions", ["clientId": projectId]) }
+    func deleteSession(id: String) async throws { try await send("DELETE", "api/db/sessions", query: ["id": id]) }
     func settings() async throws -> AppearanceSettings { try await get("api/db/settings") }
     func save(_ settings: AppearanceSettings) async throws { try await send("POST", "api/db/settings", body: settings) }
     func files(projectId: String) async throws -> [ProjectFile] { try await get("api/db/files", ["clientId": projectId]) }

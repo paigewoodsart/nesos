@@ -36,6 +36,7 @@ struct ContentView: View {
             .environment(router)
             .tint(Theme.accent)
         }
+        .preferredColorScheme(auth.hasSession && showsPhoneApp && store.boardIsDark ? .dark : .light)
         .onChange(of: auth.hasSession) { _, has in
             if !has {
                 router.sheet = nil
@@ -44,16 +45,24 @@ struct ContentView: View {
         }
     }
 
+    /// iPad shows the desktop planner. Guest mode has no website session,
+    /// so a guest gets the phone app on iPad too.
+    private var showsPhoneApp: Bool {
+        #if os(macOS)
+        false
+        #else
+        UIDevice.current.userInterfaceIdiom != .pad || auth.isGuest
+        #endif
+    }
+
     @ViewBuilder private var signedIn: some View {
         #if os(macOS)
         DesktopPlannerView()
         #else
-        // iPad shows the desktop planner. Guest mode has no website session,
-        // so a guest gets the phone app on iPad too.
-        if UIDevice.current.userInterfaceIdiom == .pad && !auth.isGuest {
-            DesktopPlannerView()
-        } else {
+        if showsPhoneApp {
             PhoneRoot()
+        } else {
+            DesktopPlannerView()
         }
         #endif
     }

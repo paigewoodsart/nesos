@@ -55,10 +55,10 @@ struct DueView: View {
                     Icon(.chevronDown, size: 14)
                 }
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(store.palette.text(section))
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 64)
-            .background(Color(hex: section.colorHex))
+            .background(store.palette.color(section))
             .clipShape(RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
@@ -110,7 +110,7 @@ struct DueView: View {
             .padding(EdgeInsets(top: 10, leading: 16, bottom: 6, trailing: 14))
 
             if adding {
-                TaskEditCard(mode: .new, projectId: nil, defaultDue: defaultDue(section), fallbackHex: section.colorHex) {
+                TaskEditCard(mode: .new, projectId: nil, defaultDue: defaultDue(section), fallbackHex: store.palette.hex(section)) {
                     withAnimation(.easeOut(duration: 0.2)) { adding = false }
                 }
                 .padding(EdgeInsets(top: 0, leading: 10, bottom: 8, trailing: 10))
@@ -136,8 +136,8 @@ struct DueView: View {
                 .padding(.trailing, 4)
             }
         }
-        .foregroundStyle(.white)
-        .background(Color(hex: section.colorHex))
+        .foregroundStyle(store.palette.text(section))
+        .background(store.palette.color(section))
         .clipShape(RoundedRectangle(cornerRadius: 7))
     }
 

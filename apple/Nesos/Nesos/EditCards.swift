@@ -130,7 +130,7 @@ struct TaskEditCard: View {
                 .frame(height: 36)
             }
         }
-        .background(Color.white.opacity(0.75))
+        .background(Theme.editCard)
         .clipShape(RoundedRectangle(cornerRadius: 7))
         .overlay(RoundedRectangle(cornerRadius: 7).stroke(tint.fill, lineWidth: 1))
         .confirmationDialog("Delete this task?", isPresented: $confirmDelete, titleVisibility: .visible) {
@@ -156,6 +156,7 @@ struct TaskEditCard: View {
             }
             .padding(20)
             .presentationDetents([.height(470)])
+            .presentationBackground(Theme.sheet)
             .presentationDragIndicator(.visible)
         }
         .onAppear(perform: setUp)
@@ -182,7 +183,7 @@ struct TaskEditCard: View {
                 .padding(.horizontal, grow ? 5 : 10)
                 .frame(maxWidth: grow ? .infinity : nil)
                 .frame(height: 30)
-                .background(selected ? tint.fill : Color.white.opacity(0.7), in: RoundedRectangle(cornerRadius: 7))
+                .background(selected ? tint.fill : Theme.chip, in: RoundedRectangle(cornerRadius: 7))
                 .overlay(RoundedRectangle(cornerRadius: 7).stroke(selected ? tint.fill : Theme.ink.opacity(0.14), lineWidth: 1))
         }
         .buttonStyle(.plain)
@@ -305,7 +306,7 @@ struct ProjectEditCard: View {
             .buttonStyle(.plain)
             .disabled(!canSave)
         }
-        .background(Color.white.opacity(0.78))
+        .background(Theme.editCard)
         .clipShape(RoundedRectangle(cornerRadius: 7))
         .overlay(RoundedRectangle(cornerRadius: 7).stroke(tint.fill, lineWidth: 1))
         .onAppear {

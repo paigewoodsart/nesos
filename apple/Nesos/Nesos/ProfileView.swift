@@ -8,7 +8,12 @@ struct ProfileView: View {
 
     @Environment(AppStore.self) private var store
     @Environment(AuthStore.self) private var auth
-    @State private var showColorPicker = false
+    @State private var picking: PickerTarget?
+
+    private enum PickerTarget: String, Identifiable {
+        case theme, personal
+        var id: String { rawValue }
+    }
     @State private var confirmDelete = false
     @State private var deleting = false
 
@@ -48,27 +53,64 @@ struct ProfileView: View {
                     Spacer(minLength: 0)
                 }
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(store.palette.onBase)
             .frame(height: 96)
-            .background(Theme.sky)
+            .background(store.palette.base)
             .clipShape(RoundedRectangle(cornerRadius: 7))
+
+            Text("YOUR COLOR").caps(11, spacing: 0.24).foregroundStyle(Theme.inkSoft)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    ForEach(Palette.presets, id: \.self) { hex in
+                        Button { store.setPersonalColor(hex) } label: {
+                            RoundedRectangle(cornerRadius: 7)
+                                .fill(Color(hex: hex))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 36)
+                                .overlay { if isPersonal(hex) { selectionRing } }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Color \(hex)")
+                    }
+                    Button { picking = .personal } label: {
+                        Icon(.plus, size: 14)
+                            .foregroundStyle(hasCustomPersonal ? store.palette.onBase : Theme.accent)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 36)
+                            .background(hasCustomPersonal ? store.palette.base : Theme.card, in: RoundedRectangle(cornerRadius: 7))
+                            .overlay(RoundedRectangle(cornerRadius: 7).stroke(Theme.cardBorder, lineWidth: 1))
+                            .overlay { if hasCustomPersonal { selectionRing } }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Custom color")
+                }
+                Text("Colors this tile, your Overdue, Today and This Week tiles, and the date on home.")
+                    .font(NFont.inter(11))
+                    .foregroundStyle(Theme.inkLight)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             Text("THEME").caps(11, spacing: 0.24).foregroundStyle(Theme.inkSoft)
 
             HStack(spacing: 10) {
-                themeButton("PASTEL", selected: store.theme == "original") {
+                themeButton("PASTEL", selected: store.theme == "original", label: Theme.fixedInkSoft) {
                     BoardBackground.pastel
                 } action: { store.setTheme("original") }
 
-                themeButton("NEUTRAL", selected: store.theme == "neutral") {
+                themeButton("NEUTRAL", selected: store.theme == "neutral", label: Theme.fixedInkSoft) {
                     LinearGradient(colors: [Color(hex: "#FAF7F2"), Color(hex: "#F5EDE0"), Color(hex: "#EDE3D4")], startPoint: .top, endPoint: .bottom)
                 } action: { store.setTheme("neutral") }
 
-                themeButton(store.theme == "custom" ? "CUSTOM · EDIT" : "CUSTOM", selected: store.theme == "custom") {
+                themeButton(
+                    store.theme == "custom" ? "CUSTOM · EDIT" : "CUSTOM",
+                    selected: store.theme == "custom",
+                    label: RGB(hex: store.customColor).luminance < AppStore.darkBoardBelow ? .white : Theme.fixedInkSoft
+                ) {
                     Color(hex: store.customColor)
                 } action: {
                     if store.theme == "custom" {
-                        showColorPicker = true
+                        picking = .theme
                     } else {
                         store.setTheme("custom")
                     }
@@ -111,9 +153,15 @@ struct ProfileView: View {
             }
             .padding(.bottom, 18)
         }
-        .sheet(isPresented: $showColorPicker) {
-            ColorPickerSheet(hex: store.customColor) { store.setCustomColor($0) }
-                .ignoresSafeArea()
+        .sheet(item: $picking) { target in
+            ColorPickerSheet(hex: target == .theme ? store.customColor : store.personalColor) { hex in
+                if target == .theme {
+                    store.setCustomColor(hex)
+                } else {
+                    store.setPersonalColor(hex)
+                }
+            }
+            .ignoresSafeArea()
         }
         .confirmationDialog(
             "Delete your Nesos account?",
@@ -132,9 +180,21 @@ struct ProfileView: View {
         }
     }
 
+    private func isPersonal(_ hex: String) -> Bool { hex.lowercased() == store.personalColor.lowercased() }
+
+    private var hasCustomPersonal: Bool { !Palette.presets.contains { isPersonal($0) } }
+
+    private var selectionRing: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8).stroke(Color.white, lineWidth: 2).padding(-1)
+            RoundedRectangle(cornerRadius: 10).stroke(Theme.ink, lineWidth: 2).padding(-3)
+        }
+    }
+
     private func themeButton<Swatch: View>(
         _ title: String,
         selected: Bool,
+        label: Color,
         @ViewBuilder swatch: () -> Swatch,
         action: @escaping () -> Void
     ) -> some View {
@@ -143,7 +203,7 @@ struct ProfileView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 64)
                 .overlay(alignment: .bottom) {
-                    Text(title).caps(9).foregroundStyle(Theme.inkSoft).lineLimit(1).minimumScaleFactor(0.8)
+                    Text(title).caps(9).foregroundStyle(label).lineLimit(1).minimumScaleFactor(0.8)
                         .padding(.bottom, 8)
                         .padding(.horizontal, 4)
                 }

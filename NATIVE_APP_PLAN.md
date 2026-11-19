@@ -255,6 +255,13 @@ Status: both builds pass (iOS Simulator and Mac). Next is a test on Paige's phon
 - iPad and Mac keep the desktop planner, with New Task and New Project quick add.
 - Finished tasks move to the archive after 24 hours, same as the website.
 
+### Added during phone testing (Nov 18, 2026)
+
+- Dark board: a dark custom background flips the phone app to light text. The switch point is `AppStore.darkBoardBelow`.
+- Timer: TIMER opens the block with START and LOG. While running: STOP and LOG. After STOP: SAVE or DELETE.
+- Timer log: a page per project listing saved sessions. Tap a session to name it, ✕ to delete it. Uses `GET /api/db/sessions?clientId=`.
+- Your color: picked in the profile (six presets or custom). It colors the profile tile, the date tile and the quote bar, and Overdue, Today and This Week become shades of it. Sky (#8fb0ec) is the default and gives the original colors. Saved as `user_settings.personal_color`.
+
 ### Guest mode (temporary, for testing)
 
 - "Continue as guest" on the sign-in screen (iPhone and iPad). Data is saved on the device only, in `nesos-guest.json`.
@@ -274,6 +281,7 @@ create table if not exists user_settings (
   theme text,
   custom_color text,
   static_background boolean,
+  personal_color text,
   updated_at timestamptz
 );
 alter table user_settings enable row level security;

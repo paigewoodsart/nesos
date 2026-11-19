@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     theme: data.theme ?? null,
     customColor: data.custom_color ?? null,
     staticBackground: data.static_background ?? null,
+    personalColor: data.personal_color ?? null,
   } : {});
 }
 
@@ -26,6 +27,7 @@ export async function POST(req: NextRequest) {
   if (typeof body.theme === "string") row.theme = body.theme;
   if (typeof body.customColor === "string") row.custom_color = body.customColor;
   if (typeof body.staticBackground === "boolean") row.static_background = body.staticBackground;
+  if (typeof body.personalColor === "string") row.personal_color = body.personalColor;
   const { error } = await supabase.from("user_settings").upsert(row);
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });

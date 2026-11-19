@@ -1,14 +1,15 @@
 import Foundation
 import Observation
 
-/// Project timers, like the website's: one runs at a time, and stopping logs
-/// a session (with an optional note) to the project.
+/// Project timers, like the website's: one runs at a time. Stopping holds
+/// the time until the person logs it to the project or deletes it.
 @Observable
 final class TimerStore {
     struct Entry: Codable {
         var accumulated: TimeInterval
         var startedAt: Date?
         var firstStartedAt: Date
+        var stoppedAt: Date?
     }
 
     private(set) var entries: [String: Entry]
@@ -23,7 +24,11 @@ final class TimerStore {
         }
     }
 
+    /// Counting right now.
     func isRunning(_ projectId: String) -> Bool { entries[projectId]?.startedAt != nil }
+
+    /// Running, or stopped and waiting to be logged or deleted.
+    func isActive(_ projectId: String) -> Bool { entries[projectId] != nil }
 
     func runningSince(_ projectId: String) -> Date? { entries[projectId]?.firstStartedAt }
 
@@ -32,41 +37,60 @@ final class TimerStore {
         return entry.accumulated + (entry.startedAt.map { now.timeIntervalSince($0) } ?? 0)
     }
 
+    /// Starts (or resumes) this project's timer and stops any other.
     func start(_ projectId: String) {
         let now = Date()
-        for (id, entry) in entries where id != projectId {
-            if let started = entry.startedAt {
-                entries[id] = Entry(accumulated: entry.accumulated + now.timeIntervalSince(started), startedAt: nil, firstStartedAt: entry.firstStartedAt)
-            }
-        }
+        for id in entries.keys where id != projectId { halt(id, at: now) }
         if var existing = entries[projectId] {
             existing.startedAt = now
+            existing.stoppedAt = nil
             entries[projectId] = existing
         } else {
-            entries[projectId] = Entry(accumulated: 0, startedAt: now, firstStartedAt: now)
+            entries[projectId] = Entry(accumulated: 0, startedAt: now, firstStartedAt: now, stoppedAt: nil)
         }
         persist()
     }
 
-    /// Stops the timer and logs the session to the project.
-    func stop(_ projectId: String, note: String, store: AppStore) async {
+    /// Stops counting and keeps the time, ready to log or delete.
+    func stop(_ projectId: String) {
+        halt(projectId, at: Date())
+        persist()
+    }
+
+    /// Throws the session away without logging it.
+    func discard(_ projectId: String) {
+        entries[projectId] = nil
+        persist()
+    }
+
+    /// Logs the session to the project, with an optional note.
+    func log(_ projectId: String, note: String, store: AppStore) async {
         guard let entry = entries[projectId] else { return }
         let now = Date()
+        let end = entry.startedAt == nil ? (entry.stoppedAt ?? now) : now
         let total = elapsed(projectId, now: now)
         entries[projectId] = nil
         persist()
         guard total >= 1 else { return }
         let session = SessionLog(
             clientId: projectId,
-            weekId: Week.weekId(for: now),
-            dayIndex: Week.dayIndex(for: now),
+            weekId: Week.weekId(for: end),
+            dayIndex: Week.dayIndex(for: end),
             startMinute: Week.minutes(entry.firstStartedAt),
-            endMinute: Week.minutes(now),
+            endMinute: Week.minutes(end),
             actualMinutes: max(1, Int((total / 60).rounded())),
             notes: note,
-            date: Week.dateString(now)
+            date: Week.dateString(end)
         )
         await store.log(session)
+    }
+
+    private func halt(_ projectId: String, at now: Date) {
+        guard var entry = entries[projectId], let started = entry.startedAt else { return }
+        entry.accumulated += now.timeIntervalSince(started)
+        entry.startedAt = nil
+        entry.stoppedAt = now
+        entries[projectId] = entry
     }
 
     private func persist() {

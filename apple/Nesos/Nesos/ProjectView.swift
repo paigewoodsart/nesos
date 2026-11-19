@@ -10,9 +10,11 @@ struct ProjectView: View {
 
     @Environment(AppStore.self) private var store
     @Environment(TimerStore.self) private var timers
+    @Environment(AuthStore.self) private var auth
     @State private var adding: Bool
     @State private var editingId: String?
     @State private var editingProject = false
+    @State private var timerOpen = false
     @State private var notes = ""
     @State private var notesLoaded = false
     @State private var saveTask: Task<Void, Never>?
@@ -72,12 +74,13 @@ struct ProjectView: View {
     }
 
     @ViewBuilder private func content(_ project: Project, tint: Tint) -> some View {
-        let running = timers.entries[projectId] != nil
+        let active = timers.isActive(projectId)
+        let running = timers.isRunning(projectId)
         let tasks = store.tasks(for: projectId)
 
-        headerTile(project, tint: tint, running: running)
+        headerTile(project, tint: tint, open: active || timerOpen, active: active, running: running)
 
-        if running && !(keyboardUp && !sessionFocused) {
+        if active && !(keyboardUp && !sessionFocused) {
             sessionNoteField(tint)
         }
 
@@ -167,32 +170,65 @@ struct ProjectView: View {
 
     // MARK: Header tile and timer
 
-    private func headerTile(_ project: Project, tint: Tint, running: Bool) -> some View {
-        let open = store.openCount(projectId)
+    /// Closed: name and a TIMER button. Open: the time, with START or LOG,
+    /// then STOP while it runs, then SAVE or DELETE once it's stopped.
+    private func headerTile(_ project: Project, tint: Tint, open: Bool, active: Bool, running: Bool) -> some View {
+        let openCount = store.openCount(projectId)
         let overdue = store.overdueCount(projectId)
         return VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
                     Text(project.name).caps(16, spacing: 0.24).lineLimit(1).minimumScaleFactor(0.7)
-                    if running {
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            Text(TimerStore.format(timers.elapsed(projectId, now: context.date)))
-                                .font(NFont.playfair(34))
-                                .monospacedDigit()
+                    Spacer(minLength: 8)
+                    if !open {
+                        timerCapsule("TIMER", icon: .play, solid: false, tint: tint) {
+                            withAnimation(.easeOut(duration: 0.2)) { timerOpen = true }
                         }
+                    } else if !active {
+                        Button {
+                            withAnimation(.easeOut(duration: 0.2)) { timerOpen = false }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("CLOSE").caps(10)
+                                Icon(.close, size: 11)
+                            }
+                            .frame(height: 30)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                Spacer(minLength: 8)
-                timerButton(tint: tint, running: running)
+                .frame(height: 30)
+
+                if open {
+                    HStack(alignment: .center, spacing: 6) {
+                        if running {
+                            TimelineView(.periodic(from: .now, by: 1)) { context in
+                                Text(TimerStore.format(timers.elapsed(projectId, now: context.date)))
+                                    .font(NFont.playfair(32))
+                                    .monospacedDigit()
+                            }
+                        } else {
+                            Text(TimerStore.format(timers.elapsed(projectId)))
+                                .font(NFont.playfair(32))
+                                .monospacedDigit()
+                        }
+                        Spacer(minLength: 8)
+                        timerControls(tint: tint, active: active, running: running)
+                    }
+                    .frame(height: 40)
+                }
             }
-            .padding(EdgeInsets(top: 16, leading: 16, bottom: 0, trailing: 12))
+            .padding(EdgeInsets(top: 12, leading: 16, bottom: 0, trailing: 12))
             Spacer(minLength: 0)
             TileBar(height: 28, leading: 16, trailing: 6) {
                 if running, let since = timers.runningSince(projectId) {
                     Circle().fill(tint.onFill).frame(width: 7, height: 7)
                     Text("RUNNING SINCE \(since.formatted(date: .omitted, time: .shortened))").caps(10).lineLimit(1)
+                } else if active {
+                    Text("STOPPED · SAVE IT OR DELETE IT").caps(10).lineLimit(1)
                 } else {
-                    Text(summary(open: open, overdue: overdue)).caps(10).lineLimit(1)
+                    Text(summary(open: openCount, overdue: overdue)).caps(10).lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 Button {
@@ -211,37 +247,68 @@ struct ProjectView: View {
             }
         }
         .foregroundStyle(tint.onFill)
-        .frame(height: running ? 132 : 96)
+        .frame(height: open ? 132 : 96)
         .background(tint.fill)
         .clipShape(RoundedRectangle(cornerRadius: 7))
     }
 
-    private func timerButton(tint: Tint, running: Bool) -> some View {
-        Button {
-            if running {
+    @ViewBuilder private func timerControls(tint: Tint, active: Bool, running: Bool) -> some View {
+        if running {
+            timerCapsule("STOP", icon: .stop, solid: true, tint: tint) {
+                sessionFocused = false
+                withAnimation(.easeOut(duration: 0.2)) { timers.stop(projectId) }
+            }
+            logCapsule(tint)
+        } else if active {
+            timerCapsule("SAVE", icon: .check, solid: true, tint: tint) {
                 let note = sessionNote
                 sessionNote = ""
                 sessionFocused = false
-                Task { await timers.stop(projectId, note: note, store: store) }
-            } else {
+                Task {
+                    await timers.log(projectId, note: note, store: store)
+                    withAnimation(.easeOut(duration: 0.2)) { timerOpen = true }
+                }
+            }
+            timerCapsule("DELETE", icon: .close, solid: false, tint: tint) {
+                sessionNote = ""
+                sessionFocused = false
+                withAnimation(.easeOut(duration: 0.2)) {
+                    timers.discard(projectId)
+                    timerOpen = true
+                }
+            }
+        } else {
+            timerCapsule("START", icon: .play, solid: true, tint: tint) {
                 withAnimation(.easeOut(duration: 0.2)) { timers.start(projectId) }
             }
-        } label: {
+            logCapsule(tint)
+        }
+    }
+
+    /// Opens the project's timer log (its saved sessions).
+    private func logCapsule(_ tint: Tint) -> some View {
+        timerCapsule("LOG", icon: nil, solid: false, tint: tint) {
+            path.append(.sessions(projectId))
+        }
+    }
+
+    private func timerCapsule(_ title: String, icon: NIcon?, solid: Bool, tint: Tint, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             HStack(spacing: 6) {
-                Icon(running ? .stop : .play, size: 10)
-                Text(running ? "STOP" : "TIMER").caps(10)
+                if let icon { Icon(icon, size: 10) }
+                Text(title).caps(10)
             }
-            .foregroundStyle(running ? tint.label : tint.onFill)
+            .foregroundStyle(solid ? tint.deep : tint.onFill)
             .padding(.horizontal, 12)
             .frame(height: 30)
-            .background(running ? Color.white : Color.white.opacity(0.25), in: Capsule())
+            .background(solid ? Color.white : Color.white.opacity(0.25), in: Capsule())
         }
         .buttonStyle(.plain)
     }
 
     private func sessionNoteField(_ tint: Tint) -> some View {
         HStack(spacing: 10) {
-            Text("SESSION NOTE").caps(10).foregroundStyle(tint.label)
+            Text("SESSION NAME").caps(10).foregroundStyle(tint.label)
             TextField("", text: $sessionNote, prompt: Text("What are you working on?").foregroundStyle(Theme.inkLight.opacity(0.8)))
                 .font(NFont.inter(13))
                 .foregroundStyle(Theme.ink)
@@ -329,7 +396,13 @@ struct ProjectView: View {
     // MARK: Files
 
     private func filesBar(_ tint: Tint) -> some View {
-        Button { showAttachChoice = true } label: {
+        Button {
+            if auth.isGuest {
+                store.errorMessage = "Files need an account. Sign in to attach files."
+            } else {
+                showAttachChoice = true
+            }
+        } label: {
             HStack(spacing: 10) {
                 Text("FILES").caps(10)
                 Text(filesLabel).font(NFont.inter(11)).opacity(0.9)
@@ -505,7 +578,7 @@ struct ArchiveView: View {
         }
         .padding(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 8))
         .frame(height: 52)
-        .card(0.45, border: Color.white.opacity(0.75))
+        .card(0.45, borderOpacity: 0.75)
     }
 
     private struct MonthGroup {
