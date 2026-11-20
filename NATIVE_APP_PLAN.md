@@ -303,7 +303,11 @@ Double-click `apple/build.command`. It builds for iPhone and Mac and writes `app
 
 - Security, before the App Store: close anon access to the planner tables (see chat of Nov 18).
 
-## Closing the open access to the tables (ready to run, Nov 19, 2026)
+## Closing the open access to the tables (DONE Nov 19, 2026)
+
+Result: merged to main as pull request #6, closing SQL run, check passed on all 11 tables (public cannot read or write, row security on, server can read, 0 open rules left, file storage rules included).
+
+Do not re-run the old saved Supabase query "Grant Anon Full Access". It would reopen everything.
 
 Why: the planner tables were reachable with the site's public key (anon role, row security off). The website's browser code fell back to that route whenever the server route failed.
 
@@ -326,3 +330,17 @@ What the look-first check showed (Nov 19):
 - Row security was already on for every table, but each planner table had an `anon_all` rule that let the public key do everything. So the tables were open in practice.
 - The "Client files" bucket is private, but four `allow_all` rules on `storage.objects` let the public key read, upload, change and delete files.
 - The website only touches files through the server key and signed links (`app/api/db/files/*`), so those four rules are not needed. The closing SQL removes them too.
+
+## Waiting for the next app update (as of Nov 19, 2026)
+
+- **Planner zoom on Mac and iPad.** View menu: Zoom In (Cmd +), Zoom Out (Cmd -), Actual Size (Cmd 0). Steps 75, 90, 100, 110, 125, 150, 175, 200 percent. Remembered on the device (`nesos-planner-zoom`). Code is in `DesktopPlannerView.swift` (`PlannerZoom`) and `NesosApp.swift`.
+  - NOT BUILT OR TESTED YET. Send the boat before the next upload and check the build log.
+  - Starts at 100 percent for everyone. Paige's Chrome default is 125 percent, which is why the app looked smaller to her. Open question: start bigger for everyone?
+- Mac TestFlight build 1.0 (1) is live for the internal group "me". It does not have zoom.
+
+## Mac upload notes (learned Nov 19, 2026)
+
+- Mac uploads need a "Mac Installer Distribution" certificate (shows in Keychain as "3rd Party Mac Developer Installer"). Made on developer.apple.com from a request file created in Keychain Access, after Xcode and the website both errored for a few hours. Expires Nov 19, 2027.
+- The macOS platform was added to the Nesos app record in App Store Connect.
+- Each app has its own TestFlight tester list. Making a group does not add anyone to it.
+- TestFlight on a Mac uses the Mac App Store's Apple ID. It has no sign-in of its own.

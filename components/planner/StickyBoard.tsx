@@ -395,6 +395,10 @@ function saveSystemConfig(cfg: Record<SystemKey, SystemConfig>, theme?: string) 
   localStorage.setItem(key, JSON.stringify(cfg));
 }
 
+// A private data type for drags inside the planner. Using a custom type (not
+// plain text) means a tile dropped on a text box doesn't paste anything in.
+const DRAG_TYPE = "application/x-nesos-drag";
+
 function loadClientOrder(): string[] {
   try { return JSON.parse(localStorage.getItem("client-order") ?? "[]"); } catch { return []; }
 }
@@ -1329,7 +1333,14 @@ export function StickyBoard({
                   <button
                     draggable
                     onClick={() => setActiveClientId(active ? null : c.id)}
-                    onDragStart={(e) => { e.stopPropagation(); setDragId(c.id); e.dataTransfer.effectAllowed = "move"; }}
+                    onDragStart={(e) => {
+                      e.stopPropagation();
+                      setDragId(c.id);
+                      e.dataTransfer.effectAllowed = "move";
+                      // Safari's engine (also used by the Mac and iPad app) and Firefox
+                      // only carry a drag through if it holds some data. Chrome doesn't care.
+                      e.dataTransfer.setData(DRAG_TYPE, c.id);
+                    }}
                     onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropIndex(i); }}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -1432,6 +1443,7 @@ export function StickyBoard({
             setPanelDragKey(key);
             setPanelDragSourceCol(colKey);
             e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData(DRAG_TYPE, key);
           }}
           onDragOver={(e) => {
             if (dragId || (colKey !== "col1" && colKey !== "col4")) return;
